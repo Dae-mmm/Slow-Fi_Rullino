@@ -1,0 +1,4 @@
+# Copia in local.properties (Android Studio aggiunge da solo sdk.dir).
+# Catalogo del negozio: progetto Supabase con lo schema in supabase/schema.sql
+supabase.url=https://IL-TUO-PROGETTO.supabase.co
+supabase.key=sb_publishable_xxxxxxxxxxxx
