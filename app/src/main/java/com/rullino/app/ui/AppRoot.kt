@@ -4,9 +4,11 @@ import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -51,15 +53,18 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
     Scaffold(
         containerColor = Palette.Body,
         snackbarHost = { SnackbarHost(snackbar) },
-        bottomBar = {
-            NavigationBar(containerColor = Palette.Plate) {
+    ) { padding ->
+        // In orizzontale la navigazione sta di lato, come una fascia del corpo macchina.
+        Row(Modifier.fillMaxSize().padding(padding)) {
+            NavigationRail(containerColor = Palette.Plate) {
+                Spacer(Modifier.weight(1f))
                 AppTab.entries.forEach { t ->
-                    NavigationBarItem(
+                    NavigationRailItem(
                         selected = tab == t,
                         onClick = { tab = t },
                         icon = { Text(t.glyph, fontSize = 20.sp) },
-                        label = { Text(t.label) },
-                        colors = NavigationBarItemDefaults.colors(
+                        label = { Text(t.label, fontSize = 11.sp) },
+                        colors = NavigationRailItemDefaults.colors(
                             selectedIconColor = Palette.Safelight,
                             selectedTextColor = Palette.Ink,
                             unselectedIconColor = Palette.Muted,
@@ -68,14 +73,14 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
                         ),
                     )
                 }
+                Spacer(Modifier.weight(1f))
             }
-        },
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            when (tab) {
-                AppTab.CAMERA -> CameraScreen(vm, onPickEmulsion = { tab = AppTab.EMULSIONS }, onOpenRolls = { tab = AppTab.ROLLS })
-                AppTab.EMULSIONS -> EmulsionsScreen(vm, onLoaded = { tab = AppTab.CAMERA })
-                AppTab.ROLLS -> RollsScreen(vm)
+            Box(Modifier.fillMaxSize()) {
+                when (tab) {
+                    AppTab.CAMERA -> CameraScreen(vm, onPickEmulsion = { tab = AppTab.EMULSIONS }, onOpenRolls = { tab = AppTab.ROLLS })
+                    AppTab.EMULSIONS -> EmulsionsScreen(vm, onLoaded = { tab = AppTab.CAMERA })
+                    AppTab.ROLLS -> RollsScreen(vm)
+                }
             }
         }
     }

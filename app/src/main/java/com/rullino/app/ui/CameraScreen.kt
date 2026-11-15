@@ -21,6 +21,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -126,101 +129,133 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
         })
     }
 
-    Column(Modifier.fillMaxSize().background(Palette.Body).padding(horizontal = 16.dp)) {
-        // ---- Calotta superiore: contafotogrammi e finestrella ----
-        Row(
-            Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            BackWindow(emulsion, r)
-            Spacer(Modifier.weight(1f))
-            FrameCounter(
-                number = when {
-                    r == null -> 0
-                    r.wound -> r.shotCount + 1
-                    else -> r.shotCount
-                },
-                total = r?.exposures ?: 36,
-            )
-        }
+    val counter = when {
+        r == null -> 0
+        r.wound -> r.shotCount + 1
+        else -> r.shotCount
+    }
 
-        // ---- Mirino ----
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .clip(RoundedCornerShape(14.dp))
-                .background(Color.Black)
-                .border(1.dp, Palette.Line, RoundedCornerShape(14.dp)),
-            contentAlignment = Alignment.Center,
+    Column(Modifier.fillMaxSize().background(Palette.Body)) {
+        // ---- Calotta superiore: riavvolgimento, targhetta, contafotogrammi, scatto, leva ----
+        Row(
+            Modifier.fillMaxWidth().height(72.dp).brushedMetal().padding(horizontal = 18.dp),
+            verticalAlignment = Alignment.Bottom,
         ) {
-            when {
-                !hasPermission -> CenterNote("Serve il permesso della fotocamera per scattare.") {
-                    OutlinedButton(onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }) { Text("Concedi") }
-                }
-                r == null -> CenterNote("La macchina è vuota.") {
-                    Button(onClick = onPickEmulsion) { Text("Carica un rullino") }
-                }
-                r.state == RollState.FINISHED -> CenterNote("Rullino finito: ${r.exposures} pose.\nRiavvolgilo per svilupparlo.") {
-                    Button(onClick = { view.confirm(); vm.develop(r) }) { Text("Riavvolgi e sviluppa") }
-                }
-                r.state == RollState.DEVELOPING -> {
-                    val p = progress
-                    CenterNote("Sviluppo in corso…") {
-                        if (p != null && p.rollId == r.id && p.total > 0) {
-                            LinearProgressIndicator(progress = { p.done / p.total.toFloat() }, modifier = Modifier.width(200.dp))
-                            Text("${p.done} di ${p.total}", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
-                        } else {
-                            LinearProgressIndicator(modifier = Modifier.width(200.dp))
-                        }
-                    }
-                }
-                else -> {
-                    Viewfinder(onReady = { capture = it })
-                    if (!r.wound) {
-                        Text(
-                            if (r.shotCount == 0) "Carica la leva per portare avanti la pellicola" else "Carica la leva",
-                            color = Palette.Ink,
-                            fontSize = 13.sp,
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(12.dp)
-                                .background(Color(0xAA000000), RoundedCornerShape(6.dp))
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
-                        )
-                    }
-                }
+            RewindKnob(ready = r?.state == RollState.FINISHED, onClick = { r?.let { view.confirm(); vm.develop(it) } })
+            Column(Modifier.padding(start = 14.dp, bottom = 12.dp)) {
+                Engraving("ISO ${r?.iso ?: "—"}", size = 10)
+                Engraving(r?.emulsionName?.uppercase() ?: "VUOTA", size = 10)
             }
-            Box(Modifier.fillMaxSize().alpha(blackout.value).background(Color.Black))
-        }
-
-        Spacer(Modifier.height(10.dp))
-        FilmStrip(progress = windProgress)
-
-        // ---- Comandi: leva e otturatore ----
-        Row(
-            Modifier.fillMaxWidth().padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
+            Spacer(Modifier.weight(1f))
+            Engraving("RULLINO", modifier = Modifier.padding(bottom = 22.dp), size = 15)
+            Spacer(Modifier.weight(1f))
+            FrameCounter(number = counter, total = r?.exposures ?: 36, modifier = Modifier.padding(bottom = 10.dp))
+            Spacer(Modifier.width(14.dp))
+            ShutterButton(armed = armed && !busy, onClick = { shoot() })
             AdvanceLever(
                 enabled = canWind,
                 onAdvanced = { r?.let { vm.wind(it) } },
                 onProgress = { windProgress = it },
             )
-            ShutterButton(armed = armed && !busy, onClick = { shoot() })
         }
 
-        if (r != null && r.state == RollState.LOADED && r.shotCount == 0) {
-            TextButton(onClick = { vm.unloadEmptyRoll(r) }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text("Cambia emulsione", color = Palette.Muted)
+        // ---- Corpo: similpelle, finestrella, mirino ----
+        Row(Modifier.fillMaxWidth().weight(1f).leatherette().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                Modifier.width(150.dp).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                BackWindow(emulsion, r)
+                Text(
+                    when {
+                        r == null -> "Nessun rullino"
+                        r.state == RollState.FINISHED -> "Finito · gira la manovella"
+                        r.state == RollState.DEVELOPING -> "In sviluppo"
+                        else -> "${r.shotCount} di ${r.exposures} pose"
+                    },
+                    color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp, textAlign = TextAlign.Center,
+                )
+                if (r != null && r.state == RollState.LOADED && r.shotCount == 0) {
+                    TextButton(onClick = { vm.unloadEmptyRoll(r) }) { Text("Cambia emulsione", color = Palette.Muted, fontSize = 12.sp) }
+                } else if (r == null) {
+                    TextButton(onClick = onOpenRolls) { Text("Rullini sviluppati", color = Palette.Muted, fontSize = 12.sp) }
+                }
             }
-        } else if (r == null) {
-            TextButton(onClick = onOpenRolls, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text("Vedi i rullini sviluppati", color = Palette.Muted)
+
+            Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .aspectRatio(1.5f, matchHeightConstraintsFirst = true)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color.Black)
+                        .border(3.dp, Color(0xFF0B0A0A), RoundedCornerShape(6.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    ViewfinderContent(
+                        vm = vm,
+                        r = r,
+                        hasPermission = hasPermission,
+                        onAskPermission = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                        onPickEmulsion = onPickEmulsion,
+                        onDevelop = { roll -> view.confirm(); vm.develop(roll) },
+                        progress = progress,
+                        onReady = { capture = it },
+                    )
+                    Box(Modifier.fillMaxSize().alpha(blackout.value).background(Color.Black))
+                }
+                Spacer(Modifier.height(8.dp))
+                FilmStrip(progress = windProgress, modifier = Modifier.fillMaxWidth(0.7f))
             }
-        } else {
-            Spacer(Modifier.height(48.dp))
+            Spacer(Modifier.width(150.dp))
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.ViewfinderContent(
+    vm: AppViewModel,
+    r: RollEntity?,
+    hasPermission: Boolean,
+    onAskPermission: () -> Unit,
+    onPickEmulsion: () -> Unit,
+    onDevelop: (RollEntity) -> Unit,
+    progress: com.rullino.app.develop.DevelopProgress?,
+    onReady: (ImageCapture) -> Unit,
+) {
+    when {
+        !hasPermission -> CenterNote("Serve il permesso della fotocamera per scattare.") {
+            OutlinedButton(onClick = onAskPermission) { Text("Concedi") }
+        }
+        r == null -> CenterNote("La macchina è vuota.") {
+            Button(onClick = onPickEmulsion) { Text("Carica un rullino") }
+        }
+        r.state == RollState.FINISHED -> CenterNote("Rullino finito: ${r.exposures} pose.\nGira la manovella per riavvolgerlo e svilupparlo.") {
+            Button(onClick = { onDevelop(r) }) { Text("Riavvolgi e sviluppa") }
+        }
+        r.state == RollState.DEVELOPING -> CenterNote("Sviluppo in corso…") {
+            if (progress != null && progress.rollId == r.id && progress.total > 0) {
+                LinearProgressIndicator(progress = { progress.done / progress.total.toFloat() }, modifier = Modifier.width(200.dp))
+                Text("${progress.done} di ${progress.total}", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
+            } else {
+                LinearProgressIndicator(modifier = Modifier.width(200.dp))
+            }
+        }
+        else -> {
+            Viewfinder(onReady = onReady)
+            if (!r.wound) {
+                Text(
+                    if (r.shotCount == 0) "Carica la leva per portare avanti la pellicola" else "Carica la leva",
+                    color = Palette.Ink,
+                    fontSize = 13.sp,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(10.dp)
+                        .background(Color(0xAA000000), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                )
+            }
         }
     }
 }
@@ -238,7 +273,7 @@ private fun CenterNote(text: String, action: @Composable () -> Unit) {
 private fun BackWindow(emulsion: EmulsionEntity?, roll: RollEntity?) {
     Box(
         Modifier
-            .size(width = 132.dp, height = 64.dp)
+            .size(width = 132.dp, height = 70.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFF0C0B0B))
             .border(2.dp, Palette.Line, RoundedCornerShape(8.dp)),
@@ -258,26 +293,6 @@ private fun BackWindow(emulsion: EmulsionEntity?, roll: RollEntity?) {
                 Text("ISO ${roll.iso} · ${roll.exposures}", color = Palette.Safelight, fontSize = 10.sp, fontFamily = Mono)
             }
         }
-    }
-}
-
-@Composable
-private fun ShutterButton(armed: Boolean, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .size(84.dp)
-            .clip(CircleShape)
-            .background(Palette.PlateHi)
-            .border(3.dp, if (armed) Palette.Chrome else Palette.Line, CircleShape)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            Modifier
-                .size(58.dp)
-                .clip(CircleShape)
-                .background(if (armed) Palette.Safelight else Palette.Line)
-        )
     }
 }
 

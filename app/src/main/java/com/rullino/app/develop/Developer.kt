@@ -56,7 +56,7 @@ class Developer(private val context: Context, private val repo: Repository) {
                     _progress.value = DevelopProgress(rollId, i, shots.size)
                     if (shot.developedUri != null) return@forEachIndexed
                     val raw = File(shot.rawPath)
-                    val src = decodeOriented(raw, renderer.maxSide) ?: return@forEachIndexed
+                    val src = decodeOriented(raw, renderer.maxSide)?.let { cropTo35mm(it) } ?: return@forEachIndexed
                     val out = renderer.render(src, preset, seed = Random.nextFloat() * 997f)
                     src.recycle()
                     val uri = saveToGallery(out, folder, "${folder}_${"%02d".format(shot.frame)}.jpg")
@@ -76,6 +76,18 @@ class Developer(private val context: Context, private val repo: Repository) {
         val date = SimpleDateFormat("yyyy-MM-dd", Locale.ITALY).format(Date(roll.finishedAt ?: roll.loadedAt))
         val name = roll.emulsionName.replace(Regex("[^\\p{L}\\p{N} _-]"), "").trim().ifBlank { "Rullino" }
         return "$name $date #${roll.id}"
+    }
+
+    /** Taglio 3:2 del fotogramma 35 mm, centrato (in verticale se lo scatto è verticale). */
+    private fun cropTo35mm(bmp: Bitmap): Bitmap {
+        val ratio = if (bmp.width >= bmp.height) 1.5f else 1f / 1.5f
+        var w = bmp.width
+        var h = (w / ratio).toInt()
+        if (h > bmp.height) { h = bmp.height; w = (h * ratio).toInt() }
+        if (w == bmp.width && h == bmp.height) return bmp
+        val out = Bitmap.createBitmap(bmp, (bmp.width - w) / 2, (bmp.height - h) / 2, w, h)
+        if (out !== bmp) bmp.recycle()
+        return out
     }
 
     private fun decodeOriented(file: File, maxSide: Int): Bitmap? {

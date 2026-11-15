@@ -16,7 +16,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:screenOrientation="portrait"
+            android:screenOrientation="sensorLandscape"
             android:launchMode="singleTop"
             android:theme="@style/Theme.Rullino">
             <intent-filter>
