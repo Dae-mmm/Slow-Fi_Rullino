@@ -41,6 +41,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
@@ -454,5 +455,130 @@ fun ReleaseButton(on: Boolean, enabled: Boolean, onToggle: () -> Unit, modifier:
         contentAlignment = Alignment.Center,
     ) {
         Text("R", color = if (on) Color(0xFF1A1918) else Palette.Ink, fontFamily = Mono, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Ghiera dello zoom, vista di profilo                                 */
+/* ------------------------------------------------------------------ */
+
+/** Focali incise sulla ghiera (mm equivalenti al 35 mm). */
+val FOCAL_MARKS = listOf(24, 28, 35, 50, 85, 135)
+
+/**
+ * Ghiera zigrinata con la scala delle focali: si trascina a destra o a sinistra,
+ * la scala scorre sotto la tacca fissa. Scala logaritmica, come sugli obiettivi veri.
+ * Al rilascio si aggancia alla focale incisa più vicina, se è a portata.
+ */
+@Composable
+fun ZoomRing(
+    focal: Float,
+    maxFocal: Float,
+    onFocal: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val view = LocalView.current
+    val scope = rememberCoroutineScope()
+    val anim = remember { Animatable(focal) }
+    val minF = FOCAL_MARKS.first().toFloat()
+    val maxF = maxFocal.coerceAtLeast(minF)
+    // Distanza in px tra due focali che raddoppiano (24 → 48): dà la "durezza" della ghiera.
+    val pxPerDoubling = with(androidx.compose.ui.platform.LocalDensity.current) { 110.dp.toPx() }
+    val lastTickPx = remember { mutableFloatStateOf(0f) }
+    val dragPx = remember { mutableFloatStateOf(0f) }
+
+    fun ln(x: Float) = kotlin.math.ln(x.toDouble()).toFloat()
+    fun focalAfter(f: Float, dx: Float) =
+        kotlin.math.exp((ln(f) - dx / pxPerDoubling * ln(2f)).toDouble()).toFloat().coerceIn(minF, maxF)
+
+    Canvas(
+        modifier
+            .height(46.dp)
+            .pointerInput(enabled, maxF) {
+                if (!enabled) return@pointerInput
+                detectHorizontalDragGestures(
+                    onDragEnd = {
+                        // Aggancio dolce alla focale incisa più vicina (entro ~12%).
+                        val cur = anim.value
+                        val near = FOCAL_MARKS.map { it.toFloat() }.filter { it <= maxF }
+                            .minByOrNull { kotlin.math.abs(ln(it) - ln(cur)) }
+                        if (near != null && kotlin.math.abs(ln(near) - ln(cur)) < 0.12f) {
+                            scope.launch {
+                                anim.animateTo(near, spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMedium)) { onFocal(value) }
+                                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            }
+                        }
+                    },
+                ) { change, dx ->
+                    change.consume()
+                    val before = anim.value
+                    // Trascinando verso sinistra la scala scorre a sinistra: focali più lunghe.
+                    val after = focalAfter(before, dx)
+                    scope.launch { anim.snapTo(after) }
+                    onFocal(after)
+                    // Piccoli scatti al tatto lungo la zigrinatura, uno più deciso sulle focali incise.
+                    dragPx.floatValue += kotlin.math.abs(dx)
+                    if (dragPx.floatValue - lastTickPx.floatValue > 9f) { view.tick(); lastTickPx.floatValue = dragPx.floatValue }
+                    FOCAL_MARKS.forEach { m ->
+                        val mf = m.toFloat()
+                        if ((before < mf && after >= mf) || (before > mf && after <= mf)) {
+                            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        }
+                    }
+                }
+            }
+    ) {
+        val w = size.width
+        val h = size.height
+        val center = w / 2f
+        val cur = anim.value
+
+        // Barilotto: un cilindro visto di profilo (più chiaro al centro, scuro ai bordi).
+        drawRoundRect(
+            Brush.verticalGradient(listOf(Color(0xFF151413), Color(0xFF3B3836), Color(0xFF1A1918))),
+            Offset(0f, 0f), Size(w, h), CornerRadius(6.dp.toPx()),
+        )
+        // Zigrinatura nella metà bassa: righe che scorrono con la rotazione.
+        val ridge = 5.dp.toPx()
+        val shift = (ln(cur) / ln(2f) * pxPerDoubling) % ridge
+        var x = -shift
+        while (x < w) {
+            val edge = kotlin.math.abs(x - center) / center   // ai lati le righe si stringono e si scuriscono
+            drawLine(
+                Color(0xFF0B0A0A).copy(alpha = 0.9f - 0.4f * edge),
+                Offset(x, h * 0.58f), Offset(x, h - 3.dp.toPx()),
+                strokeWidth = (2.2f - edge).dp.toPx(),
+            )
+            x += ridge
+        }
+        // Fascia della scala, in alto.
+        drawRect(Color(0xFF232120), Offset(0f, 3.dp.toPx()), Size(w, h * 0.5f))
+
+        // Focali incise: posizione in scala logaritmica rispetto a quella corrente.
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 11.sp.toPx()
+            textAlign = android.graphics.Paint.Align.CENTER
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+        FOCAL_MARKS.forEach { m ->
+            val mx = center + (ln(m.toFloat()) - ln(cur)) / ln(2f) * pxPerDoubling
+            if (mx < -20f || mx > w + 20f) return@forEach
+            val reachable = m <= maxF + 0.5f
+            val d = kotlin.math.abs(mx - center) / center
+            paint.color = if (!reachable) android.graphics.Color.rgb(90, 86, 82)
+            else if (kotlin.math.abs(mx - center) < 6f) android.graphics.Color.rgb(255, 106, 61)
+            else android.graphics.Color.argb((255 * (1f - 0.6f * d)).toInt().coerceIn(60, 255), 235, 230, 224)
+            drawContext.canvas.nativeCanvas.drawText(m.toString(), mx, h * 0.38f, paint)
+            drawLine(Color(0xFF9C958D), Offset(mx, h * 0.44f), Offset(mx, h * 0.52f), strokeWidth = 1.dp.toPx())
+        }
+        // Tacca fissa di riferimento.
+        val tri = Path().apply {
+            moveTo(center - 5.dp.toPx(), 0f); lineTo(center + 5.dp.toPx(), 0f); lineTo(center, 6.dp.toPx()); close()
+        }
+        drawPath(tri, Palette.Safelight)
+        // Ombre ai lati: il cilindro gira via dalla vista.
+        drawRect(Brush.horizontalGradient(listOf(Color(0xCC000000), Color.Transparent), startX = 0f, endX = w * 0.18f), Offset.Zero, Size(w * 0.18f, h))
+        drawRect(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xCC000000)), startX = w * 0.82f, endX = w), Offset(w * 0.82f, 0f), Size(w * 0.18f, h))
     }
 }

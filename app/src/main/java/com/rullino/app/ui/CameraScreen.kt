@@ -78,6 +78,8 @@ import com.rullino.app.data.RollEntity
 import com.rullino.app.data.RollState
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.math.roundToInt
+import androidx.camera.core.Camera
 
 @Composable
 fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit) {
@@ -101,6 +103,22 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
     var capture by remember { mutableStateOf<ImageCapture?>(null) }
     var busy by remember { mutableStateOf(false) }
     var windProgress by remember { mutableFloatStateOf(0f) }
+    var camera by remember { mutableStateOf<Camera?>(null) }
+    var focal by remember { mutableFloatStateOf(24f) }
+    var showFocal by remember { mutableStateOf(false) }
+    // 24 mm equivalenti = zoom 1× sul principale; il massimo dipende dal telefono (al più 135 mm).
+    val maxRatio by produceState(1f, camera) {
+        value = camera?.cameraInfo?.zoomState?.value?.maxZoomRatio ?: 1f
+    }
+    val maxFocal = (24f * maxRatio).coerceAtMost(135f)
+    LaunchedEffect(focal, camera) {
+        camera?.cameraControl?.setZoomRatio((focal / 24f).coerceIn(1f, maxRatio))
+    }
+    LaunchedEffect(focal) {
+        showFocal = true
+        kotlinx.coroutines.delay(900)
+        showFocal = false
+    }
     val blackout = remember { Animatable(0f) }
     val sound = remember { MediaActionSound().apply { load(MediaActionSound.SHUTTER_CLICK) } }
     DisposableEffect(Unit) { onDispose { sound.release() } }
@@ -263,13 +281,30 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                         onAskPermission = { permissionLauncher.launch(Manifest.permission.CAMERA) },
                         onPickEmulsion = { showPicker = true },
                         progress = progress,
-                        onReady = { capture = it },
+                        onReady = { cap, cam -> capture = cap; camera = cam },
                         doubleExposure = doubleOnNext > 0,
                     )
+                    if (showFocal && camera != null) {
+                        Text(
+                            "${focal.roundToInt()} mm",
+                            color = Palette.Ink, fontFamily = Mono, fontSize = 14.sp,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(10.dp)
+                                .background(Color(0xAA000000), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        )
+                    }
                     Box(Modifier.fillMaxSize().alpha(blackout.value).background(Color.Black))
                 }
                 Spacer(Modifier.height(8.dp))
-                FilmStrip(progress = windProgress, modifier = Modifier.fillMaxWidth(0.7f))
+                ZoomRing(
+                    focal = focal,
+                    maxFocal = maxFocal,
+                    onFocal = { focal = it },
+                    enabled = camera != null,
+                    modifier = Modifier.fillMaxWidth(0.8f),
+                )
             }
             Spacer(Modifier.width(150.dp))
         }
@@ -284,7 +319,7 @@ private fun BoxScope.ViewfinderContent(
     onAskPermission: () -> Unit,
     onPickEmulsion: () -> Unit,
     progress: com.rullino.app.develop.DevelopProgress?,
-    onReady: (ImageCapture) -> Unit,
+    onReady: (ImageCapture, Camera) -> Unit,
     doubleExposure: Boolean,
 ) {
     when {
@@ -448,7 +483,7 @@ private fun BackWindow(emulsion: EmulsionEntity?, roll: RollEntity?) {
 
 /** Mirino CameraX: anteprima "pulita" (come un mirino ottico) e ImageCapture pronta allo scatto. */
 @Composable
-private fun Viewfinder(onReady: (ImageCapture) -> Unit) {
+private fun Viewfinder(onReady: (ImageCapture, Camera) -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember {
@@ -488,8 +523,8 @@ private fun Viewfinder(onReady: (ImageCapture) -> Unit) {
             provider = p
             val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
             p.unbindAll()
-            p.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture)
-            onReady(imageCapture)
+            val cam = p.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture)
+            onReady(imageCapture, cam)
         }, ContextCompat.getMainExecutor(context))
         onDispose { provider?.unbindAll() }
     }
