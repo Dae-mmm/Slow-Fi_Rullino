@@ -16,7 +16,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import android.graphics.Bitmap
+import com.rullino.app.data.ReleaseEntity
+import com.rullino.app.release.ReleasePdf
+import com.rullino.app.release.ReleaseTemplate
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -32,6 +37,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val repo = app.repo
     private val developer = app.developer
     val settings = app.settings
+    val shop = app.shop
+    val releaseTemplate = ReleaseTemplate(application)
+
+    val inventory: StateFlow<Map<String, Int>> = repo.inventory
+        .map { list -> list.associate { it.emulsionId to it.count } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** Cosa dice il negoziante in questo momento. */
+    val shopkeeperLine = MutableStateFlow<String?>(null)
 
     val emulsions: StateFlow<List<EmulsionEntity>> =
         repo.emulsions.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -78,13 +92,62 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         say(if (frames == null) "Riavvolto fino all'inizio: i prossimi scatti si sovrappongono" else "Riavvolto di $frames: i prossimi scatti si sovrappongono")
     }
 
-    /** Sviluppa subito con le pose fatte (anche da un rullino messo da parte). */
-    fun developNow(r: RollEntity) = app.appScope.launch {
-        runCatching {
-            repo.finishNow(r.id)
-            developer.develop(r.id)
-        }.onSuccess { sayLab() }.onFailure { say(it.message ?: "Sviluppo non riuscito") }
+    /** Riavvolge e toglie il rullino: va portato al negozio per lo sviluppo. */
+    fun rewindOut(r: RollEntity) = viewModelScope.launch {
+        repo.rewindOut(r.id)
+        say("Rullino riavvolto: portalo al negozio per svilupparlo")
     }
+
+    /* ---- Negozio ---- */
+
+    /** Consegna al laboratorio: lo sviluppo parte subito, i negativi saranno pronti all'ora indicata. */
+    fun deliver(r: RollEntity) = app.appScope.launch {
+        shopkeeperLine.value = "Vediamo… bel rullino! Lo metto subito in vasca."
+        runCatching { developer.develop(r.id) }
+            .onSuccess {
+                val ready = repo.db.rolls().get(r.id)?.readyAt ?: System.currentTimeMillis()
+                shopkeeperLine.value = if (settings.currentWaitMillis() == 0L) "Ecco fatto, già pronto! Puoi ritirarlo." else "Torna ${formatPickup(ready)}: sarà pronto."
+            }
+            .onFailure { shopkeeperLine.value = "Ahi, qualcosa è andato storto in vasca: ${it.message ?: "riprova"}" }
+    }
+
+    fun pickUp(r: RollEntity) = viewModelScope.launch {
+        if (repo.pickUp(r.id) { settings.isReady(it) }) shopkeeperLine.value = "Ecco i tuoi negativi. Guardali bene sul tavolo luminoso!"
+        else shopkeeperLine.value = "Non è ancora pronto, abbi pazienza."
+    }
+
+    fun claimDaily(installed: List<EmulsionEntity>) = viewModelScope.launch {
+        if (!shop.dailyAvailable()) { shopkeeperLine.value = "Il rullino di oggi l'hai già preso. Torna domani!"; return@launch }
+        val e = shop.dailyEmulsion(installed) ?: run { shopkeeperLine.value = "Oggi lo scaffale è vuoto…"; return@launch }
+        repo.addToInventory(e.id, 1)
+        shop.markDailyClaimed()
+        shopkeeperLine.value = "Ecco il rullino di oggi: una ${e.name}. Trattalo bene, ogni posa conta."
+    }
+
+    fun buy(e: EmulsionEntity) = viewModelScope.launch {
+        if (shop.spend(com.rullino.app.data.Shop.ROLL_PRICE)) {
+            repo.addToInventory(e.id, 1)
+            shopkeeperLine.value = "Una ${e.name}, ottima scelta."
+        } else shopkeeperLine.value = "Mi spiace, non hai abbastanza gettoni."
+    }
+
+    /* ---- Liberatorie ---- */
+
+    fun releases(rollId: Long) = repo.releases(rollId)
+
+    fun saveRelease(roll: RollEntity, draft: ReleaseEntity, signature: Bitmap) = viewModelScope.launch {
+        runCatching { repo.saveRelease(draft, signature) }
+            .onSuccess { say("Liberatoria salvata per la posa ${draft.frame}") }
+            .onFailure { say(it.message ?: "Non riesco a salvare la liberatoria") }
+    }
+
+    fun exportReleasePdf(roll: RollEntity, r: ReleaseEntity, onDone: (Uri) -> Unit) = viewModelScope.launch {
+        runCatching { ReleasePdf.export(app, r, releaseTemplate.fill(r, roll.emulsionName)) }
+            .onSuccess { say("PDF salvato in Download/Rullino"); onDone(it) }
+            .onFailure { say(it.message ?: "Non riesco a creare il PDF") }
+    }
+
+    fun deleteRelease(r: ReleaseEntity) = viewModelScope.launch { repo.deleteRelease(r); say("Liberatoria eliminata") }
 
     fun deleteRoll(r: RollEntity, onDone: () -> Unit = {}) = viewModelScope.launch {
         runCatching { repo.deleteRoll(r.id) }
@@ -125,10 +188,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun recordShot(rollId: Long, file: File) = app.appScope.launch { repo.recordShot(rollId, file) }
 
-    /** Lo sviluppo continua anche se si cambia schermata. */
-    fun develop(r: RollEntity) = app.appScope.launch {
-        runCatching { developer.develop(r.id) }.onSuccess { sayLab() }.onFailure { say(it.message ?: "Sviluppo non riuscito") }
-    }
+
 
     fun importFrom(uri: Uri, onDone: (EmulsionEntity) -> Unit = {}) = viewModelScope.launch {
         runCatching {
@@ -178,5 +238,18 @@ fun formatWait(ms: Long): String {
         h > 0 && m > 0 -> "$h h $m min"
         h > 0 -> if (h == 1L) "1 ora" else "$h ore"
         else -> "$m min"
+    }
+}
+
+/** "oggi alle 18:30", "domani alle 9:05", "lunedì alle 10:00" */
+fun formatPickup(at: Long): String {
+    val zone = java.time.ZoneId.systemDefault()
+    val t = java.time.Instant.ofEpochMilli(at).atZone(zone)
+    val today = java.time.LocalDate.now(zone)
+    val time = "%d:%02d".format(t.hour, t.minute)
+    return when (t.toLocalDate()) {
+        today -> "oggi alle $time"
+        today.plusDays(1) -> "domani alle $time"
+        else -> t.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ITALIAN) + " alle $time"
     }
 }

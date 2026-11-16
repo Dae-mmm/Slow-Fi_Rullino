@@ -24,7 +24,10 @@ class Repository(private val context: Context, val db: AppDb) {
     val activeRoll: Flow<RollEntity?> = db.rolls().active()
     val rolls: Flow<List<RollEntity>> = db.rolls().all()
 
+    val inventory: Flow<List<InventoryEntity>> = db.inventory().all()
+
     fun frames(rollId: Long): Flow<List<FrameEntity>> = db.frames().forRollFlow(rollId)
+    fun releases(rollId: Long): Flow<List<ReleaseEntity>> = db.releases().forRollFlow(rollId)
     fun exposuresOnFrame(rollId: Long, frame: Int): Flow<Int> = db.exposures().countOnFrameFlow(rollId, frame)
 
     suspend fun emulsion(id: String): EmulsionEntity? = db.emulsions().get(id)
@@ -34,16 +37,29 @@ class Repository(private val context: Context, val db: AppDb) {
 
     /* ---------------- Caricare e sganciare ---------------- */
 
-    /** In macchina c'è posto se non c'è un rullino, o se quello caricato è ancora vergine (lo toglie). */
+    /* ---------------- Magazzino ---------------- */
+
+    suspend fun addToInventory(emulsionId: String, n: Int) = db.withTransaction {
+        val have = db.inventory().get(emulsionId)?.count ?: 0
+        db.inventory().upsert(InventoryEntity(emulsionId, (have + n).coerceAtLeast(0)))
+    }
+
+    /** In macchina c'è posto se non c'è un rullino, o se quello caricato è ancora vergine (torna in magazzino). */
     private suspend fun makeRoomInCamera() {
         for (current in db.rolls().activeNow()) {
-            if (current.state == RollState.LOADED && current.shotCount == 0) db.rolls().delete(current)
-            else throw IllegalStateException("C'è già un rullino in macchina: sgancialo prima")
+            if (current.shotCount == 0) {
+                db.rolls().delete(current)
+                addToInventory(current.emulsionId, 1)
+            } else throw IllegalStateException("C'è già un rullino in macchina: sgancialo prima")
         }
     }
 
+    /** Carica un rullino preso dal magazzino. */
     suspend fun loadRoll(e: EmulsionEntity, exposures: Int): Long = db.withTransaction {
         makeRoomInCamera()
+        val have = db.inventory().get(e.id)?.count ?: 0
+        if (have <= 0) throw IllegalStateException("Non hai rullini di «${e.name}»: passa dal negozio")
+        db.inventory().upsert(InventoryEntity(e.id, have - 1))
         db.rolls().insert(
             RollEntity(
                 emulsionId = e.id, emulsionName = e.name, iso = e.iso, exposures = exposures,
@@ -60,10 +76,14 @@ class Repository(private val context: Context, val db: AppDb) {
         db.rolls().update(r.copy(state = RollState.LOADED, wound = false))
     }
 
-    /** Toglie dalla macchina un rullino su cui non si è ancora scattato. */
-    suspend fun unloadEmptyRoll(roll: RollEntity) {
-        val fresh = db.rolls().get(roll.id) ?: return
-        if (fresh.shotCount == 0) { db.rolls().delete(fresh); rollDir(fresh.id).deleteRecursively() }
+    /** Toglie dalla macchina un rullino su cui non si è ancora scattato: torna in magazzino. */
+    suspend fun unloadEmptyRoll(roll: RollEntity) = db.withTransaction {
+        val fresh = db.rolls().get(roll.id) ?: return@withTransaction
+        if (fresh.shotCount == 0) {
+            db.rolls().delete(fresh)
+            addToInventory(fresh.emulsionId, 1)
+            rollDir(fresh.id).deleteRecursively()
+        }
     }
 
     /** Sgancia e mette da parte, per finirlo più avanti. */
@@ -72,12 +92,20 @@ class Repository(private val context: Context, val db: AppDb) {
         if (r.state == RollState.LOADED && r.shotCount > 0) db.rolls().update(r.copy(state = RollState.SHELVED, wound = false))
     }
 
-    /** Sgancia per sviluppare subito con le pose fatte. */
-    suspend fun finishNow(rollId: Long) {
+    /** Riavvolge e toglie dalla macchina (o da un rullino messo da parte): ora va portato al laboratorio. */
+    suspend fun rewindOut(rollId: Long) {
         val r = db.rolls().get(rollId) ?: return
         if ((r.state == RollState.LOADED || r.state == RollState.SHELVED) && r.shotCount > 0) {
             db.rolls().update(r.copy(state = RollState.FINISHED, wound = false, finishedAt = System.currentTimeMillis()))
         }
+    }
+
+    /** Ritira i negativi al negozio, se sono pronti. */
+    suspend fun pickUp(rollId: Long, ready: (RollEntity) -> Boolean): Boolean {
+        val r = db.rolls().get(rollId) ?: return false
+        if (r.state != RollState.DEVELOPED || r.pickedUp || !ready(r)) return false
+        db.rolls().update(r.copy(pickedUp = true))
+        return true
     }
 
     /**
@@ -109,17 +137,8 @@ class Repository(private val context: Context, val db: AppDb) {
         val frame = r.cursor
         val now = System.currentTimeMillis()
         db.exposures().insert(ExposureEntity(rollId = rollId, frame = frame, rawPath = file.absolutePath, takenAt = now))
-        val next = frame + 1
-        val finished = next > r.exposures
-        db.rolls().update(
-            r.copy(
-                cursor = next,
-                shotCount = maxOf(r.shotCount, frame),
-                wound = false,
-                state = if (finished) RollState.FINISHED else RollState.LOADED,
-                finishedAt = if (finished) now else null,
-            )
-        )
+        // A fine rullino resta in macchina: va riavvolto con la manovella.
+        db.rolls().update(r.copy(cursor = frame + 1, shotCount = maxOf(r.shotCount, frame), wound = false))
     }
 
     /* ---------------- Stampa e cancellazione ---------------- */
@@ -155,6 +174,7 @@ class Repository(private val context: Context, val db: AppDb) {
         db.withTransaction {
             db.frames().deleteRoll(rollId)
             db.exposures().deleteRoll(rollId)
+            db.releases().deleteRoll(rollId)
             db.rolls().delete(r)
         }
         rollDir(rollId).deleteRecursively()
@@ -176,6 +196,8 @@ class Repository(private val context: Context, val db: AppDb) {
             exposures.filter { it.frame == f.frame }.forEach { File(it.rawPath).delete() }
             db.frames().deleteFrame(rollId, f.frame)
             db.exposures().deleteFrame(rollId, f.frame)
+            db.releases().forRoll(rollId).filter { it.frame == f.frame }.forEach { File(it.signaturePath).delete() }
+            db.releases().deleteFrame(rollId, f.frame)
         }
         deleteFromGallery(prints)
     }
@@ -191,6 +213,22 @@ class Repository(private val context: Context, val db: AppDb) {
             }
         }
         return needConfirm
+    }
+
+    /* ---------------- Liberatorie ---------------- */
+
+    suspend fun saveRelease(release: ReleaseEntity, signature: android.graphics.Bitmap): ReleaseEntity = withContext(Dispatchers.IO) {
+        val dir = File(rollDir(release.rollId), "releases").apply { mkdirs() }
+        val file = File(dir, "%02d_%d.png".format(release.frame, System.currentTimeMillis()))
+        file.outputStream().use { signature.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+        val withSig = release.copy(signaturePath = file.absolutePath)
+        val id = db.releases().insert(withSig)
+        withSig.copy(id = id)
+    }
+
+    suspend fun deleteRelease(r: ReleaseEntity) {
+        db.releases().delete(r)
+        File(r.signaturePath).delete()
     }
 
     suspend fun deleteEmulsion(e: EmulsionEntity) {

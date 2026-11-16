@@ -31,9 +31,18 @@ Requisiti: Android 10 (API 29) o più recente, fotocamera posteriore.
   Si stampa una posa o una selezione: solo le stampe vanno in *Immagini/Rullino/<emulsione data #rullino>*.
 - **Taglio dei negativi**: tieni le pose scelte, il resto (con le eventuali stampe) viene eliminato.
 - La grana usa un seme diverso per ogni posa, come su pellicola vera.
-- **Laboratorio**: dopo lo sviluppo i negativi sono pronti tra 1 ora, 3 ore o 1 giorno (Opzioni).
+- **Negozio** (Foto Lab anni '80): il negoziante ti dà il **rullino del giorno** (gratis, uno al giorno, l'emulsione
+  ruota), vende rullini a **gettoni** (valuta interna, in futuro si vinceranno con i concorsi) e gestisce il **laboratorio**:
+  consegni i rullini riavvolti, ti dice a che ora tornare, e ritiri i negativi.
+- **Magazzino**: caricare un rullino in macchina ne consuma uno. Un rullino caricato e mai usato torna in magazzino.
+- **Il tuo negoziante**: metti il disegno in `app/src/main/assets/shop/negoziante.png` e sostituisce il segnaposto
+  (viene ingrandito senza sfocature).
+- **Liberatorie**: per ogni posa (in fotocamera sull'ultima posa, o dal lentino sul tavolo luminoso) modulo con nome,
+  cognome, contatto, luogo, usi fuori dall'app, minori con genitore/tutore e firma col dito. PDF in Download/Rullino.
+  Il testo è un **segnaposto** (`assets/liberatoria/testo.txt`) modificabile anche da Opzioni.
+- **Laboratorio**: dopo la consegna i negativi sono pronti tra 1 ora, 3 ore o 1 giorno (Opzioni).
 - **Modalità sviluppatore**: in Opzioni tocca 7 volte la versione; poi puoi saltare i tempi del laboratorio.
-- Il database è alla versione 3: passando da una versione precedente l'app riparte da zero (rullini di prova inclusi).
+- Il database è alla versione 4: passando da una versione precedente l'app riparte da zero (rullini di prova inclusi).
 
 ## Formato `.emulsion` (versione 1)
 

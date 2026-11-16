@@ -27,6 +27,9 @@ class Settings(context: Context) {
     /** Solo in modalità sviluppatore: i negativi sono pronti subito. */
     val skipLabWait: StateFlow<Boolean> = _skipLabWait
 
+    fun photographerName(): String = prefs.getString("photographer", "") ?: ""
+    fun setPhotographerName(v: String) { prefs.edit().putString("photographer", v.trim()).apply() }
+
     fun setLabTime(t: LabTime) { _labTime.value = t; prefs.edit().putString("labTime", t.name).apply() }
 
     fun setDeveloperMode(on: Boolean) {

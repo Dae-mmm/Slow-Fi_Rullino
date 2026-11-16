@@ -131,6 +131,8 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
     }
 
     var showBack by remember { mutableStateOf(false) }
+    var releaseFrame by remember { mutableStateOf<Int?>(null) }
+    releaseFrame?.let { f -> r?.let { roll -> ReleasesDialog(vm, roll, f, onClose = { releaseFrame = null }) } }
     val doubleOnNext by remember(r?.id, r?.cursor) {
         if (r == null) kotlinx.coroutines.flow.flowOf(0) else vm.exposuresOnFrame(r.id, r.cursor)
     }.collectAsState(initial = 0)
@@ -139,7 +141,7 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
         BackDialog(
             roll = r,
             onDismiss = { showBack = false },
-            onDevelop = { showBack = false; view.confirm(); vm.developNow(r) },
+            onDevelop = { showBack = false; view.confirm(); vm.rewindOut(r) },
             onShelve = { showBack = false; vm.shelve(r) },
             onRewind = { n -> showBack = false; view.tick(); vm.rewind(r, n) },
             onDelete = { showBack = false; vm.deleteRoll(r) },
@@ -158,7 +160,7 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
             Modifier.fillMaxWidth().height(72.dp).brushedMetal().padding(horizontal = 18.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
-            RewindKnob(ready = r?.state == RollState.FINISHED, onClick = { r?.let { view.confirm(); vm.develop(it) } })
+            RewindKnob(ready = r?.isAtEnd == true, onClick = { r?.let { view.confirm(); vm.rewindOut(it) } })
             Column(Modifier.padding(start = 14.dp, bottom = 12.dp)) {
                 Engraving("ISO ${r?.iso ?: "—"}", size = 10)
                 Engraving(r?.emulsionName?.uppercase() ?: "VUOTA", size = 10)
@@ -187,8 +189,7 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
                 Text(
                     when {
                         r == null -> "Nessun rullino"
-                        r.state == RollState.FINISHED -> "Finito · gira la manovella"
-                        r.state == RollState.DEVELOPING -> "In sviluppo"
+                        r.isAtEnd -> "Finito · gira la manovella"
                         r.cursor <= r.shotCount -> "Posa ${r.cursor} già esposta\n${r.shotCount} di ${r.exposures} pose"
                         else -> "${r.shotCount} di ${r.exposures} pose"
                     },
@@ -198,6 +199,11 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
                     TextButton(onClick = { vm.unloadEmptyRoll(r) }) { Text("Cambia emulsione", color = Palette.Muted, fontSize = 12.sp) }
                 } else if (r != null && r.state == RollState.LOADED) {
                     OutlinedButton(onClick = { showBack = true }) { Text("Apri il dorso", fontSize = 12.sp) }
+                    if (r.cursor > 1) {
+                        TextButton(onClick = { releaseFrame = r.cursor - 1 }) {
+                            Text("Liberatoria posa ${r.cursor - 1}", color = Palette.Muted, fontSize = 12.sp)
+                        }
+                    }
                 } else if (r == null) {
                     TextButton(onClick = onOpenRolls) { Text("Rullini sviluppati", color = Palette.Muted, fontSize = 12.sp) }
                 }
@@ -219,7 +225,7 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
                         hasPermission = hasPermission,
                         onAskPermission = { permissionLauncher.launch(Manifest.permission.CAMERA) },
                         onPickEmulsion = onPickEmulsion,
-                        onDevelop = { roll -> view.confirm(); vm.develop(roll) },
+                        onDevelop = { roll -> view.confirm(); vm.rewindOut(roll) },
                         progress = progress,
                         onReady = { capture = it },
                         doubleExposure = doubleOnNext > 0,
@@ -250,11 +256,11 @@ private fun BoxScope.ViewfinderContent(
         !hasPermission -> CenterNote("Serve il permesso della fotocamera per scattare.") {
             OutlinedButton(onClick = onAskPermission) { Text("Concedi") }
         }
-        r == null -> CenterNote("La macchina è vuota.") {
+        r == null -> CenterNote("La macchina è vuota.\nIl rullino del giorno ti aspetta al negozio.") {
             Button(onClick = onPickEmulsion) { Text("Carica un rullino") }
         }
-        r.state == RollState.FINISHED -> CenterNote("Rullino finito: ${r.exposures} pose.\nGira la manovella per riavvolgerlo e svilupparlo.") {
-            Button(onClick = { onDevelop(r) }) { Text("Riavvolgi e sviluppa") }
+        r.isAtEnd -> CenterNote("Rullino finito: ${r.exposures} pose.\nGira la manovella per riavvolgerlo, poi portalo al negozio.") {
+            Button(onClick = { onDevelop(r) }) { Text("Riavvolgi") }
         }
         r.state == RollState.DEVELOPING -> CenterNote("Sviluppo in corso…") {
             if (progress != null && progress.rollId == r.id && progress.total > 0) {
@@ -314,7 +320,7 @@ private fun BackDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Sgancia il rullino", color = Palette.Muted, fontSize = 12.sp, fontFamily = Mono)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onDevelop) { Text("Sviluppa ora") }
+                    Button(onClick = onDevelop) { Text("Riavvolgi e togli") }
                     OutlinedButton(onClick = onShelve) { Text("Metti da parte") }
                 }
                 Spacer(Modifier.height(4.dp))

@@ -5,6 +5,7 @@ import android.util.Log
 import com.rullino.app.data.AppDb
 import com.rullino.app.data.Repository
 import com.rullino.app.data.Settings
+import com.rullino.app.data.Shop
 import com.rullino.app.develop.Developer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,12 +21,15 @@ class RullinoApp : Application() {
         private set
     lateinit var settings: Settings
         private set
+    lateinit var shop: Shop
+        private set
 
     override fun onCreate() {
         super.onCreate()
         val db = AppDb.build(this)
         repo = Repository(this, db)
         settings = Settings(this)
+        shop = Shop(this)
         developer = Developer(this, repo, settings)
         appScope.launch {
             installBundledEmulsions()
@@ -50,6 +54,6 @@ class RullinoApp : Application() {
     }
 
     private companion object {
-        const val BUNDLED_VERSION = 3
+        const val BUNDLED_VERSION = 4
     }
 }

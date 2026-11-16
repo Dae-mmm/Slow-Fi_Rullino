@@ -42,7 +42,7 @@ object RollState {
     const val LOADED = "LOADED"
     /** Sganciato a metà e messo da parte: si può ricaricare e finire. */
     const val SHELVED = "SHELVED"
-    /** In macchina, finito o sganciato per lo sviluppo: aspetta di essere sviluppato. */
+    /** Riavvolto e tolto dalla macchina: va portato al laboratorio. */
     const val FINISHED = "FINISHED"
     const val DEVELOPING = "DEVELOPING"
     /** Sviluppato: è una striscia di negativi sul tavolo luminoso. */
@@ -70,9 +70,40 @@ data class RollEntity(
     val developedAt: Long? = null,
     /** Quando i negativi tornano dal laboratorio. */
     val readyAt: Long? = null,
+    /** Negativi ritirati al negozio: ora sono sul tavolo luminoso. */
+    val pickedUp: Boolean = false,
 ) {
     val canWind get() = state == RollState.LOADED && !wound && cursor <= exposures
+    /** Tutte le pose esposte: va riavvolto. */
+    val isAtEnd get() = state == RollState.LOADED && cursor > exposures
 }
+
+/** Rullini vergini in magazzino, per emulsione. */
+@Entity(tableName = "inventory")
+data class InventoryEntity(
+    @PrimaryKey val emulsionId: String,
+    val count: Int,
+)
+
+/** Liberatoria firmata per una posa. */
+@Entity(tableName = "releases", indices = [Index("rollId")])
+data class ReleaseEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val rollId: Long,
+    val frame: Int,
+    val photographer: String,
+    val firstName: String,
+    val lastName: String,
+    val contact: String,
+    val place: String,
+    val signedAt: Long,
+    /** La persona autorizza anche usi fuori dall'app (mostre, stampe, pubblicazioni). */
+    val externalUse: Boolean,
+    val isMinor: Boolean,
+    /** Genitore o tutore che firma per un minore. */
+    val guardianName: String,
+    val signaturePath: String,
+)
 
 /** Una singola esposizione. Più esposizioni sullo stesso fotogramma fanno una doppia esposizione. */
 @Entity(tableName = "exposures", indices = [Index("rollId")])
@@ -111,11 +142,11 @@ interface EmulsionDao {
 
 @Dao
 interface RollDao {
-    /** Il rullino in macchina (caricato, finito o in sviluppo). */
-    @Query("SELECT * FROM rolls WHERE state IN ('LOADED', 'FINISHED', 'DEVELOPING') ORDER BY loadedAt DESC LIMIT 1")
+    /** Il rullino in macchina. */
+    @Query("SELECT * FROM rolls WHERE state = 'LOADED' ORDER BY loadedAt DESC LIMIT 1")
     fun active(): Flow<RollEntity?>
 
-    @Query("SELECT * FROM rolls WHERE state IN ('LOADED', 'FINISHED', 'DEVELOPING')")
+    @Query("SELECT * FROM rolls WHERE state = 'LOADED'")
     suspend fun activeNow(): List<RollEntity>
 
     @Query("SELECT * FROM rolls ORDER BY loadedAt DESC")
@@ -162,6 +193,39 @@ interface ExposureDao {
 }
 
 @Dao
+interface InventoryDao {
+    @Query("SELECT * FROM inventory WHERE count > 0")
+    fun all(): Flow<List<InventoryEntity>>
+
+    @Query("SELECT * FROM inventory WHERE emulsionId = :id")
+    suspend fun get(id: String): InventoryEntity?
+
+    @Upsert
+    suspend fun upsert(i: InventoryEntity)
+}
+
+@Dao
+interface ReleaseDao {
+    @Insert
+    suspend fun insert(r: ReleaseEntity): Long
+
+    @Query("SELECT * FROM releases WHERE rollId = :rollId ORDER BY frame, signedAt")
+    fun forRollFlow(rollId: Long): Flow<List<ReleaseEntity>>
+
+    @Query("SELECT * FROM releases WHERE rollId = :rollId")
+    suspend fun forRoll(rollId: Long): List<ReleaseEntity>
+
+    @Delete
+    suspend fun delete(r: ReleaseEntity)
+
+    @Query("DELETE FROM releases WHERE rollId = :rollId")
+    suspend fun deleteRoll(rollId: Long)
+
+    @Query("DELETE FROM releases WHERE rollId = :rollId AND frame = :frame")
+    suspend fun deleteFrame(rollId: Long, frame: Int)
+}
+
+@Dao
 interface FrameDao {
     @Upsert
     suspend fun upsert(f: FrameEntity)
@@ -183,8 +247,11 @@ interface FrameDao {
 }
 
 @Database(
-    entities = [EmulsionEntity::class, RollEntity::class, ExposureEntity::class, FrameEntity::class],
-    version = 3,
+    entities = [
+        EmulsionEntity::class, RollEntity::class, ExposureEntity::class, FrameEntity::class,
+        InventoryEntity::class, ReleaseEntity::class,
+    ],
+    version = 4,
     exportSchema = false,
 )
 abstract class AppDb : RoomDatabase() {
@@ -192,6 +259,8 @@ abstract class AppDb : RoomDatabase() {
     abstract fun rolls(): RollDao
     abstract fun exposures(): ExposureDao
     abstract fun frames(): FrameDao
+    abstract fun inventory(): InventoryDao
+    abstract fun releases(): ReleaseDao
 
     companion object {
         fun build(context: Context): AppDb =

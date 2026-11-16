@@ -1,0 +1,20 @@
+LIBERATORIA PER L'UTILIZZO DELL'IMMAGINE
+[TESTO SEGNAPOSTO – da sostituire con il testo rivisto da un legale]
+
+Io sottoscritto/a {{NOME}} {{COGNOME}}, contatto {{CONTATTO}},
+{{TUTORE}}
+autorizzo {{FOTOGRAFO}} a utilizzare la fotografia che mi ritrae, scattata il {{DATA}} a {{LUOGO}}
+(rullino «{{RULLINO}}», posa {{POSA}}), per:
+
+- la partecipazione ai concorsi fotografici dell'app Rullino, dove la foto è visibile solo ai giudici;
+- l'eventuale esposizione nella bacheca dell'app per una settimana, se la foto vince.
+
+{{USI_ESTERNI}}
+
+L'autorizzazione è concessa a titolo gratuito. Posso revocarla in qualsiasi momento scrivendo a chi ha
+scattato la foto o tramite l'app; la revoca non ha effetto sugli usi già avvenuti.
+
+I miei dati sono conservati dall'app solo per il tempo necessario al concorso e all'eventuale esposizione,
+poi vengono cancellati.
+
+Luogo e data: {{LUOGO}}, {{DATA}}

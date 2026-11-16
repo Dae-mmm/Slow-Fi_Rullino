@@ -75,7 +75,7 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit) {
     }
     fun ready(r: RollEntity) = r.state == RollState.DEVELOPED && ((devMode && skipWait) || (r.readyAt ?: 0L) <= now)
 
-    if (open != null && ready(open)) {
+    if (open != null && open.pickedUp) {
         BackHandler { openId = null }
         LightTable(vm, open, onBack = { openId = null })
         return
@@ -94,7 +94,7 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit) {
                 cameraFree = active == null || (active?.state == RollState.LOADED && active?.shotCount == 0),
                 onOpen = { openId = r.id },
                 onReload = { vm.reload(r, onOpenCamera) },
-                onDevelop = { vm.developNow(r) },
+                onDevelop = { vm.rewindOut(r) },
                 onDelete = { vm.deleteRoll(r) },
             )
         }
@@ -118,7 +118,7 @@ private fun RollRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .background(Palette.Plate)
-            .clickable(enabled = isReady, onClick = onOpen)
+            .clickable(enabled = r.pickedUp, onClick = onOpen)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -131,15 +131,21 @@ private fun RollRow(
             )
         }
         Text(
-            if (r.state == RollState.DEVELOPED && !isReady) "Al laboratorio · pronto tra ${formatWait(waitLeft)}" else stateLabel(r),
-            color = if (isReady) Palette.Ink else Palette.Safelight,
+            when {
+                r.pickedUp -> "Negativi ›"
+                r.state == RollState.DEVELOPING -> "Al laboratorio · in vasca"
+                r.state == RollState.DEVELOPED && !isReady -> "Al laboratorio · pronto tra ${formatWait(waitLeft)}"
+                r.state == RollState.DEVELOPED -> "Pronto: ritiralo al negozio"
+                else -> stateLabel(r)
+            },
+            color = if (r.pickedUp) Palette.Ink else Palette.Safelight,
             fontSize = 12.sp,
         )
         if (r.state == RollState.SHELVED) {
             OutlinedButton(enabled = cameraFree, onClick = onReload) { Text("Ricarica") }
-            Button(onClick = onDevelop) { Text("Sviluppa") }
+            Button(onClick = onDevelop) { Text("Riavvolgi") }
         }
-        if (r.state == RollState.SHELVED || isReady) {
+        if (r.state == RollState.SHELVED || r.state == RollState.FINISHED || r.pickedUp) {
             TextButton(onClick = { if (confirmDelete) onDelete() else confirmDelete = true }) {
                 Text(if (confirmDelete) "Conferma" else "Elimina", color = Color(0xFFFF8A80))
             }
@@ -179,6 +185,9 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
     var loupe by remember { mutableStateOf<FrameEntity?>(null) }
     var confirmCut by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    val releases by remember(roll.id) { vm.releases(roll.id) }.collectAsState(initial = emptyList())
+    var releaseFrame by remember { mutableStateOf<Int?>(null) }
+    releaseFrame?.let { f -> ReleasesDialog(vm, roll, f, onClose = { releaseFrame = null }) }
 
     Column(
         Modifier
@@ -223,6 +232,7 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
                     NegativeFrame(
                         frame = f,
                         roll = roll,
+                        hasRelease = releases.any { it.frame == f.frame },
                         isSelected = f.frame in selected,
                         selecting = selecting,
                         onClick = {
@@ -246,6 +256,7 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
             frame = f,
             onClose = { loupe = null },
             onPrint = { vm.print(roll, listOf(f)); loupe = null },
+            onRelease = { loupe = null; releaseFrame = f.frame },
         )
     }
 
@@ -270,7 +281,7 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
 
 /** Un fotogramma della striscia: perforazioni sopra e sotto, numero e nome dell'emulsione sul bordo. */
 @Composable
-private fun NegativeFrame(frame: FrameEntity, roll: RollEntity, isSelected: Boolean, selecting: Boolean, onClick: () -> Unit) {
+private fun NegativeFrame(frame: FrameEntity, roll: RollEntity, hasRelease: Boolean, isSelected: Boolean, selecting: Boolean, onClick: () -> Unit) {
     val base = if (roll.isBw) Color(0xFF2E2D2B) else Color(0xFF7A3A12)
     Column(
         Modifier
@@ -301,6 +312,13 @@ private fun NegativeFrame(frame: FrameEntity, roll: RollEntity, isSelected: Bool
                     "STAMPATA",
                     color = Color.White, fontFamily = Mono, fontSize = 9.sp,
                     modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp).background(Color(0x99000000)).padding(horizontal = 4.dp),
+                )
+            }
+            if (hasRelease) {
+                Text(
+                    "LIB",
+                    color = Color.White, fontFamily = Mono, fontSize = 9.sp,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(4.dp).background(Color(0x99000000)).padding(horizontal = 4.dp),
                 )
             }
             if (frame.exposureCount > 1) {
@@ -345,7 +363,7 @@ private fun Sprockets(base: Color, label: String?, number: Int) {
 
 /** Il lentino: il fotogramma in positivo, grande, con la stampa. */
 @Composable
-private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit) {
+private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, onRelease: () -> Unit) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
             Modifier.fillMaxSize().background(Color(0xEE0C0B0B)).padding(16.dp),
@@ -365,6 +383,7 @@ private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit) 
                 Spacer(Modifier.width(8.dp))
                 if (frame.printUri == null) Button(onClick = onPrint) { Text("Stampa") }
                 else Text("Già stampata", color = Palette.Ink)
+                OutlinedButton(onClick = onRelease) { Text("Liberatoria") }
                 OutlinedButton(onClick = onClose) { Text("Rimetti sul tavolo") }
             }
         }
@@ -374,7 +393,7 @@ private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit) 
 private fun stateLabel(r: RollEntity) = when (r.state) {
     RollState.LOADED -> "In macchina"
     RollState.SHELVED -> "Messo da parte"
-    RollState.FINISHED -> "Da sviluppare"
+    RollState.FINISHED -> "Da portare al negozio"
     RollState.DEVELOPING -> "In sviluppo"
     else -> "Negativi ›"
 }

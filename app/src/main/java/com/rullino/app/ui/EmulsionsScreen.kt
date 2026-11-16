@@ -74,6 +74,7 @@ fun EmulsionsScreen(vm: AppViewModel, onLoaded: () -> Unit) {
 @Composable
 private fun MyEmulsions(vm: AppViewModel, onLoaded: () -> Unit) {
     val list by vm.emulsions.collectAsState()
+    val inventory by vm.inventory.collectAsState()
     var selected by remember { mutableStateOf<EmulsionEntity?>(null) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) vm.importFrom(uri)
@@ -97,7 +98,7 @@ private fun MyEmulsions(vm: AppViewModel, onLoaded: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(list, key = { it.id }) { e -> EmulsionCard(e) { selected = e } }
+            items(list, key = { it.id }) { e -> EmulsionCard(e, inventory[e.id] ?: 0) { selected = e } }
         }
     }
 
@@ -109,7 +110,7 @@ private fun MyEmulsions(vm: AppViewModel, onLoaded: () -> Unit) {
 }
 
 @Composable
-private fun EmulsionCard(e: EmulsionEntity, onClick: () -> Unit) {
+private fun EmulsionCard(e: EmulsionEntity, owned: Int, onClick: () -> Unit) {
     Column(
         Modifier
             .clip(RoundedCornerShape(10.dp))
@@ -123,6 +124,7 @@ private fun EmulsionCard(e: EmulsionEntity, onClick: () -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Tag("ISO ${e.iso}")
             Tag(if (e.isBw) "BN" else "COLORE")
+            if (owned > 0) Tag("×$owned")
         }
     }
 }
@@ -157,12 +159,15 @@ private fun Tag(text: String) {
 @Composable
 private fun EmulsionDetail(e: EmulsionEntity, vm: AppViewModel, onLoaded: () -> Unit, onDeleted: () -> Unit) {
     val active by vm.activeRoll.collectAsState()
+    val inventory by vm.inventory.collectAsState()
+    val owned = inventory[e.id] ?: 0
     var exposures by remember(e.id) { mutableIntStateOf(if (e.exposures == 24) 24 else 36) }
     val busyRoll = active?.let { it.shotCount > 0 || it.state != RollState.LOADED } == true
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             BoxArt(e, Modifier.size(96.dp))
+            
             Column(Modifier.weight(1f)) {
                 Text(e.name, color = Palette.Ink, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                 Text("ISO ${e.iso} · ${if (e.isBw) "bianco e nero" else "colore"}", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
@@ -191,11 +196,15 @@ private fun EmulsionDetail(e: EmulsionEntity, vm: AppViewModel, onLoaded: () -> 
             }
         }
 
+        Text(
+            if (owned > 0) "In magazzino: $owned rullini" else "Nessun rullino in magazzino: prendilo al negozio",
+            color = if (owned > 0) Palette.Ink else Palette.Safelight, fontSize = 13.sp,
+        )
         if (busyRoll) {
             Text("C'è già un rullino in macchina: finiscilo e sviluppalo prima di caricarne un altro.", color = Palette.Muted, fontSize = 13.sp)
         }
         Button(
-            enabled = !busyRoll,
+            enabled = !busyRoll && owned > 0,
             onClick = { vm.loadRoll(e, exposures, onLoaded) },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("Carica un rullino da $exposures") }

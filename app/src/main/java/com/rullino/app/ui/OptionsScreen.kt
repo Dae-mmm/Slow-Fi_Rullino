@@ -6,12 +6,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -20,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,6 +60,28 @@ fun OptionsScreen(vm: AppViewModel) {
             Text("Vale per i prossimi rullini: quelli già al laboratorio mantengono il loro tempo.", color = Palette.Muted, fontSize = 12.sp)
         }
 
+        Section("Liberatoria") {
+            var editing by remember { mutableStateOf(false) }
+            var text by remember { mutableStateOf("") }
+            Text(
+                if (vm.releaseTemplate.isCustom) "Stai usando un testo tuo." else "Stai usando il testo segnaposto: sostituiscilo con quello rivisto da un legale.",
+                color = Palette.Muted, fontSize = 13.sp,
+            )
+            if (editing) {
+                Text("Segnaposto: {{NOME}} {{COGNOME}} {{CONTATTO}} {{FOTOGRAFO}} {{DATA}} {{LUOGO}} {{RULLINO}} {{POSA}} {{USI_ESTERNI}} {{TUTORE}}", color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
+                OutlinedTextField(text, { text = it }, modifier = Modifier.fillMaxWidth().height(260.dp), textStyle = androidx.compose.ui.text.TextStyle(fontFamily = Mono, fontSize = 12.sp, color = Palette.Ink))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { vm.releaseTemplate.save(text); editing = false; vm.say("Testo della liberatoria salvato") }) { Text("Salva") }
+                    TextButton(onClick = { editing = false }) { Text("Annulla") }
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { text = vm.releaseTemplate.text(); editing = true }) { Text("Modifica il testo") }
+                    if (vm.releaseTemplate.isCustom) TextButton(onClick = { vm.releaseTemplate.reset(); vm.say("Ripristinato il testo segnaposto") }) { Text("Ripristina segnaposto") }
+                }
+            }
+        }
+
         if (devMode) {
             Section("Modalità sviluppatore") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -67,6 +94,10 @@ fun OptionsScreen(vm: AppViewModel) {
                         onCheckedChange = { settings.setSkipLabWait(it) },
                         colors = SwitchDefaults.colors(checkedTrackColor = Palette.Safelight),
                     )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { vm.shop.earn(100); vm.say("+100 gettoni") }) { Text("+100 gettoni") }
+                    OutlinedButton(onClick = { vm.shop.resetDaily(); vm.say("Rullino del giorno di nuovo disponibile") }) { Text("Rullino del giorno di nuovo") }
                 }
                 TextButton(onClick = { settings.setDeveloperMode(false); taps = 0; vm.say("Modalità sviluppatore disattivata") }) {
                     Text("Disattiva la modalità sviluppatore", color = Palette.Muted)

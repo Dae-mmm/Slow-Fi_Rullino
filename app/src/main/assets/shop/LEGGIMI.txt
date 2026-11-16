@@ -1,0 +1,5 @@
+Negoziante in pixel art
+=======================
+Metti qui il tuo disegno come  negoziante.png  (sfondo trasparente).
+L'app lo usa al posto del segnaposto e lo ingrandisce senza sfocarlo,
+quindi disegnalo piccolo (per esempio 32×40 o 48×60 pixel).
