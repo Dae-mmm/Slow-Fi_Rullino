@@ -28,7 +28,7 @@
     <string name="wind_first">Spann den Hebel, um den Film zu transportieren</string>
     <string name="wind">Spann den Hebel</string>
     <string name="shelve_long">Beiseitelegen und später fertig fotografieren</string>
-    <string name="back_help">Zum Zurückspulen nimm die Kurbel oben links:\n• ohne R geht jede Umdrehung ein Bild zurück (Doppelbelichtung);\n• mit R spulst du alles zurück und der Film kommt aus der Kamera.</string>
+    <string name="back_help">Zum Zurückspulen drück R und dreh die Kurbel rechts:\n• jede Umdrehung bringt dich ein Bild zurück, bereit, es erneut zu belichten (Doppelbelichtung);\n• am Ende des Films spult die Kurbel alles zurück und der Film kommt aus der Kamera.</string>
     <string name="delete_roll_confirm">Nochmal tippen: alle Aufnahmen werden gelöscht</string>
     <string name="delete_roll">Film löschen</string>
     <string name="close_back">Rückwand schließen</string>
@@ -248,4 +248,7 @@
     <string name="chip_release">+ Freigabe Bild %1$s</string>
     <string name="prev_frame">Vorheriges Bild</string>
     <string name="next_frame">Nächstes Bild</string>
+    <string name="cam_r_hint">R an · jede Kurbelumdrehung\ngeht ein Bild zurück</string>
+    <string name="rewind_all_out">Alles zurückspulen und fürs Labor herausnehmen</string>
+    <string name="crank">Rückspulkurbel</string>
 </resources>

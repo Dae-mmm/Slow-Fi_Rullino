@@ -117,7 +117,8 @@ class Repository(private val context: Context, val db: AppDb) {
         val r = db.rolls().get(rollId) ?: return
         if (r.state != RollState.LOADED) return
         val target = if (frames == null) 1 else (r.cursor - frames).coerceAtLeast(1)
-        db.rolls().update(r.copy(cursor = target, wound = false))
+        // Tornati indietro si è già sulla posa: pronta per scattarci sopra (doppia esposizione).
+        db.rolls().update(r.copy(cursor = target, wound = frames != null))
     }
 
     suspend fun wind(rollId: Long) {

@@ -382,7 +382,7 @@ internal fun stroke(px: Float) = Stroke(px)
 /**
  * Manovella da girare col dito in senso orario attorno al pomello.
  * Ogni giro completo chiama [onFullTurn]; ogni quarto di giro dà un piccolo scatto al tatto.
- * Vista di profilo: il braccio della manovella oscilla avanti e indietro mentre gira.
+ * Vista frontale, dall'alto: il braccio gira insieme al dito, così il gesto resta comodo.
  */
 @Composable
 fun RewindCrank(
@@ -402,13 +402,13 @@ fun RewindCrank(
 
     Canvas(
         modifier
-            .size(96.dp, 64.dp)
+            .size(124.dp)
             .pointerInput(enabled, resetKey) {
                 if (!enabled) {
                     detectDragGestures(onDragStart = { view.reject() }) { change, _ -> change.consume() }
                     return@pointerInput
                 }
-                val center = Offset(size.width / 2f, size.height * 0.55f)
+                val center = Offset(size.width / 2f, size.height / 2f)
                 detectDragGestures { change, _ ->
                     change.consume()
                     val prev = change.previousPosition - center
@@ -433,29 +433,45 @@ fun RewindCrank(
                 }
             }
     ) {
-        val cx = size.width / 2f
-        val baseY = size.height * 0.86f
-        // Pomello zigrinato
-        drawOval(Color(0xFF6E6964), Offset(cx - 24.dp.toPx(), baseY - 4.dp.toPx()), Size(48.dp.toPx(), 12.dp.toPx()))
-        drawRect(Brush.verticalGradient(listOf(Color(0xFF3A3634), Color(0xFF1E1C1B))), Offset(cx - 24.dp.toPx(), baseY - 18.dp.toPx()), Size(48.dp.toPx(), 16.dp.toPx()))
-        var x = cx - 22.dp.toPx()
-        while (x < cx + 22.dp.toPx()) {
-            drawLine(Color(0xFF55504C), Offset(x, baseY - 17.dp.toPx()), Offset(x, baseY - 3.dp.toPx()), strokeWidth = 1.dp.toPx())
-            x += 4.dp.toPx()
-        }
-        drawOval(Color(0xFF2A2725), Offset(cx - 24.dp.toPx(), baseY - 23.dp.toPx()), Size(48.dp.toPx(), 10.dp.toPx()))
-        // Braccio della manovella che gira (proiezione di profilo)
+        val c = Offset(size.width / 2f, size.height / 2f)
+        val r0 = size.minDimension / 2f - 2.dp.toPx()
         val a = Math.toRadians(angle.floatValue.toDouble())
-        val reach = 26.dp.toPx()
-        val tip = Offset(cx + (reach * kotlin.math.cos(a)).toFloat(), baseY - 26.dp.toPx() + (4.dp.toPx() * kotlin.math.sin(a)).toFloat())
         val crankColor = when {
             !enabled -> Color(0xFF6A6560)
             highlight -> Palette.Safelight
             else -> Color(0xFFCFCAC4)
         }
-        drawLine(crankColor, Offset(cx, baseY - 22.dp.toPx()), tip, strokeWidth = 4.dp.toPx())
-        drawRoundRect(crankColor, Offset(tip.x - 4.dp.toPx(), tip.y - 12.dp.toPx()), Size(8.dp.toPx(), 12.dp.toPx()), CornerRadius(3.dp.toPx()))
-        drawCircle(Color(0xFFB9B4AE), radius = 4.dp.toPx(), center = Offset(cx, baseY - 22.dp.toPx()))
+        // Pomello zigrinato visto dall'alto: la zigrinatura gira col braccio.
+        drawCircle(Color(0xFF1E1C1B), radius = r0, center = c)
+        val ticks = 48
+        for (i in 0 until ticks) {
+            val t = a + i * 2 * Math.PI / ticks
+            val cos = kotlin.math.cos(t).toFloat(); val sin = kotlin.math.sin(t).toFloat()
+            drawLine(
+                Color(0xFF4A4542),
+                Offset(c.x + cos * (r0 - 7.dp.toPx()), c.y + sin * (r0 - 7.dp.toPx())),
+                Offset(c.x + cos * (r0 - 1.dp.toPx()), c.y + sin * (r0 - 1.dp.toPx())),
+                strokeWidth = 1.5f.dp.toPx(),
+            )
+        }
+        drawCircle(
+            Brush.radialGradient(listOf(Color(0xFF55504C), Color(0xFF2A2725)), center = c, radius = r0 * 0.85f),
+            radius = r0 - 8.dp.toPx(), center = c,
+        )
+        // Freccia del verso di rotazione, incisa sul pomello.
+        drawArc(
+            Color(0x66CFCAC4), startAngle = -150f, sweepAngle = 120f, useCenter = false,
+            topLeft = Offset(c.x - r0 * 0.62f, c.y - r0 * 0.62f), size = Size(r0 * 1.24f, r0 * 1.24f),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f.dp.toPx()),
+        )
+        // Braccio e impugnatura.
+        val reach = r0 * 0.66f
+        val tip = Offset(c.x + (reach * kotlin.math.cos(a)).toFloat(), c.y + (reach * kotlin.math.sin(a)).toFloat())
+        drawLine(crankColor, c, tip, strokeWidth = 8.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        drawCircle(Color(0xFF0C0B0B), radius = 12.dp.toPx(), center = tip)
+        drawCircle(crankColor, radius = 10.dp.toPx(), center = tip)
+        drawCircle(Color(0xFFB9B4AE), radius = 7.dp.toPx(), center = c)
+        drawCircle(Color(0xFF3A3634), radius = 3.dp.toPx(), center = c)
     }
 }
 

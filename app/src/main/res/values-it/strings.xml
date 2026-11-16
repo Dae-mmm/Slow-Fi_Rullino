@@ -28,7 +28,7 @@
     <string name="wind_first">Carica la leva per portare avanti la pellicola</string>
     <string name="wind">Carica la leva</string>
     <string name="shelve_long">Metti da parte per finirlo più avanti</string>
-    <string name="back_help">Per riavvolgere usa la manovella in alto a sinistra:\n• senza R, ogni giro torna indietro di una posa (doppia esposizione);\n• con R acceso, riavvolgi tutto e il rullino esce dalla macchina.</string>
+    <string name="back_help">Per riavvolgere premi R e gira la manovella a destra:\n• ogni giro ti riporta indietro di una posa, pronta per scattarci sopra di nuovo (doppia esposizione);\n• a fine rullino la manovella riavvolge tutto e il rullino esce dalla macchina.</string>
     <string name="delete_roll_confirm">Tocca di nuovo: elimini tutte le pose</string>
     <string name="delete_roll">Elimina il rullino</string>
     <string name="close_back">Chiudi il dorso</string>
@@ -248,4 +248,7 @@
     <string name="chip_release">+ Liberatoria posa %1$s</string>
     <string name="prev_frame">Posa precedente</string>
     <string name="next_frame">Posa successiva</string>
+    <string name="cam_r_hint">R acceso · ogni giro di\nmanovella torna di una posa</string>
+    <string name="rewind_all_out">Riavvolgi tutto e toglilo per il laboratorio</string>
+    <string name="crank">Manovella di riavvolgimento</string>
 </resources>

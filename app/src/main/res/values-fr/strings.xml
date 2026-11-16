@@ -28,7 +28,7 @@
     <string name="wind_first">Arme le levier pour avancer le film</string>
     <string name="wind">Arme le levier</string>
     <string name="shelve_long">Mettre de côté pour la finir plus tard</string>
-    <string name="back_help">Pour rembobiner, utilise la manivelle en haut à gauche :\n• sans R, chaque tour revient d\'une vue (double exposition) ;\n• avec R allumé, tu rembobines tout et la pellicule sort de l\'appareil.</string>
+    <string name="back_help">Pour rembobiner, appuie sur R et tourne la manivelle à droite :\n• chaque tour te ramène d\'une vue en arrière, prête pour reprendre une photo dessus (double exposition) ;\n• en fin de pellicule la manivelle rembobine tout et la pellicule sort de l\'appareil.</string>
     <string name="delete_roll_confirm">Touche encore : tu supprimes toutes les poses</string>
     <string name="delete_roll">Supprimer la pellicule</string>
     <string name="close_back">Fermer le dos</string>
@@ -248,4 +248,7 @@
     <string name="chip_release">+ Autorisation vue %1$s</string>
     <string name="prev_frame">Vue précédente</string>
     <string name="next_frame">Vue suivante</string>
+    <string name="cam_r_hint">R activé · chaque tour de\nmanivelle recule d\'une vue</string>
+    <string name="rewind_all_out">Tout rembobiner et la sortir pour le labo</string>
+    <string name="crank">Manivelle de rembobinage</string>
 </resources>

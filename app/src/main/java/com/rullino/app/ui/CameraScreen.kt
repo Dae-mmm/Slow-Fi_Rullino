@@ -1,5 +1,7 @@
 package com.rullino.app.ui
 
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import kotlinx.coroutines.delay
 import com.rullino.app.R
 import androidx.compose.ui.res.stringResource
@@ -177,6 +179,7 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
             onDismiss = { showBack = false },
             onShelve = { showBack = false; vm.shelve(r) },
             onDelete = { showBack = false; vm.deleteRoll(r) },
+            onRewindOut = { showBack = false; vm.rewindOut(r) },
         )
     }
 
@@ -190,6 +193,9 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
     // con R acceso la manovella riporta tutta la pellicola nel caricatore e il rullino esce dalla macchina.
     var releaseOn by remember(r?.id) { mutableStateOf(false) }
     var unloadTurns by remember(r?.id) { mutableIntStateOf(0) }
+    val crankLabel = stringResource(R.string.crank)
+    // Dopo uno scatto il pulsante R torna su da solo.
+    LaunchedEffect(lastShotAt) { if (lastShotAt > 0) { releaseOn = false; unloadTurns = 0 } }
     val turnsNeeded = maxOf(2, ((r?.shotCount ?: 0) + 5) / 6)
 
     val dbCounter = when {
@@ -204,14 +210,15 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
     // Dove sta andando il contatore mentre si gira la manovella (null = fermo).
     val rollPair: Pair<Int, Pair<Int, Float>>? = when {
         r == null || r.shotCount == 0 -> null
-        releaseOn -> {
+        releaseOn && r.isAtEnd -> {
             val t = ((unloadTurns + crank) / turnsNeeded).coerceIn(0f, 1f)
             val v = dbCounter * (1f - t)
             val from = kotlin.math.ceil(v).toInt()
             if (from <= 0) null else Pair(from, Pair(from - 1, from - v))
         }
-        crank > 0f && r.cursor > 1 && optimistic == null -> Pair(counter, Pair(r.cursor - 2, crank))
-        crank > 0f && optimistic != null && counter > 0 -> Pair(counter, Pair(counter - 1, crank))
+        !releaseOn || crank <= 0f -> null
+        optimistic == null && r.cursor > 1 && counter != r.cursor - 1 -> Pair(counter, Pair(r.cursor - 1, crank))
+        optimistic != null && counter > 1 -> Pair(counter, Pair(counter - 1, crank))
         else -> null
     }
 
@@ -221,30 +228,6 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
             Modifier.fillMaxWidth().height(72.dp).brushedMetal().padding(horizontal = 18.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                RewindCrank(
-                    enabled = r != null && r.shotCount > 0,
-                    resetKey = Pair(r?.id, releaseOn),
-                    onProgress = { crank = it },
-                    highlight = releaseOn || r?.isAtEnd == true,
-                    onFullTurn = {
-                        val roll = r ?: return@RewindCrank
-                        if (releaseOn) {
-                            unloadTurns++
-                            if (unloadTurns >= turnsNeeded) { optimistic = 0; releaseOn = false; unloadTurns = 0; vm.rewindOut(roll) }
-                        } else if (roll.cursor > 1) {
-                            optimistic = roll.cursor - 2
-                            vm.rewindFrame(roll)
-                        } else view.reject()
-                    },
-                )
-            }
-            ReleaseButton(
-                on = releaseOn,
-                enabled = r != null && r.shotCount > 0,
-                onToggle = { releaseOn = !releaseOn; unloadTurns = 0 },
-                modifier = Modifier.padding(bottom = 10.dp),
-            )
             Column(Modifier.padding(start = 14.dp, bottom = 12.dp)) {
                 Engraving("ISO ${r?.iso ?: "—"}", size = 10)
                 Engraving(r?.emulsionName?.uppercase() ?: stringResource(R.string.engr_empty), size = 10)
@@ -281,7 +264,8 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                 Text(
                     when {
                         r == null -> stringResource(R.string.cam_no_roll)
-                        releaseOn -> stringResource(R.string.cam_rewinding, unloadTurns * 100 / turnsNeeded)
+                        releaseOn && r.isAtEnd -> stringResource(R.string.cam_rewinding, unloadTurns * 100 / turnsNeeded)
+                        releaseOn -> stringResource(R.string.cam_r_hint)
                         r.isAtEnd -> stringResource(R.string.cam_at_end)
                         r.cursor <= r.shotCount -> stringResource(R.string.cam_frame_exposed, r.cursor, r.shotCount, r.exposures)
                         else -> stringResource(R.string.cam_count, r.shotCount, r.exposures)
@@ -358,7 +342,39 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                     modifier = Modifier.fillMaxWidth(0.8f),
                 )
             }
-            Spacer(Modifier.width(150.dp))
+            // Manovella di riavvolgimento vista di fronte, a portata di pollice, con il pulsante R.
+            Column(
+                Modifier.width(150.dp).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ReleaseButton(
+                        on = releaseOn,
+                        enabled = r != null && r.shotCount > 0,
+                        onToggle = { releaseOn = !releaseOn; unloadTurns = 0 },
+                    )
+                    Engraving("REWIND", size = 10)
+                }
+                RewindCrank(
+                    enabled = r != null && r.shotCount > 0 && releaseOn,
+                    resetKey = Pair(r?.id, releaseOn),
+                    onProgress = { crank = it },
+                    highlight = releaseOn,
+                    onFullTurn = {
+                        val roll = r ?: return@RewindCrank
+                        if (roll.isAtEnd) {
+                            unloadTurns++
+                            if (unloadTurns >= turnsNeeded) { optimistic = 0; releaseOn = false; unloadTurns = 0; vm.rewindOut(roll) }
+                        } else if (roll.cursor > 1) {
+                            // Torna alla posa precedente, già pronta: lo scatto successivo ci va sopra.
+                            optimistic = roll.cursor - 1
+                            vm.rewindFrame(roll)
+                        } else view.reject()
+                    },
+                    modifier = Modifier.semantics { contentDescription = crankLabel },
+                )
+            }
         }
     }
 }
@@ -428,6 +444,7 @@ private fun BackDialog(
     onDismiss: () -> Unit,
     onShelve: () -> Unit,
     onDelete: () -> Unit,
+    onRewindOut: () -> Unit,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
     AlertDialog(
@@ -436,6 +453,7 @@ private fun BackDialog(
         title = { Text(roll.emulsionName + " · " + stringResource(R.string.cam_count, roll.shotCount, roll.exposures)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(onClick = onRewindOut) { Text(stringResource(R.string.rewind_all_out)) }
                 OutlinedButton(onClick = onShelve) { Text(stringResource(R.string.shelve_long)) }
                 Text(
                     stringResource(R.string.back_help),

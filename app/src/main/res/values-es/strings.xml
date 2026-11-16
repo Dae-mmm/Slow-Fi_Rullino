@@ -28,7 +28,7 @@
     <string name="wind_first">Carga la palanca para avanzar la película</string>
     <string name="wind">Carga la palanca</string>
     <string name="shelve_long">Guardar para terminarlo más tarde</string>
-    <string name="back_help">Para rebobinar usa la manivela de arriba a la izquierda:\n• sin R, cada vuelta retrocede una foto (doble exposición);\n• con R encendido, rebobinas todo y el carrete sale de la cámara.</string>
+    <string name="back_help">Para rebobinar pulsa R y gira la manivela de la derecha:\n• cada vuelta te lleva una foto atrás, lista para disparar otra vez encima (doble exposición);\n• al final del carrete la manivela lo rebobina todo y el carrete sale de la cámara.</string>
     <string name="delete_roll_confirm">Toca otra vez: borrarás todas las fotos</string>
     <string name="delete_roll">Borrar el carrete</string>
     <string name="close_back">Cerrar el respaldo</string>
@@ -248,4 +248,7 @@
     <string name="chip_release">+ Autorización foto %1$s</string>
     <string name="prev_frame">Foto anterior</string>
     <string name="next_frame">Foto siguiente</string>
+    <string name="cam_r_hint">R activado · cada vuelta de\nmanivela retrocede una foto</string>
+    <string name="rewind_all_out">Rebobinar todo y sacarlo para el laboratorio</string>
+    <string name="crank">Manivela de rebobinado</string>
 </resources>

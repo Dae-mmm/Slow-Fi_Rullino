@@ -29,7 +29,7 @@
     <string name="wind_first">Wind the lever to advance the film</string>
     <string name="wind">Wind the lever</string>
     <string name="shelve_long">Set aside to finish later</string>
-    <string name="back_help">To rewind, use the crank at the top left:\n• without R, each turn goes back one frame (double exposure);\n• with R on, you rewind everything and the roll leaves the camera.</string>
+    <string name="back_help">To rewind, press R and turn the crank on the right:\n• each turn takes you back one frame, ready to shoot on it again (double exposure);\n• at the end of the roll the crank rewinds it all and the roll leaves the camera.</string>
     <string name="delete_roll_confirm">Tap again: you\'ll delete all exposures</string>
     <string name="delete_roll">Delete the roll</string>
     <string name="close_back">Close the back</string>
@@ -249,4 +249,7 @@
     <string name="chip_release">+ Release for frame %1$s</string>
     <string name="prev_frame">Previous frame</string>
     <string name="next_frame">Next frame</string>
+    <string name="cam_r_hint">R on · each turn of the\ncrank goes back one frame</string>
+    <string name="rewind_all_out">Rewind it all and take it out for the lab</string>
+    <string name="crank">Rewind crank</string>
 </resources>
