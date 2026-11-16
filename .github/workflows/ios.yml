@@ -1,0 +1,20 @@
+name: iOS build check
+
+on:
+  push:
+    branches: [main]
+    paths: ["ios/**", ".github/workflows/ios.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Xcode
+        run: xcodebuild -version
+      - name: Build (senza firma)
+        run: |
+          xcodebuild -project ios/Rullino.xcodeproj -target Rullino -sdk iphoneos \
+            -configuration Debug CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build | tee build.log | grep -E "error:|warning: .*(deprecated)|BUILD" || true
+          grep -q "BUILD SUCCEEDED" build.log

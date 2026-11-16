@@ -87,3 +87,20 @@ arriverà con Google Play Billing.
 
 `develop/FilmShader.kt` è una copia esatta dello shader di Camera Oscura. Se cambi lo shader nell'editor,
 aggiorna anche questo file, altrimenti le foto sviluppate non coincidono con l'anteprima.
+
+## iOS (versione provvisoria)
+
+Nella cartella `ios/` c'è una versione SwiftUI dell'app (fotocamera, leva e manovella,
+laboratorio, tavolo luminoso, negozio, opzioni, 5 lingue). Mancano per ora: liberatorie,
+import di `.emulsion` e catalogo online.
+
+Per installarla sul tuo iPhone:
+
+1. Apri `ios/Rullino.xcodeproj` con Xcode 16 o successivo.
+2. Seleziona il target **Rullino** › *Signing & Capabilities* › *Team*: scegli il tuo Apple ID
+   (Personal Team). Se Xcode dice che il bundle id è già usato, cambialo (es. `com.tuonome.rullino`).
+3. Collega l'iPhone, attiva la *Modalità sviluppatore* (Impostazioni › Privacy e sicurezza) e premi ▶︎.
+4. Al primo avvio: Impostazioni › Generali › VPN e gestione dispositivi › fidati del tuo profilo.
+
+Con l'Apple ID gratuito la firma dura 7 giorni: poi basta ripremere ▶︎ in Xcode (i dati restano).
+Le stringhe iOS si generano da `tools/i18n/table.py` insieme a quelle Android (`gen.py`).

@@ -1,0 +1,488 @@
+[
+ {
+  "id": "bundled-bn-3200",
+  "name": "BN 3200",
+  "iso": 3200,
+  "exposures": 36,
+  "type": "bw",
+  "note": "Granulosa, filtro rosso",
+  "params": {
+   "exposure": 0,
+   "temperature": 0,
+   "tint": 0,
+   "gamma": 1,
+   "contrast": 35,
+   "highlights": 0,
+   "shadows": -10,
+   "fade": 0,
+   "saturation": 0,
+   "vibrance": 0,
+   "hsl": {
+    "red": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "orange": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "yellow": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "green": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "aqua": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "blue": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "purple": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "magenta": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    }
+   },
+   "split": {
+    "shadowHue": 210,
+    "shadowAmount": 0,
+    "highlightHue": 40,
+    "highlightAmount": 0,
+    "balance": 0
+   },
+   "mono": {
+    "enabled": true,
+    "red": 80,
+    "green": 30,
+    "blue": -10
+   },
+   "grain": {
+    "amount": 30,
+    "size": 1.8,
+    "roughness": 70
+   },
+   "vignette": 25
+  }
+ },
+ {
+  "id": "bundled-bn-400",
+  "name": "BN 400",
+  "iso": 400,
+  "exposures": 36,
+  "type": "bw",
+  "note": "Bianco e nero classico",
+  "params": {
+   "exposure": 0,
+   "temperature": 0,
+   "tint": 0,
+   "gamma": 1,
+   "contrast": 18,
+   "highlights": 0,
+   "shadows": 0,
+   "fade": 0,
+   "saturation": 0,
+   "vibrance": 0,
+   "hsl": {
+    "red": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "orange": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "yellow": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "green": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "aqua": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "blue": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "purple": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "magenta": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    }
+   },
+   "split": {
+    "shadowHue": 210,
+    "shadowAmount": 0,
+    "highlightHue": 40,
+    "highlightAmount": 0,
+    "balance": 0
+   },
+   "mono": {
+    "enabled": true,
+    "red": 40,
+    "green": 50,
+    "blue": 10
+   },
+   "grain": {
+    "amount": 26,
+    "size": 1.3,
+    "roughness": 55
+   },
+   "vignette": 0
+  }
+ },
+ {
+  "id": "bundled-calda-200",
+  "name": "Calda 200",
+  "iso": 200,
+  "exposures": 36,
+  "type": "color",
+  "note": "Pelli morbide, verdi spenti",
+  "params": {
+   "exposure": 0,
+   "temperature": 18,
+   "tint": 0,
+   "gamma": 1,
+   "contrast": -12,
+   "highlights": -15,
+   "shadows": 0,
+   "fade": 8,
+   "saturation": -8,
+   "vibrance": 0,
+   "hsl": {
+    "red": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "orange": {
+     "hue": -3,
+     "sat": -10,
+     "lum": 10
+    },
+    "yellow": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "green": {
+     "hue": 12,
+     "sat": -30,
+     "lum": 0
+    },
+    "aqua": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "blue": {
+     "hue": -8,
+     "sat": -15,
+     "lum": 0
+    },
+    "purple": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "magenta": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    }
+   },
+   "split": {
+    "shadowHue": 190,
+    "shadowAmount": 12,
+    "highlightHue": 35,
+    "highlightAmount": 14,
+    "balance": 10
+   },
+   "mono": {
+    "enabled": false,
+    "red": 30,
+    "green": 59,
+    "blue": 11
+   },
+   "grain": {
+    "amount": 22,
+    "size": 1.2,
+    "roughness": 45
+   },
+   "vignette": 0
+  }
+ },
+ {
+  "id": "bundled-diapositiva-100",
+  "name": "Diapositiva 100",
+  "iso": 100,
+  "exposures": 36,
+  "type": "color",
+  "note": "Satura e contrastata, ombre fredde",
+  "params": {
+   "exposure": -0.2,
+   "temperature": 0,
+   "tint": 0,
+   "gamma": 1,
+   "contrast": 30,
+   "highlights": 0,
+   "shadows": 0,
+   "fade": 0,
+   "saturation": 18,
+   "vibrance": 10,
+   "hsl": {
+    "red": {
+     "hue": 2,
+     "sat": 10,
+     "lum": -5
+    },
+    "orange": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "yellow": {
+     "hue": -6,
+     "sat": 5,
+     "lum": 0
+    },
+    "green": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "aqua": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "blue": {
+     "hue": 6,
+     "sat": 15,
+     "lum": -10
+    },
+    "purple": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "magenta": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    }
+   },
+   "split": {
+    "shadowHue": 225,
+    "shadowAmount": 14,
+    "highlightHue": 50,
+    "highlightAmount": 4,
+    "balance": 0
+   },
+   "mono": {
+    "enabled": false,
+    "red": 30,
+    "green": 59,
+    "blue": 11
+   },
+   "grain": {
+    "amount": 10,
+    "size": 1,
+    "roughness": 35
+   },
+   "vignette": 15
+  }
+ },
+ {
+  "id": "bundled-neutra-100",
+  "name": "Neutra 100",
+  "iso": 100,
+  "exposures": 36,
+  "type": "color",
+  "note": "Punto zero, grana minima",
+  "params": {
+   "exposure": 0,
+   "temperature": 0,
+   "tint": 0,
+   "gamma": 1,
+   "contrast": 0,
+   "highlights": 0,
+   "shadows": 0,
+   "fade": 0,
+   "saturation": 0,
+   "vibrance": 0,
+   "hsl": {
+    "red": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "orange": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "yellow": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "green": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "aqua": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "blue": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "purple": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "magenta": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    }
+   },
+   "split": {
+    "shadowHue": 210,
+    "shadowAmount": 0,
+    "highlightHue": 40,
+    "highlightAmount": 0,
+    "balance": 0
+   },
+   "mono": {
+    "enabled": false,
+    "red": 30,
+    "green": 59,
+    "blue": 11
+   },
+   "grain": {
+    "amount": 8,
+    "size": 1,
+    "roughness": 40
+   },
+   "vignette": 0
+  }
+ },
+ {
+  "id": "bundled-notturna-800",
+  "name": "Notturna 800",
+  "iso": 800,
+  "exposures": 36,
+  "type": "color",
+  "note": "Tungsteno, ombre ciano",
+  "params": {
+   "exposure": 0,
+   "temperature": -25,
+   "tint": 5,
+   "gamma": 1,
+   "contrast": 10,
+   "highlights": 0,
+   "shadows": 0,
+   "fade": 12,
+   "saturation": 0,
+   "vibrance": 0,
+   "hsl": {
+    "red": {
+     "hue": -6,
+     "sat": 10,
+     "lum": 0
+    },
+    "orange": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "yellow": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "green": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "aqua": {
+     "hue": -8,
+     "sat": 15,
+     "lum": 0
+    },
+    "blue": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "purple": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    },
+    "magenta": {
+     "hue": 0,
+     "sat": 0,
+     "lum": 0
+    }
+   },
+   "split": {
+    "shadowHue": 185,
+    "shadowAmount": 20,
+    "highlightHue": 20,
+    "highlightAmount": 10,
+    "balance": -10
+   },
+   "mono": {
+    "enabled": false,
+    "red": 30,
+    "green": 59,
+    "blue": 11
+   },
+   "grain": {
+    "amount": 30,
+    "size": 1.4,
+    "roughness": 55
+   },
+   "vignette": 0
+  }
+ }
+]

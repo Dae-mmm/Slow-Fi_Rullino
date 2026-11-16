@@ -1,0 +1,156 @@
+import Foundation
+
+extension KeyedDecodingContainer {
+    /// Valore se presente, altrimenti il predefinito (come i default di kotlinx-serialization).
+    func v<T: Decodable>(_ key: Key, _ def: T) -> T {
+        (try? decodeIfPresent(T.self, forKey: key)) ?? def
+    }
+}
+
+/// Ordine dei settori dei colori selettivi: deve coincidere con lo shader.
+let hueKeys = ["red", "orange", "yellow", "green", "aqua", "blue", "purple", "magenta"]
+
+struct HslAdj: Decodable {
+    var hue: Float = 0, sat: Float = 0, lum: Float = 0
+    enum CodingKeys: String, CodingKey { case hue, sat, lum }
+    init() {}
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        hue = c.v(.hue, 0); sat = c.v(.sat, 0); lum = c.v(.lum, 0)
+    }
+}
+
+struct SplitTone: Decodable {
+    var shadowHue: Float = 210, shadowAmount: Float = 0, highlightHue: Float = 40, highlightAmount: Float = 0, balance: Float = 0
+    enum CodingKeys: String, CodingKey { case shadowHue, shadowAmount, highlightHue, highlightAmount, balance }
+    init() {}
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        shadowHue = c.v(.shadowHue, 210); shadowAmount = c.v(.shadowAmount, 0)
+        highlightHue = c.v(.highlightHue, 40); highlightAmount = c.v(.highlightAmount, 0); balance = c.v(.balance, 0)
+    }
+}
+
+struct MonoMix: Decodable {
+    var enabled = false, red: Float = 30, green: Float = 59, blue: Float = 11
+    enum CodingKeys: String, CodingKey { case enabled, red, green, blue }
+    init() {}
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        enabled = c.v(.enabled, false); red = c.v(.red, 30); green = c.v(.green, 59); blue = c.v(.blue, 11)
+    }
+}
+
+struct GrainParams: Decodable {
+    var amount: Float = 20, size: Float = 1.2, roughness: Float = 50
+    enum CodingKeys: String, CodingKey { case amount, size, roughness }
+    init() {}
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        amount = c.v(.amount, 20); size = c.v(.size, 1.2); roughness = c.v(.roughness, 50)
+    }
+}
+
+/// Parametri come li esporta Camera Oscura (unità dell'interfaccia, −100…100 salvo eccezioni).
+struct FilmParams: Decodable {
+    var exposure: Float = 0, temperature: Float = 0, tint: Float = 0, gamma: Float = 1
+    var contrast: Float = 0, highlights: Float = 0, shadows: Float = 0, fade: Float = 0
+    var saturation: Float = 0, vibrance: Float = 0
+    var hsl: [String: HslAdj] = [:]
+    var split = SplitTone()
+    var mono = MonoMix()
+    var grain = GrainParams()
+    var vignette: Float = 0
+
+    enum CodingKeys: String, CodingKey {
+        case exposure, temperature, tint, gamma, contrast, highlights, shadows, fade, saturation, vibrance, hsl, split, mono, grain, vignette
+    }
+    init() {}
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        exposure = c.v(.exposure, 0); temperature = c.v(.temperature, 0); tint = c.v(.tint, 0)
+        gamma = c.v(.gamma, 1); contrast = c.v(.contrast, 0); highlights = c.v(.highlights, 0)
+        shadows = c.v(.shadows, 0); fade = c.v(.fade, 0); saturation = c.v(.saturation, 0)
+        vibrance = c.v(.vibrance, 0); hsl = c.v(.hsl, [:]); split = c.v(.split, SplitTone())
+        mono = c.v(.mono, MonoMix()); grain = c.v(.grain, GrainParams()); vignette = c.v(.vignette, 0)
+    }
+}
+
+/// Un'emulsione (look della pellicola), come esce da un file .emulsion.
+struct Emulsion: Decodable, Identifiable {
+    var id: String
+    var name: String
+    var iso: Int
+    var exposures: Int
+    var type: String
+    var note: String
+    var params: FilmParams
+
+    var isBw: Bool { type == "bw" || params.mono.enabled }
+
+    enum CodingKeys: String, CodingKey { case id, name, iso, exposures, type, note, params }
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = c.v(.name, "")
+        iso = c.v(.iso, 400); exposures = c.v(.exposures, 36)
+        type = c.v(.type, "color"); note = c.v(.note, ""); params = c.v(.params, FilmParams())
+    }
+}
+
+enum RollState: String, Codable { case loaded, shelved, finished, developing, developed }
+
+struct Roll: Codable, Identifiable, Equatable {
+    var id: Int
+    var emulsionId: String
+    var emulsionName: String
+    var iso: Int
+    var exposures: Int
+    var isBw: Bool
+    var cursor = 1          // posa su cui cade il prossimo scatto
+    var shotCount = 0       // pose esposte almeno una volta
+    var wound = false       // leva caricata: si può scattare
+    var state = RollState.loaded
+    var createdAt = Date()
+    var readyAt: Date?
+
+    var canWind: Bool { state == .loaded && !wound && cursor <= exposures }
+    var isAtEnd: Bool { state == .loaded && cursor > exposures }
+}
+
+struct Exposure: Codable, Equatable {
+    var rollId: Int
+    var frame: Int
+    var file: String        // relativo alla cartella dei dati
+}
+
+struct DevFrame: Codable, Equatable {
+    var rollId: Int
+    var frame: Int
+    var file: String
+    var layers: Int
+    var printed = false
+}
+
+enum LabTime: String, Codable, CaseIterable {
+    case hour, threeHours, day
+    var seconds: TimeInterval {
+        switch self { case .hour: 3600; case .threeHours: 3 * 3600; case .day: 24 * 3600 }
+    }
+    var key: String {
+        switch self { case .hour: "lab_1h"; case .threeHours: "lab_3h"; case .day: "lab_1d" }
+    }
+}
+
+struct AppData: Codable, Equatable {
+    var rolls: [Roll] = []
+    var exposures: [Exposure] = []
+    var frames: [DevFrame] = []
+    var inventory: [String: Int] = [:]
+    var coins = 0
+    var lastDaily = ""
+    var nextId = 1
+    var labTime = LabTime.day
+    var devMode = false
+    var skipLab = false
+}
