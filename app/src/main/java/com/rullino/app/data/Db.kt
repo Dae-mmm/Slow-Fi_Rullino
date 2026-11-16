@@ -38,13 +38,18 @@ data class EmulsionEntity(
 }
 
 object RollState {
+    /** In macchina, si può scattare. */
     const val LOADED = "LOADED"
+    /** Sganciato a metà e messo da parte: si può ricaricare e finire. */
+    const val SHELVED = "SHELVED"
+    /** In macchina, finito o sganciato per lo sviluppo: aspetta di essere sviluppato. */
     const val FINISHED = "FINISHED"
     const val DEVELOPING = "DEVELOPING"
+    /** Sviluppato: è una striscia di negativi sul tavolo luminoso. */
     const val DEVELOPED = "DEVELOPED"
 }
 
-/** Un rullino caricato in macchina. */
+/** Un rullino. */
 @Entity(tableName = "rolls")
 data class RollEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -52,24 +57,39 @@ data class RollEntity(
     val emulsionName: String,
     val iso: Int,
     val exposures: Int,
+    /** Numero del prossimo fotogramma che verrà esposto (1…exposures+1). Riavvolgendo torna indietro. */
+    val cursor: Int = 1,
+    /** Fotogramma più avanzato mai esposto. */
     val shotCount: Int = 0,
     /** true quando la leva è stata caricata e l'otturatore è armato. */
     val wound: Boolean = false,
     val state: String = RollState.LOADED,
+    val isBw: Boolean = false,
     val loadedAt: Long,
     val finishedAt: Long? = null,
     val developedAt: Long? = null,
-)
+) {
+    val canWind get() = state == RollState.LOADED && !wound && cursor <= exposures
+}
 
-/** Uno scatto: [rawPath] è il "negativo" privato, [developedUri] la foto in galleria. */
-@Entity(tableName = "shots", indices = [Index("rollId")])
-data class ShotEntity(
+/** Una singola esposizione. Più esposizioni sullo stesso fotogramma fanno una doppia esposizione. */
+@Entity(tableName = "exposures", indices = [Index("rollId")])
+data class ExposureEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val rollId: Long,
     val frame: Int,
     val rawPath: String,
     val takenAt: Long,
-    val developedUri: String? = null,
+)
+
+/** Un fotogramma sviluppato: [developedPath] è il positivo privato, [printUri] la stampa in galleria. */
+@Entity(tableName = "frames", primaryKeys = ["rollId", "frame"])
+data class FrameEntity(
+    val rollId: Long,
+    val frame: Int,
+    val developedPath: String,
+    val exposureCount: Int = 1,
+    val printUri: String? = null,
 )
 
 @Dao
@@ -89,8 +109,12 @@ interface EmulsionDao {
 
 @Dao
 interface RollDao {
-    @Query("SELECT * FROM rolls WHERE state != 'DEVELOPED' ORDER BY loadedAt DESC LIMIT 1")
+    /** Il rullino in macchina (caricato, finito o in sviluppo). */
+    @Query("SELECT * FROM rolls WHERE state IN ('LOADED', 'FINISHED', 'DEVELOPING') ORDER BY loadedAt DESC LIMIT 1")
     fun active(): Flow<RollEntity?>
+
+    @Query("SELECT * FROM rolls WHERE state IN ('LOADED', 'FINISHED', 'DEVELOPING')")
+    suspend fun activeNow(): List<RollEntity>
 
     @Query("SELECT * FROM rolls ORDER BY loadedAt DESC")
     fun all(): Flow<List<RollEntity>>
@@ -101,8 +125,8 @@ interface RollDao {
     @Query("SELECT * FROM rolls WHERE state = 'DEVELOPING'")
     suspend fun developing(): List<RollEntity>
 
-    @Query("SELECT * FROM rolls WHERE state != 'DEVELOPED'")
-    suspend fun activeNow(): List<RollEntity>
+    @Query("SELECT COUNT(*) FROM rolls WHERE emulsionId = :emulsionId AND state != 'DEVELOPED'")
+    suspend fun openWithEmulsion(emulsionId: String): Int
 
     @Insert
     suspend fun insert(r: RollEntity): Long
@@ -115,28 +139,63 @@ interface RollDao {
 }
 
 @Dao
-interface ShotDao {
+interface ExposureDao {
     @Insert
-    suspend fun insert(s: ShotEntity): Long
+    suspend fun insert(e: ExposureEntity): Long
 
-    @Update
-    suspend fun update(s: ShotEntity)
+    @Query("SELECT * FROM exposures WHERE rollId = :rollId ORDER BY frame, takenAt")
+    suspend fun forRoll(rollId: Long): List<ExposureEntity>
 
-    @Query("SELECT * FROM shots WHERE rollId = :rollId ORDER BY frame")
-    suspend fun forRoll(rollId: Long): List<ShotEntity>
+    @Query("SELECT COUNT(*) FROM exposures WHERE rollId = :rollId AND frame = :frame")
+    suspend fun countOnFrame(rollId: Long, frame: Int): Int
 
-    @Query("SELECT * FROM shots WHERE rollId = :rollId ORDER BY frame")
-    fun forRollFlow(rollId: Long): Flow<List<ShotEntity>>
+    @Query("SELECT COUNT(*) FROM exposures WHERE rollId = :rollId AND frame = :frame")
+    fun countOnFrameFlow(rollId: Long, frame: Int): Flow<Int>
+
+    @Query("DELETE FROM exposures WHERE rollId = :rollId")
+    suspend fun deleteRoll(rollId: Long)
+
+    @Query("DELETE FROM exposures WHERE rollId = :rollId AND frame = :frame")
+    suspend fun deleteFrame(rollId: Long, frame: Int)
 }
 
-@Database(entities = [EmulsionEntity::class, RollEntity::class, ShotEntity::class], version = 1, exportSchema = false)
+@Dao
+interface FrameDao {
+    @Upsert
+    suspend fun upsert(f: FrameEntity)
+
+    @Query("SELECT * FROM frames WHERE rollId = :rollId ORDER BY frame")
+    suspend fun forRoll(rollId: Long): List<FrameEntity>
+
+    @Query("SELECT * FROM frames WHERE rollId = :rollId ORDER BY frame")
+    fun forRollFlow(rollId: Long): Flow<List<FrameEntity>>
+
+    @Query("SELECT * FROM frames WHERE rollId = :rollId AND frame = :frame")
+    suspend fun get(rollId: Long, frame: Int): FrameEntity?
+
+    @Query("DELETE FROM frames WHERE rollId = :rollId")
+    suspend fun deleteRoll(rollId: Long)
+
+    @Query("DELETE FROM frames WHERE rollId = :rollId AND frame = :frame")
+    suspend fun deleteFrame(rollId: Long, frame: Int)
+}
+
+@Database(
+    entities = [EmulsionEntity::class, RollEntity::class, ExposureEntity::class, FrameEntity::class],
+    version = 2,
+    exportSchema = false,
+)
 abstract class AppDb : RoomDatabase() {
     abstract fun emulsions(): EmulsionDao
     abstract fun rolls(): RollDao
-    abstract fun shots(): ShotDao
+    abstract fun exposures(): ExposureDao
+    abstract fun frames(): FrameDao
 
     companion object {
         fun build(context: Context): AppDb =
-            Room.databaseBuilder(context, AppDb::class.java, "rullino.db").build()
+            Room.databaseBuilder(context, AppDb::class.java, "rullino.db")
+                // App ancora in sviluppo: cambiando schema si riparte da zero.
+                .fallbackToDestructiveMigration(true)
+                .build()
     }
 }

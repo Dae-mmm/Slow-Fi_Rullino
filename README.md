@@ -22,9 +22,16 @@ Requisiti: Android 10 (API 29) o più recente, fotocamera posteriore.
 | `develop/` | Sviluppo: lo stesso shader GLSL di Camera Oscura, eseguito in OpenGL ES 3 fuori schermo |
 | `ui/` | Schermate Compose: fotocamera (leva, contafotogrammi, finestrella), emulsioni e negozio, rullini e provini |
 
-- Gli scatti restano nella memoria privata dell'app (`files/rolls/<id>/`) finché il rullino non è sviluppato.
-- Lo sviluppo salva le foto in *Immagini/Rullino/<emulsione data #rullino>*.
+- Gli scatti restano nella memoria privata dell'app (`files/rolls/<id>/raw`).
+- **Apri il dorso** (in fotocamera): sviluppa subito, metti da parte per finirlo dopo, riavvolgi di 1, 2 pose
+  o tutto per fare doppie esposizioni, oppure elimina il rullino.
+- Le esposizioni sullo stesso fotogramma si fondono sommando la luce (fusione *screen*), come sulla pellicola.
+- **Sviluppo** → negativi nella memoria dell'app (`files/rolls/<id>/dev`). In galleria non va niente.
+- **Tavolo luminoso** (Rullini): striscia di negativi con perforazioni e scritte di bordo; il lentino mostra il positivo.
+  Si stampa una posa o una selezione: solo le stampe vanno in *Immagini/Rullino/<emulsione data #rullino>*.
+- **Taglio dei negativi**: tieni le pose scelte, il resto (con le eventuali stampe) viene eliminato.
 - La grana usa un seme diverso per ogni posa, come su pellicola vera.
+- Il database è alla versione 2: passando dalla versione precedente l'app riparte da zero (rullini di prova inclusi).
 
 ## Formato `.emulsion` (versione 1)
 

@@ -1,16 +1,18 @@
 package com.rullino.app.develop
 
-import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Matrix
-import android.net.Uri
-import android.os.Environment
-import android.provider.MediaStore
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.Rect
 import androidx.exifinterface.media.ExifInterface
+import com.rullino.app.data.ExposureEntity
+import com.rullino.app.data.FrameEntity
 import com.rullino.app.data.Repository
-import com.rullino.app.data.RollEntity
 import com.rullino.app.data.RollState
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,17 +21,16 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.concurrent.Executors
 import kotlin.random.Random
 
 data class DevelopProgress(val rollId: Long, val done: Int, val total: Int)
 
 /**
- * Sviluppa un rullino: applica l'emulsione a ogni negativo e salva le foto in
- * Immagini/Rullino/<emulsione – data>. Tutto il lavoro OpenGL gira su un thread dedicato.
+ * Sviluppa un rullino in negativi: per ogni fotogramma fonde le sue esposizioni
+ * (doppia esposizione), applica l'emulsione e salva il positivo nella memoria privata.
+ * In galleria va solo ciò che si stampa dal tavolo luminoso.
+ * Tutto il lavoro OpenGL gira su un thread dedicato.
  */
 class Developer(private val context: Context, private val repo: Repository) {
 
@@ -42,26 +43,28 @@ class Developer(private val context: Context, private val repo: Repository) {
         withContext(glDispatcher) {
             val db = repo.db
             val start = db.rolls().get(rollId) ?: return@withContext
-            if (start.state == RollState.DEVELOPED || start.state == RollState.LOADED) return@withContext
+            if (start.state != RollState.FINISHED && start.state != RollState.DEVELOPING) return@withContext
             val emulsion = db.emulsions().get(start.emulsionId)
                 ?: throw IllegalStateException("L'emulsione «${start.emulsionName}» non è più installata")
             val preset = repo.loadPreset(emulsion)
             db.rolls().update(start.copy(state = RollState.DEVELOPING))
 
-            val shots = db.shots().forRoll(rollId)
-            val folder = folderName(start)
+            val byFrame: Map<Int, List<ExposureEntity>> = db.exposures().forRoll(rollId).groupBy { it.frame }
+            val already = db.frames().forRoll(rollId).associateBy { it.frame }
+            val outDir = File(repo.rollDir(rollId), "dev").apply { mkdirs() }
             val renderer = FilmRenderer()
             try {
-                shots.forEachIndexed { i, shot ->
-                    _progress.value = DevelopProgress(rollId, i, shots.size)
-                    if (shot.developedUri != null) return@forEachIndexed
-                    val raw = File(shot.rawPath)
-                    val src = decodeOriented(raw, renderer.maxSide)?.let { cropTo35mm(it) } ?: return@forEachIndexed
-                    val out = renderer.render(src, preset, seed = Random.nextFloat() * 997f)
-                    src.recycle()
-                    val uri = saveToGallery(out, folder, "${folder}_${"%02d".format(shot.frame)}.jpg")
+                var i = 0
+                for ((frame, layers) in byFrame.toSortedMap()) {
+                    _progress.value = DevelopProgress(rollId, i++, byFrame.size)
+                    if (already[frame]?.let { File(it.developedPath).exists() } == true) continue
+                    val merged = mergeExposures(layers.map { File(it.rawPath) }, renderer.maxSide) ?: continue
+                    val out = renderer.render(merged, preset, seed = Random.nextFloat() * 997f)
+                    merged.recycle()
+                    val file = File(outDir, "%02d.jpg".format(frame))
+                    file.outputStream().use { out.compress(Bitmap.CompressFormat.JPEG, 94, it) }
                     out.recycle()
-                    db.shots().update(shot.copy(developedUri = uri.toString()))
+                    db.frames().upsert(FrameEntity(rollId = rollId, frame = frame, developedPath = file.absolutePath, exposureCount = layers.size))
                 }
             } finally {
                 renderer.release()
@@ -72,10 +75,22 @@ class Developer(private val context: Context, private val repo: Repository) {
         }
     }
 
-    private fun folderName(roll: RollEntity): String {
-        val date = SimpleDateFormat("yyyy-MM-dd", Locale.ITALY).format(Date(roll.finishedAt ?: roll.loadedAt))
-        val name = roll.emulsionName.replace(Regex("[^\\p{L}\\p{N} _-]"), "").trim().ifBlank { "Rullino" }
-        return "$name $date #${roll.id}"
+    /**
+     * Fonde le esposizioni di un fotogramma come fa la pellicola: la luce si somma,
+     * quindi le parti chiare di uno scatto riempiono le parti scure dell'altro (fusione "screen").
+     */
+    private fun mergeExposures(files: List<File>, maxSide: Int): Bitmap? {
+        val layers = files.mapNotNull { decodeOriented(it, maxSide)?.let { b -> cropTo35mm(b) } }
+        if (layers.isEmpty()) return null
+        val base = layers.first().copy(Bitmap.Config.ARGB_8888, true)
+        if (layers.size > 1) {
+            val canvas = Canvas(base)
+            val paint = Paint(Paint.FILTER_BITMAP_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.SCREEN) }
+            val dst = Rect(0, 0, base.width, base.height)
+            for (layer in layers.drop(1)) canvas.drawBitmap(layer, null, dst, paint)
+        }
+        layers.forEach { it.recycle() }
+        return base
     }
 
     /** Taglio 3:2 del fotogramma 35 mm, centrato (in verticale se lo scatto è verticale). */
@@ -118,23 +133,5 @@ class Developer(private val context: Context, private val repo: Repository) {
         val rotated = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true)
         if (rotated !== bmp) bmp.recycle()
         return rotated
-    }
-
-    private fun saveToGallery(bmp: Bitmap, folder: String, fileName: String): Uri {
-        val resolver = context.contentResolver
-        val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Rullino/$folder")
-            put(MediaStore.Images.Media.IS_PENDING, 1)
-        }
-        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-            ?: throw IllegalStateException("Impossibile salvare nella galleria")
-        resolver.openOutputStream(uri)?.use { bmp.compress(Bitmap.CompressFormat.JPEG, 94, it) }
-            ?: throw IllegalStateException("Impossibile scrivere la foto")
-        values.clear()
-        values.put(MediaStore.Images.Media.IS_PENDING, 0)
-        resolver.update(uri, values, null, null)
-        return uri
     }
 }

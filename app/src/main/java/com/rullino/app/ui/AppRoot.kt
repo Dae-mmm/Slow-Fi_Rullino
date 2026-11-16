@@ -1,6 +1,9 @@
 package com.rullino.app.ui
 
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -44,6 +47,14 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
             onImportHandled()
         }
     }
+    val deleteRequest by vm.galleryDeleteRequest.collectAsState()
+    val deleteLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+        vm.galleryDeleteRequest.value = null
+    }
+    LaunchedEffect(deleteRequest) {
+        deleteRequest?.let { deleteLauncher.launch(IntentSenderRequest.Builder(it).build()) }
+    }
+
     LaunchedEffect(message) {
         val m = message ?: return@LaunchedEffect
         snackbar.showSnackbar(m)
@@ -79,7 +90,7 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
                 when (tab) {
                     AppTab.CAMERA -> CameraScreen(vm, onPickEmulsion = { tab = AppTab.EMULSIONS }, onOpenRolls = { tab = AppTab.ROLLS })
                     AppTab.EMULSIONS -> EmulsionsScreen(vm, onLoaded = { tab = AppTab.CAMERA })
-                    AppTab.ROLLS -> RollsScreen(vm)
+                    AppTab.ROLLS -> RollsScreen(vm, onOpenCamera = { tab = AppTab.CAMERA })
                 }
             }
         }

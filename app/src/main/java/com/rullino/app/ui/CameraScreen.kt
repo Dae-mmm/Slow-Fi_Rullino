@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -101,7 +102,7 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
     DisposableEffect(Unit) { onDispose { sound.release() } }
 
     val loaded = r != null && r.state == RollState.LOADED
-    val canWind = loaded && r != null && !r.wound && r.shotCount < r.exposures
+    val canWind = r?.canWind == true
     val armed = loaded && r != null && r.wound
 
     fun shoot() {
@@ -129,10 +130,26 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
         })
     }
 
+    var showBack by remember { mutableStateOf(false) }
+    val doubleOnNext by remember(r?.id, r?.cursor) {
+        if (r == null) kotlinx.coroutines.flow.flowOf(0) else vm.exposuresOnFrame(r.id, r.cursor)
+    }.collectAsState(initial = 0)
+
+    if (showBack && r != null) {
+        BackDialog(
+            roll = r,
+            onDismiss = { showBack = false },
+            onDevelop = { showBack = false; view.confirm(); vm.developNow(r) },
+            onShelve = { showBack = false; vm.shelve(r) },
+            onRewind = { n -> showBack = false; view.tick(); vm.rewind(r, n) },
+            onDelete = { showBack = false; vm.deleteRoll(r) },
+        )
+    }
+
     val counter = when {
         r == null -> 0
-        r.wound -> r.shotCount + 1
-        else -> r.shotCount
+        r.wound -> r.cursor
+        else -> r.cursor - 1
     }
 
     Column(Modifier.fillMaxSize().background(Palette.Body)) {
@@ -172,12 +189,15 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
                         r == null -> "Nessun rullino"
                         r.state == RollState.FINISHED -> "Finito · gira la manovella"
                         r.state == RollState.DEVELOPING -> "In sviluppo"
+                        r.cursor <= r.shotCount -> "Posa ${r.cursor} già esposta\n${r.shotCount} di ${r.exposures} pose"
                         else -> "${r.shotCount} di ${r.exposures} pose"
                     },
                     color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp, textAlign = TextAlign.Center,
                 )
                 if (r != null && r.state == RollState.LOADED && r.shotCount == 0) {
                     TextButton(onClick = { vm.unloadEmptyRoll(r) }) { Text("Cambia emulsione", color = Palette.Muted, fontSize = 12.sp) }
+                } else if (r != null && r.state == RollState.LOADED) {
+                    OutlinedButton(onClick = { showBack = true }) { Text("Apri il dorso", fontSize = 12.sp) }
                 } else if (r == null) {
                     TextButton(onClick = onOpenRolls) { Text("Rullini sviluppati", color = Palette.Muted, fontSize = 12.sp) }
                 }
@@ -202,6 +222,7 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
                         onDevelop = { roll -> view.confirm(); vm.develop(roll) },
                         progress = progress,
                         onReady = { capture = it },
+                        doubleExposure = doubleOnNext > 0,
                     )
                     Box(Modifier.fillMaxSize().alpha(blackout.value).background(Color.Black))
                 }
@@ -223,6 +244,7 @@ private fun BoxScope.ViewfinderContent(
     onDevelop: (RollEntity) -> Unit,
     progress: com.rullino.app.develop.DevelopProgress?,
     onReady: (ImageCapture) -> Unit,
+    doubleExposure: Boolean,
 ) {
     when {
         !hasPermission -> CenterNote("Serve il permesso della fotocamera per scattare.") {
@@ -244,6 +266,19 @@ private fun BoxScope.ViewfinderContent(
         }
         else -> {
             Viewfinder(onReady = onReady)
+            if (doubleExposure) {
+                Text(
+                    "DOPPIA ESPOSIZIONE · POSA ${r.cursor}",
+                    color = Palette.Safelight,
+                    fontFamily = Mono,
+                    fontSize = 11.sp,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(10.dp)
+                        .background(Color(0xAA000000), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                )
+            }
             if (!r.wound) {
                 Text(
                     if (r.shotCount == 0) "Carica la leva per portare avanti la pellicola" else "Carica la leva",
@@ -258,6 +293,48 @@ private fun BoxScope.ViewfinderContent(
             }
         }
     }
+}
+
+/** Il dorso aperto: cosa fare del rullino in macchina. */
+@Composable
+private fun BackDialog(
+    roll: RollEntity,
+    onDismiss: () -> Unit,
+    onDevelop: () -> Unit,
+    onShelve: () -> Unit,
+    onRewind: (Int?) -> Unit,
+    onDelete: () -> Unit,
+) {
+    var confirmDelete by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Palette.Plate,
+        title = { Text("${roll.emulsionName} · ${roll.shotCount} di ${roll.exposures} pose") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Sgancia il rullino", color = Palette.Muted, fontSize = 12.sp, fontFamily = Mono)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onDevelop) { Text("Sviluppa ora") }
+                    OutlinedButton(onClick = onShelve) { Text("Metti da parte") }
+                }
+                Spacer(Modifier.height(4.dp))
+                Text("Riavvolgi per la doppia esposizione", color = Palette.Muted, fontSize = 12.sp, fontFamily = Mono)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(enabled = roll.cursor > 1, onClick = { onRewind(1) }) { Text("1 posa") }
+                    OutlinedButton(enabled = roll.cursor > 2, onClick = { onRewind(2) }) { Text("2 pose") }
+                    OutlinedButton(enabled = roll.cursor > 1, onClick = { onRewind(null) }) { Text("Tutto") }
+                }
+                Spacer(Modifier.height(4.dp))
+                TextButton(onClick = { if (confirmDelete) onDelete() else confirmDelete = true }) {
+                    Text(
+                        if (confirmDelete) "Tocca di nuovo: elimini tutte le pose" else "Elimina il rullino",
+                        color = Color(0xFFFF8A80),
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Chiudi il dorso") } },
+    )
 }
 
 @Composable

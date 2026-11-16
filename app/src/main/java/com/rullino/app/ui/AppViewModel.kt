@@ -1,14 +1,17 @@
 package com.rullino.app.ui
 
 import android.app.Application
+import android.content.IntentSender
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rullino.app.RullinoApp
 import com.rullino.app.data.CatalogItem
 import com.rullino.app.data.EmulsionEntity
 import com.rullino.app.data.RollEntity
-import com.rullino.app.data.ShotEntity
+import com.rullino.app.data.FrameEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,7 +44,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val store = MutableStateFlow<StoreState>(if (repo.catalog.isConfigured) StoreState.Loading else StoreState.NotConfigured)
     val downloading = MutableStateFlow<Set<String>>(emptySet())
 
-    fun shots(rollId: Long): Flow<List<ShotEntity>> = repo.shots(rollId)
+    /** Richiesta di conferma di Android per cancellare stampe non create da questa installazione. */
+    val galleryDeleteRequest = MutableStateFlow<IntentSender?>(null)
+
+    fun frames(rollId: Long): Flow<List<FrameEntity>> = repo.frames(rollId)
+    fun exposuresOnFrame(rollId: Long, frame: Int): Flow<Int> = repo.exposuresOnFrame(rollId, frame)
 
     fun say(text: String) { message.value = text }
 
@@ -55,7 +62,60 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun wind(r: RollEntity) = viewModelScope.launch { repo.wind(r.id) }
 
-    fun rawFileFor(r: RollEntity): File = repo.rawFileFor(r.id, r.shotCount + 1)
+    fun rawFileFor(r: RollEntity): File = repo.rawFileFor(r)
+
+    /* ---- Sgancio del rullino ---- */
+
+    fun shelve(r: RollEntity) = viewModelScope.launch { repo.shelve(r.id); say("Rullino messo da parte: lo trovi in Rullini") }
+
+    fun reload(r: RollEntity, onDone: () -> Unit) = viewModelScope.launch {
+        runCatching { repo.reloadRoll(r.id) }.onSuccess { onDone() }.onFailure { say(it.message ?: "Non riesco a ricaricarlo") }
+    }
+
+    fun rewind(r: RollEntity, frames: Int?) = viewModelScope.launch {
+        repo.rewind(r.id, frames)
+        say(if (frames == null) "Riavvolto fino all'inizio: i prossimi scatti si sovrappongono" else "Riavvolto di $frames: i prossimi scatti si sovrappongono")
+    }
+
+    /** Sviluppa subito con le pose fatte (anche da un rullino messo da parte). */
+    fun developNow(r: RollEntity) = app.appScope.launch {
+        runCatching {
+            repo.finishNow(r.id)
+            developer.develop(r.id)
+        }.onFailure { say(it.message ?: "Sviluppo non riuscito") }
+    }
+
+    fun deleteRoll(r: RollEntity, onDone: () -> Unit = {}) = viewModelScope.launch {
+        runCatching { repo.deleteRoll(r.id) }
+            .onSuccess { askGalleryConfirm(it); say("Rullino eliminato"); onDone() }
+            .onFailure { say(it.message ?: "Non riesco a eliminarlo") }
+    }
+
+    /* ---- Tavolo luminoso ---- */
+
+    fun print(r: RollEntity, frames: List<FrameEntity>) = viewModelScope.launch {
+        var n = 0
+        for (f in frames) {
+            if (f.printUri != null) continue
+            runCatching { repo.print(r, f) }.onSuccess { n++ }.onFailure { say(it.message ?: "Stampa non riuscita") }
+        }
+        if (n > 0) say(if (n == 1) "Stampa pronta in galleria" else "$n stampe pronte in galleria")
+    }
+
+    fun cutKeeping(r: RollEntity, keep: Set<Int>) = viewModelScope.launch {
+        runCatching { repo.cutKeeping(r.id, keep) }
+            .onSuccess { askGalleryConfirm(it); say("Negativi tagliati: tenuti ${keep.size}") }
+            .onFailure { say(it.message ?: "Taglio non riuscito") }
+    }
+
+    private fun askGalleryConfirm(uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        if (Build.VERSION.SDK_INT >= 30) {
+            galleryDeleteRequest.value = MediaStore.createDeleteRequest(app.contentResolver, uris).intentSender
+        } else {
+            say("Alcune stampe vanno cancellate a mano dalla galleria")
+        }
+    }
 
     fun recordShot(rollId: Long, file: File) = app.appScope.launch { repo.recordShot(rollId, file) }
 
@@ -73,12 +133,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun deleteEmulsion(e: EmulsionEntity) = viewModelScope.launch {
-        if (activeRoll.value?.emulsionId == e.id) {
-            say("Questa emulsione è nel rullino in macchina")
-            return@launch
-        }
-        repo.deleteEmulsion(e)
-        say("«${e.name}» eliminata")
+        runCatching { repo.deleteEmulsion(e) }
+            .onSuccess { say("«${e.name}» eliminata") }
+            .onFailure { say(it.message ?: "Non riesco a eliminarla") }
     }
 
     fun refreshStore() {

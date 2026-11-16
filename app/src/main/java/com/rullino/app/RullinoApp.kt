@@ -46,6 +46,6 @@ class RullinoApp : Application() {
     }
 
     private companion object {
-        const val BUNDLED_VERSION = 1
+        const val BUNDLED_VERSION = 2
     }
 }
