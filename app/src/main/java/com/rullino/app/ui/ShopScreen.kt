@@ -66,7 +66,6 @@ fun ShopScreen(vm: AppViewModel) {
     val now by produceState(System.currentTimeMillis()) { while (true) { delay(30_000); value = System.currentTimeMillis() } }
 
     val dailyAvailable = lastDaily != vm.shop.today()
-    val daily = vm.shop.dailyEmulsion(emulsions)
     val toDeliver = rolls.filter { it.state == RollState.FINISHED }
     val atLab = rolls.filter { (it.state == RollState.DEVELOPING || it.state == RollState.DEVELOPED) && !it.pickedUp }
     fun ready(r: RollEntity) = r.state == RollState.DEVELOPED && ((dev && skip) || (r.readyAt ?: 0L) <= now)
@@ -108,19 +107,11 @@ fun ShopScreen(vm: AppViewModel) {
 
             item {
                 ShopPanel("Rullino del giorno") {
-                    if (daily == null) {
-                        Text("Nessuna emulsione installata.", color = Palette.Muted)
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Column(Modifier.weight(1f)) {
-                                Text(daily.name, color = Palette.Ink, fontWeight = FontWeight.SemiBold)
-                                Text("ISO ${daily.iso} · gratis, uno al giorno", color = Palette.Muted, fontSize = 12.sp)
-                            }
-                            Button(enabled = dailyAvailable, onClick = { vm.claimDaily(emulsions) }) {
-                                Text(if (dailyAvailable) "Ritira" else "Domani")
-                            }
-                        }
-                    }
+                    Text(
+                        if (dailyAvailable) "Oggi un rullino a tua scelta è gratis: prendilo dallo scaffale qui sotto."
+                        else "Il rullino gratis di oggi l'hai già preso. Domani te ne aspetta un altro.",
+                        color = if (dailyAvailable) Palette.Ink else Palette.Muted, fontSize = 13.sp,
+                    )
                 }
             }
 
@@ -142,7 +133,15 @@ fun ShopScreen(vm: AppViewModel) {
             item {
                 ShopPanel("Scaffale · ${Shop.ROLL_PRICE} gettoni al rullino") {
                     if (emulsions.isEmpty()) Text("Lo scaffale è vuoto.", color = Palette.Muted)
-                    emulsions.forEach { e -> ShelfRow(e, inventory[e.id] ?: 0, canAfford = coins >= Shop.ROLL_PRICE) { vm.buy(e) } }
+                    emulsions.forEach { e ->
+                        ShelfRow(
+                            e, inventory[e.id] ?: 0,
+                            canAfford = coins >= Shop.ROLL_PRICE,
+                            freeToday = dailyAvailable,
+                            onFree = { vm.claimDaily(e) },
+                            onBuy = { vm.buy(e) },
+                        )
+                    }
                     Text(
                         "I gettoni si vinceranno con i concorsi fotografici. Per ora: rullino del giorno.",
                         color = Palette.Muted, fontSize = 11.sp,
@@ -213,12 +212,13 @@ private fun LabRow(r: RollEntity, status: String, action: @Composable () -> Unit
 }
 
 @Composable
-private fun ShelfRow(e: EmulsionEntity, owned: Int, canAfford: Boolean, onBuy: () -> Unit) {
+private fun ShelfRow(e: EmulsionEntity, owned: Int, canAfford: Boolean, freeToday: Boolean, onFree: () -> Unit, onBuy: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(Modifier.weight(1f)) {
             Text(e.name, color = Palette.Ink)
             Text("ISO ${e.iso} · ne hai $owned", color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
         }
+        if (freeToday) Button(onClick = onFree) { Text("Gratis oggi") }
         OutlinedButton(enabled = canAfford, onClick = onBuy) { Text("Compra") }
     }
 }

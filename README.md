@@ -31,8 +31,7 @@ Requisiti: Android 10 (API 29) o più recente, fotocamera posteriore.
   Si stampa una posa o una selezione: solo le stampe vanno in *Immagini/Rullino/<emulsione data #rullino>*.
 - **Taglio dei negativi**: tieni le pose scelte, il resto (con le eventuali stampe) viene eliminato.
 - La grana usa un seme diverso per ogni posa, come su pellicola vera.
-- **Negozio** (Foto Lab anni '80): il negoziante ti dà il **rullino del giorno** (gratis, uno al giorno, l'emulsione
-  ruota), vende rullini a **gettoni** (valuta interna, in futuro si vinceranno con i concorsi) e gestisce il **laboratorio**:
+- **Negozio** (Foto Lab anni '80): il negoziante ti regala il **rullino del giorno** (uno al giorno, a scelta tra tutte le emulsioni), vende rullini a **gettoni** (valuta interna, in futuro si vinceranno con i concorsi) e gestisce il **laboratorio**:
   consegni i rullini riavvolti, ti dice a che ora tornare, e ritiri i negativi.
 - **Magazzino**: caricare un rullino in macchina ne consuma uno. Un rullino caricato e mai usato torna in magazzino.
 - **Il tuo negoziante**: metti il disegno in `app/src/main/assets/shop/negoziante.png` e sostituisce il segnaposto

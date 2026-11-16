@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
@@ -68,7 +72,14 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         // In orizzontale la navigazione sta di lato, come una fascia del corpo macchina.
-        Row(Modifier.fillMaxSize().padding(padding)) {
+        Row(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                // Tiene il menù lontano dal foro della fotocamera e dagli angoli arrotondati dello schermo.
+                .windowInsetsPadding(WindowInsets.displayCutout)
+                .padding(horizontal = 8.dp),
+        ) {
             NavigationRail(containerColor = Palette.Plate) {
                 Spacer(Modifier.weight(1f))
                 AppTab.entries.forEach { t ->

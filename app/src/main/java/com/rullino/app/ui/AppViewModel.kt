@@ -116,12 +116,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         else shopkeeperLine.value = "Non è ancora pronto, abbi pazienza."
     }
 
-    fun claimDaily(installed: List<EmulsionEntity>) = viewModelScope.launch {
+    /** Ogni giorno un rullino a scelta è gratis. */
+    fun claimDaily(e: EmulsionEntity) = viewModelScope.launch {
         if (!shop.dailyAvailable()) { shopkeeperLine.value = "Il rullino di oggi l'hai già preso. Torna domani!"; return@launch }
-        val e = shop.dailyEmulsion(installed) ?: run { shopkeeperLine.value = "Oggi lo scaffale è vuoto…"; return@launch }
         repo.addToInventory(e.id, 1)
         shop.markDailyClaimed()
-        shopkeeperLine.value = "Ecco il rullino di oggi: una ${e.name}. Trattalo bene, ogni posa conta."
+        shopkeeperLine.value = "Una ${e.name}, offre la casa. Trattala bene: ogni posa conta."
     }
 
     fun buy(e: EmulsionEntity) = viewModelScope.launch {
