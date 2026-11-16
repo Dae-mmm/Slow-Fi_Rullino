@@ -96,7 +96,10 @@ fun Modifier.leatherette(): Modifier = drawBehind {
 /* ------------------------------------------------------------------ */
 
 /** Corsa della leva in gradi: parte puntata a sinistra e ruota verso chi guarda. */
-private const val LEVER_DEG = 140f
+private const val LEVER_DEG = 120f
+
+/** Il pomello si muove più del dito: basta una passata corta per caricare. */
+private const val LEVER_GAIN = 1.6f
 
 /**
  * La leva è imperniata a destra e il braccio punta a sinistra. Trascinando il pomello
@@ -118,8 +121,8 @@ fun AdvanceLever(
     val tipX = remember { mutableFloatStateOf(Float.NaN) }
 
     fun geometry(w: Float, h: Float): Triple<Float, Float, Float> {
-        val pivotX = w * 0.60f
-        val armLen = w * 0.50f
+        val pivotX = w * 0.72f
+        val armLen = w * 0.44f
         val pivotY = h * 0.58f
         return Triple(pivotX, armLen, pivotY)
     }
@@ -158,7 +161,7 @@ fun AdvanceLever(
                     change.consume()
                     val (pivotX, armLen, _) = geometry(size.width.toFloat(), size.height.toFloat())
                     val minCos = cos(Math.toRadians(LEVER_DEG.toDouble())).toFloat()
-                    val x = (tipX.floatValue + dx).coerceIn(pivotX - armLen, pivotX - armLen * minCos)
+                    val x = (tipX.floatValue + dx * LEVER_GAIN).coerceIn(pivotX - armLen, pivotX - armLen * minCos)
                     tipX.floatValue = x
                     val theta = acos(((pivotX - x) / armLen).coerceIn(minCos, 1f))
                     val next = (Math.toDegrees(theta.toDouble()).toFloat() / LEVER_DEG).coerceIn(0f, 1f)

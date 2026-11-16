@@ -210,6 +210,8 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                 onAdvanced = { r?.let { vm.wind(it) } },
                 onProgress = { windProgress = it },
             )
+            // Margine a destra: il dito non deve arrivare al bordo dello schermo per finire la corsa.
+            Spacer(Modifier.width(48.dp))
         }
 
         // ---- Corpo: similpelle, finestrella, mirino ----
