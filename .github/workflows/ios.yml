@@ -13,6 +13,10 @@ jobs:
       - uses: actions/checkout@v5
       - name: Xcode
         run: xcodebuild -version
+      - name: Shader Metal (compilato a runtime dall'app, qui solo verificato)
+        run: |
+          python3 -c "import re;s=open('ios/Rullino/FilmRenderer.swift').read();open('film.metal','w').write(s.split('static let metal = \"\"\"')[1].split('\"\"\"')[0])"
+          xcrun -sdk iphoneos metal -c film.metal -o film.air
       - name: Build (senza firma)
         run: |
           xcodebuild -project ios/Rullino.xcodeproj -target Rullino -sdk iphoneos \
