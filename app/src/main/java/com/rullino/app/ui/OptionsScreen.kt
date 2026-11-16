@@ -106,24 +106,30 @@ fun OptionsScreen(vm: AppViewModel) {
         }
 
         // Come su Android: 7 tocchi sulla versione attivano la modalità sviluppatore.
-        Text(
-            "Rullino · versione ${BuildConfig.VERSION_NAME}",
-            color = Palette.Muted,
-            fontFamily = Mono,
-            fontSize = 12.sp,
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .clickable {
-                    if (devMode) return@clickable
-                    taps++
-                    view.tick()
-                    when {
-                        taps >= 7 -> { settings.setDeveloperMode(true); view.confirm(); vm.say("Ora sei uno sviluppatore") }
-                        taps >= 4 -> vm.say("Ancora ${7 - taps} tocchi")
+        // Il conto alla rovescia sta accanto alla scritta, così niente la copre mentre tocchi.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                "Rullino · versione ${BuildConfig.VERSION_NAME}",
+                color = Palette.Muted,
+                fontFamily = Mono,
+                fontSize = 12.sp,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable {
+                        if (devMode) return@clickable
+                        taps++
+                        view.tick()
+                        if (taps >= 7) { settings.setDeveloperMode(true); view.confirm() }
                     }
-                }
-                .padding(6.dp),
-        )
+                    .padding(horizontal = 6.dp, vertical = 10.dp),
+            )
+            val hint = when {
+                devMode -> "Sei uno sviluppatore"
+                taps >= 3 -> "Ancora ${7 - taps}"
+                else -> null
+            }
+            if (hint != null) Text(hint, color = Palette.Safelight, fontFamily = Mono, fontSize = 12.sp)
+        }
     }
 }
 
