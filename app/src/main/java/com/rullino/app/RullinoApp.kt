@@ -32,11 +32,25 @@ class RullinoApp : Application() {
         shop = Shop(this)
         developer = Developer(this, repo, settings)
         appScope.launch {
+            cleanOrphanRolls(db)
             installBundledEmulsions()
             // Riprende uno sviluppo interrotto (app chiusa a metà).
             for (roll in db.rolls().developing()) {
                 runCatching { developer.develop(roll.id) }.onFailure { Log.e("Rullino", "Sviluppo ripreso fallito", it) }
             }
+        }
+    }
+
+    /**
+     * Toglie le cartelle dei rullini che il database non conosce più
+     * (per esempio dopo un aggiornamento che ha azzerato i dati).
+     */
+    private suspend fun cleanOrphanRolls(db: AppDb) {
+        val dir = java.io.File(filesDir, "rolls")
+        val known = db.rolls().allIds().toSet()
+        dir.listFiles()?.forEach { f ->
+            val id = f.name.toLongOrNull()
+            if (id == null || id !in known) f.deleteRecursively()
         }
     }
 

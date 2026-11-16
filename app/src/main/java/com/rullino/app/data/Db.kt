@@ -155,6 +155,9 @@ interface RollDao {
     @Query("SELECT * FROM rolls WHERE id = :id")
     suspend fun get(id: Long): RollEntity?
 
+    @Query("SELECT id FROM rolls")
+    suspend fun allIds(): List<Long>
+
     @Query("SELECT * FROM rolls WHERE state = 'DEVELOPING'")
     suspend fun developing(): List<RollEntity>
 
