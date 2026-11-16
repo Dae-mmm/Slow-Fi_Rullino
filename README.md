@@ -14,6 +14,15 @@ Le emulsioni si creano con **Camera Oscura** (l'editor web) e si esportano come 
 
 Requisiti: Android 10 (API 29) o più recente, fotocamera posteriore.
 
+## Provarla dal telefono, senza PC
+
+A ogni modifica su `main`, GitHub compila l'app e pubblica l'APK nella pagina
+**Releases** del repository (`Rullino-build-N.apk`). Dal telefono: apri Releases,
+scarica l'ultima build, installala (consenti l'installazione da browser la prima volta).
+
+La chiave di firma di prova è in `keystore/` ed è la stessa usata da Android Studio,
+quindi le build di GitHub e quelle del PC si installano una sopra l'altra.
+
 ## Come funziona
 
 | Cartella | Cosa c'è |

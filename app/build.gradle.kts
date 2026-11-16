@@ -27,6 +27,17 @@ android {
         buildConfigField("String", "SUPABASE_KEY", "\"${localProps.getProperty("supabase.key", "")}\"")
     }
 
+    // Stessa chiave per Android Studio e per GitHub: così l'APK scaricato da Releases
+    // si installa sopra quella compilata dal PC e viceversa. È solo una chiave di prova.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("keystore/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
