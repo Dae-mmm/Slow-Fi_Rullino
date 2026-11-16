@@ -48,8 +48,12 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
 
     LaunchedEffect(importUri) {
         if (importUri != null) {
-            vm.importFrom(importUri)
-            tab = AppTab.EMULSIONS
+            if (vm.settings.developerMode.value) {
+                vm.importFrom(importUri)
+                tab = AppTab.EMULSIONS
+            } else {
+                vm.say("Per importare file .emulsion attiva la modalità sviluppatore (Opzioni)")
+            }
             onImportHandled()
         }
     }

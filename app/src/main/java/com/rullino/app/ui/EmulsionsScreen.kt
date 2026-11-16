@@ -54,6 +54,10 @@ import coil.compose.AsyncImage
 import com.rullino.app.data.CatalogItem
 import com.rullino.app.data.EmulsionEntity
 import com.rullino.app.data.RollState
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.rullino.app.data.Shop
 import java.io.File
 import java.text.NumberFormat
 import java.util.Locale
@@ -75,6 +79,7 @@ fun EmulsionsScreen(vm: AppViewModel, onLoaded: () -> Unit) {
 private fun MyEmulsions(vm: AppViewModel, onLoaded: () -> Unit) {
     val list by vm.emulsions.collectAsState()
     val inventory by vm.inventory.collectAsState()
+    val devMode by vm.settings.developerMode.collectAsState()
     var selected by remember { mutableStateOf<EmulsionEntity?>(null) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) vm.importFrom(uri)
@@ -83,11 +88,11 @@ private fun MyEmulsions(vm: AppViewModel, onLoaded: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("${list.size} emulsioni", color = Palette.Muted, modifier = Modifier.weight(1f))
-            OutlinedButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text("Importa .emulsion") }
+            if (devMode) OutlinedButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text("Importa .emulsion") }
         }
         if (list.isEmpty()) {
             Text(
-                "Nessuna emulsione installata. Importane una creata con Camera Oscura o scaricala dal negozio.",
+                "Nessuna emulsione installata.",
                 color = Palette.Muted,
                 modifier = Modifier.padding(16.dp),
             )
@@ -160,59 +165,82 @@ private fun Tag(text: String) {
 private fun EmulsionDetail(e: EmulsionEntity, vm: AppViewModel, onLoaded: () -> Unit, onDeleted: () -> Unit) {
     val active by vm.activeRoll.collectAsState()
     val inventory by vm.inventory.collectAsState()
+    val coins by vm.shop.coins.collectAsState()
+    val lastDaily by vm.shop.lastDaily.collectAsState()
     val owned = inventory[e.id] ?: 0
+    val freeToday = lastDaily != vm.shop.today()
     var exposures by remember(e.id) { mutableIntStateOf(if (e.exposures == 24) 24 else 36) }
-    val busyRoll = active?.let { it.shotCount > 0 || it.state != RollState.LOADED } == true
+    val busyRoll = active?.let { it.shotCount > 0 } == true
+    var confirmDelete by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            BoxArt(e, Modifier.size(96.dp))
-            
-            Column(Modifier.weight(1f)) {
-                Text(e.name, color = Palette.Ink, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-                Text("ISO ${e.iso} · ${if (e.isBw) "bianco e nero" else "colore"}", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
-                if (e.note.isNotBlank()) Text(e.note, color = Palette.Ink, fontSize = 13.sp)
-            }
-        }
-
-        val demos = e.demos().map { File(e.dir, it) }.filter { it.exists() }
-        if (demos.isNotEmpty()) {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(demos) { f ->
-                    AsyncImage(
-                        model = f,
-                        contentDescription = "Foto di esempio",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.height(150.dp).aspectRatio(1.5f).clip(RoundedCornerShape(6.dp)),
-                    )
+    // In orizzontale: a sinistra l'emulsione, a destra le azioni. Tutto scorre se lo schermo è basso.
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 28.dp),
+        horizontalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                BoxArt(e, Modifier.size(96.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(e.name, color = Palette.Ink, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    Text("ISO ${e.iso} · ${if (e.isBw) "bianco e nero" else "colore"}", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
+                    if (e.note.isNotBlank()) Text(e.note, color = Palette.Ink, fontSize = 13.sp)
                 }
             }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Pose", color = Palette.Muted, modifier = Modifier.padding(end = 4.dp))
-            listOf(24, 36).forEach { n ->
-                FilterChip(selected = exposures == n, onClick = { exposures = n }, label = { Text("$n") })
+            val demos = e.demos().map { File(e.dir, it) }.filter { it.exists() }
+            if (demos.isNotEmpty()) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(demos) { f ->
+                        AsyncImage(
+                            model = f,
+                            contentDescription = "Foto di esempio",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.height(120.dp).aspectRatio(1.5f).clip(RoundedCornerShape(6.dp)),
+                        )
+                    }
+                }
             }
+            TextButton(onClick = {
+                if (confirmDelete) { vm.deleteEmulsion(e); onDeleted() } else confirmDelete = true
+            }) { Text(if (confirmDelete) "Tocca di nuovo per eliminare" else "Elimina emulsione", color = Color(0xFFFF8A80)) }
         }
 
-        Text(
-            if (owned > 0) "In magazzino: $owned rullini" else "Nessun rullino in magazzino: prendilo al negozio",
-            color = if (owned > 0) Palette.Ink else Palette.Safelight, fontSize = 13.sp,
-        )
-        if (busyRoll) {
-            Text("C'è già un rullino in macchina: finiscilo e sviluppalo prima di caricarne un altro.", color = Palette.Muted, fontSize = 13.sp)
-        }
-        Button(
-            enabled = !busyRoll && owned > 0,
-            onClick = { vm.loadRoll(e, exposures, onLoaded) },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("Carica un rullino da $exposures") }
+        Column(Modifier.width(300.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                if (owned > 0) "In magazzino: $owned ${if (owned == 1) "rullino" else "rullini"}" else "Nessun rullino in magazzino",
+                color = if (owned > 0) Palette.Ink else Palette.Safelight, fontSize = 14.sp,
+            )
+            if (owned == 0) {
+                // Si può rimediare subito, senza passare dal negozio.
+                if (freeToday) {
+                    Button(onClick = { vm.claimDaily(e) }, modifier = Modifier.fillMaxWidth()) { Text("Prendilo gratis (rullino di oggi)") }
+                }
+                OutlinedButton(
+                    enabled = coins >= Shop.ROLL_PRICE,
+                    onClick = { vm.buy(e) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Compra per ${Shop.ROLL_PRICE} gettoni (ne hai $coins)") }
+            }
 
-        var confirmDelete by remember { mutableStateOf(false) }
-        TextButton(onClick = {
-            if (confirmDelete) { vm.deleteEmulsion(e); onDeleted() } else confirmDelete = true
-        }) { Text(if (confirmDelete) "Tocca di nuovo per eliminare" else "Elimina emulsione", color = Color(0xFFFF8A80)) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Pose", color = Palette.Muted, modifier = Modifier.padding(end = 4.dp))
+                listOf(24, 36).forEach { n ->
+                    FilterChip(selected = exposures == n, onClick = { exposures = n }, label = { Text("$n") })
+                }
+            }
+            if (busyRoll) {
+                Text("C'è già un rullino in macchina: finiscilo o sgancialo dal dorso.", color = Palette.Muted, fontSize = 13.sp)
+            }
+            Button(
+                enabled = !busyRoll && owned > 0,
+                onClick = { vm.loadRoll(e, exposures, onLoaded) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Carica il rullino in macchina") }
+        }
     }
 }
 
