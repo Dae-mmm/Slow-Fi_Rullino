@@ -1,5 +1,8 @@
 package com.rullino.app.ui
 
+import kotlinx.coroutines.delay
+import com.rullino.app.R
+import androidx.compose.ui.res.stringResource
 import android.Manifest
 import android.content.pm.PackageManager
 import android.media.MediaActionSound
@@ -127,6 +130,13 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
     val canWind = r?.canWind == true
     val armed = loaded && r != null && r.wound
 
+    // Dopo ogni scatto compare per qualche secondo una scorciatoia per la liberatoria.
+    var lastShot by remember { mutableStateOf<Int?>(null) }
+    var lastShotAt by remember { mutableStateOf(0L) }
+    LaunchedEffect(lastShotAt) {
+        if (lastShotAt > 0) { delay(8000); lastShot = null }
+    }
+
     fun shoot() {
         val current = r ?: return
         val cap = capture
@@ -142,11 +152,13 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
         cap.takePicture(options, ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                 vm.recordShot(current.id, file)
+                lastShot = current.cursor
+                lastShotAt = System.currentTimeMillis()
                 busy = false
             }
 
             override fun onError(exception: ImageCaptureException) {
-                vm.say("Lo scatto non è riuscito, riprova")
+                vm.say(R.string.shot_failed)
                 busy = false
             }
         })
@@ -154,7 +166,7 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
 
     var showBack by remember { mutableStateOf(false) }
     var releaseFrame by remember { mutableStateOf<Int?>(null) }
-    releaseFrame?.let { f -> r?.let { roll -> ReleasesDialog(vm, roll, f, onClose = { releaseFrame = null }) } }
+    releaseFrame?.let { f -> r?.let { roll -> ReleasesDialog(vm, roll, f, onClose = { releaseFrame = null }, maxFrame = roll.shotCount) } }
     val doubleOnNext by remember(r?.id, r?.cursor) {
         if (r == null) kotlinx.coroutines.flow.flowOf(0) else vm.exposuresOnFrame(r.id, r.cursor)
     }.collectAsState(initial = 0)
@@ -215,7 +227,7 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
             )
             Column(Modifier.padding(start = 14.dp, bottom = 12.dp)) {
                 Engraving("ISO ${r?.iso ?: "—"}", size = 10)
-                Engraving(r?.emulsionName?.uppercase() ?: "VUOTA", size = 10)
+                Engraving(r?.emulsionName?.uppercase() ?: stringResource(R.string.engr_empty), size = 10)
             }
             Spacer(Modifier.weight(1f))
             Engraving("RULLINO", modifier = Modifier.padding(bottom = 22.dp), size = 15)
@@ -235,32 +247,32 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
         // ---- Corpo: similpelle, finestrella, mirino ----
         Row(Modifier.fillMaxWidth().weight(1f).leatherette().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(
-                Modifier.width(150.dp).fillMaxHeight(),
+                Modifier.width(150.dp).fillMaxHeight().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 BackWindow(emulsion, r)
                 Text(
                     when {
-                        r == null -> "Nessun rullino"
-                        releaseOn -> "Riavvolgimento ${unloadTurns * 100 / turnsNeeded}%\ngira la manovella"
-                        r.isAtEnd -> "Finito · premi R\ne gira la manovella"
-                        r.cursor <= r.shotCount -> "Posa ${r.cursor} già esposta\n${r.shotCount} di ${r.exposures} pose"
-                        else -> "${r.shotCount} di ${r.exposures} pose"
+                        r == null -> stringResource(R.string.cam_no_roll)
+                        releaseOn -> stringResource(R.string.cam_rewinding, unloadTurns * 100 / turnsNeeded)
+                        r.isAtEnd -> stringResource(R.string.cam_at_end)
+                        r.cursor <= r.shotCount -> stringResource(R.string.cam_frame_exposed, r.cursor, r.shotCount, r.exposures)
+                        else -> stringResource(R.string.cam_count, r.shotCount, r.exposures)
                     },
                     color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp, textAlign = TextAlign.Center,
                 )
                 if (r != null && r.state == RollState.LOADED && r.shotCount == 0) {
-                    TextButton(onClick = { vm.unloadEmptyRoll(r) }) { Text("Cambia rullino", color = Palette.Muted, fontSize = 12.sp) }
+                    TextButton(onClick = { vm.unloadEmptyRoll(r) }) { Text(stringResource(R.string.cam_change_roll), color = Palette.Muted, fontSize = 12.sp) }
                 } else if (r != null && r.state == RollState.LOADED) {
-                    OutlinedButton(onClick = { showBack = true }) { Text("Apri il dorso", fontSize = 12.sp) }
-                    if (r.cursor > 1) {
-                        TextButton(onClick = { releaseFrame = r.cursor - 1 }) {
-                            Text("Liberatoria posa ${r.cursor - 1}", color = Palette.Muted, fontSize = 12.sp)
+                    OutlinedButton(onClick = { showBack = true }) { Text(stringResource(R.string.cam_open_back), fontSize = 12.sp) }
+                    if (r.shotCount > 0) {
+                        OutlinedButton(onClick = { releaseFrame = (lastShot ?: (r.cursor - 1)).coerceIn(1, r.shotCount) }) {
+                            Text(stringResource(R.string.cam_releases), fontSize = 12.sp)
                         }
                     }
                 } else if (r == null) {
-                    TextButton(onClick = onOpenRolls) { Text("Rullini sviluppati", color = Palette.Muted, fontSize = 12.sp) }
+                    TextButton(onClick = onOpenRolls) { Text(stringResource(R.string.cam_developed_rolls), color = Palette.Muted, fontSize = 12.sp) }
                 }
             }
 
@@ -295,6 +307,20 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                                 .padding(horizontal = 8.dp, vertical = 3.dp),
                         )
                     }
+                    val chipFrame = lastShot
+                    if (chipFrame != null && r != null && r.state == RollState.LOADED) {
+                        Text(
+                            stringResource(R.string.chip_release, chipFrame),
+                            color = Palette.Ink, fontSize = 13.sp,
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(10.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color(0xCC000000))
+                                .clickable { releaseFrame = chipFrame; lastShot = null }
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
                     Box(Modifier.fillMaxSize().alpha(blackout.value).background(Color.Black))
                 }
                 Spacer(Modifier.height(8.dp))
@@ -323,17 +349,17 @@ private fun BoxScope.ViewfinderContent(
     doubleExposure: Boolean,
 ) {
     when {
-        !hasPermission -> CenterNote("Serve il permesso della fotocamera per scattare.") {
-            OutlinedButton(onClick = onAskPermission) { Text("Concedi") }
+        !hasPermission -> CenterNote(stringResource(R.string.cam_need_permission)) {
+            OutlinedButton(onClick = onAskPermission) { Text(stringResource(R.string.grant)) }
         }
-        r == null -> CenterNote("La macchina è vuota.") {
-            Button(onClick = onPickEmulsion) { Text("Scegli un rullino") }
+        r == null -> CenterNote(stringResource(R.string.cam_empty)) {
+            Button(onClick = onPickEmulsion) { Text(stringResource(R.string.choose_roll)) }
         }
-        r.isAtEnd -> CenterNote("Rullino finito: ${r.exposures} pose.\nPremi R e gira la manovella per riavvolgerlo.") {}
-        r.state == RollState.DEVELOPING -> CenterNote("Sviluppo in corso…") {
+        r.isAtEnd -> CenterNote(stringResource(R.string.cam_finished_note, r.exposures)) {}
+        r.state == RollState.DEVELOPING -> CenterNote(stringResource(R.string.developing)) {
             if (progress != null && progress.rollId == r.id && progress.total > 0) {
                 LinearProgressIndicator(progress = { progress.done / progress.total.toFloat() }, modifier = Modifier.width(200.dp))
-                Text("${progress.done} di ${progress.total}", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
+                Text(stringResource(R.string.x_of_y, progress.done, progress.total), color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
             } else {
                 LinearProgressIndicator(modifier = Modifier.width(200.dp))
             }
@@ -342,7 +368,7 @@ private fun BoxScope.ViewfinderContent(
             Viewfinder(onReady = onReady)
             if (doubleExposure) {
                 Text(
-                    "DOPPIA ESPOSIZIONE · POSA ${r.cursor}",
+                    stringResource(R.string.double_exposure_badge, r.cursor),
                     color = Palette.Safelight,
                     fontFamily = Mono,
                     fontSize = 11.sp,
@@ -355,7 +381,7 @@ private fun BoxScope.ViewfinderContent(
             }
             if (!r.wound) {
                 Text(
-                    if (r.shotCount == 0) "Carica la leva per portare avanti la pellicola" else "Carica la leva",
+                    if (r.shotCount == 0) stringResource(R.string.wind_first) else stringResource(R.string.wind),
                     color = Palette.Ink,
                     fontSize = 13.sp,
                     modifier = Modifier
@@ -381,25 +407,23 @@ private fun BackDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Palette.Plate,
-        title = { Text("${roll.emulsionName} · ${roll.shotCount} di ${roll.exposures} pose") },
+        title = { Text(roll.emulsionName + " · " + stringResource(R.string.cam_count, roll.shotCount, roll.exposures)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = onShelve) { Text("Metti da parte per finirlo più avanti") }
+                OutlinedButton(onClick = onShelve) { Text(stringResource(R.string.shelve_long)) }
                 Text(
-                    "Per riavvolgere usa la manovella in alto a sinistra:\n" +
-                        "• senza R, ogni giro torna indietro di una posa (doppia esposizione);\n" +
-                        "• con R acceso, riavvolgi tutto e il rullino esce dalla macchina.",
+                    stringResource(R.string.back_help),
                     color = Palette.Muted, fontSize = 12.sp,
                 )
                 TextButton(onClick = { if (confirmDelete) onDelete() else confirmDelete = true }) {
                     Text(
-                        if (confirmDelete) "Tocca di nuovo: elimini tutte le pose" else "Elimina il rullino",
+                        if (confirmDelete) stringResource(R.string.delete_roll_confirm) else stringResource(R.string.delete_roll),
                         color = Color(0xFFFF8A80),
                     )
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Chiudi il dorso") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close_back)) } },
     )
 }
 
@@ -413,14 +437,14 @@ private fun RollPickerDialog(vm: AppViewModel, onDismiss: () -> Unit, onGoShop: 
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Palette.Plate,
-        title = { Text("Scegli un rullino") },
+        title = { Text(stringResource(R.string.choose_roll)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
                 if (owned.isEmpty()) {
-                    Text("Non hai rullini in magazzino. Il negozio ne regala uno al giorno.", color = Palette.Ink)
+                    Text(stringResource(R.string.picker_none), color = Palette.Ink)
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Pose", color = Palette.Muted)
+                        Text(stringResource(R.string.exposures_label), color = Palette.Muted)
                         listOf(24, 36).forEach { n ->
                             FilterChip(selected = exposures == n, onClick = { exposures = n }, label = { Text("$n") })
                         }
@@ -432,16 +456,16 @@ private fun RollPickerDialog(vm: AppViewModel, onDismiss: () -> Unit, onGoShop: 
                         ) {
                             Column(Modifier.weight(1f)) {
                                 Text(e.name, color = Palette.Ink)
-                                Text("ISO ${e.iso} · ne hai ${inventory[e.id]}", color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
+                                Text(stringResource(R.string.iso_owned, e.iso, inventory[e.id] ?: 0), color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
                             }
-                            Button(onClick = { vm.loadRoll(e, exposures, onDismiss) }) { Text("Carica") }
+                            Button(onClick = { vm.loadRoll(e, exposures, onDismiss) }) { Text(stringResource(R.string.load)) }
                         }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onGoShop) { Text(if (owned.isEmpty()) "Vai al negozio" else "Compra altri rullini") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Chiudi") } },
+        confirmButton = { TextButton(onClick = onGoShop) { Text(if (owned.isEmpty()) stringResource(R.string.go_shop) else stringResource(R.string.buy_more)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
     )
 }
 
@@ -466,10 +490,10 @@ private fun BackWindow(emulsion: EmulsionEntity?, roll: RollEntity?) {
     ) {
         val canister = emulsion?.canisterFile?.let { File(emulsion.dir, it) }
         when {
-            roll == null -> Text("vuota", color = Palette.Muted, fontSize = 12.sp, fontFamily = Mono)
+            roll == null -> Text(stringResource(R.string.window_empty), color = Palette.Muted, fontSize = 12.sp, fontFamily = Mono)
             canister != null && canister.exists() -> AsyncImage(
                 model = canister,
-                contentDescription = "Rullino ${roll.emulsionName}",
+                contentDescription = stringResource(R.string.roll_cd, roll.emulsionName),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )

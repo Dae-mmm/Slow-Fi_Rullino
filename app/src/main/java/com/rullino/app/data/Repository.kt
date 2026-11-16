@@ -1,5 +1,6 @@
 package com.rullino.app.data
 
+import com.rullino.app.R
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
@@ -50,7 +51,7 @@ class Repository(private val context: Context, val db: AppDb) {
             if (current.shotCount == 0) {
                 db.rolls().delete(current)
                 addToInventory(current.emulsionId, 1)
-            } else throw IllegalStateException("C'è già un rullino in macchina: sgancialo prima")
+            } else throw IllegalStateException(context.getString(R.string.err_roll_in_camera))
         }
     }
 
@@ -58,7 +59,7 @@ class Repository(private val context: Context, val db: AppDb) {
     suspend fun loadRoll(e: EmulsionEntity, exposures: Int): Long = db.withTransaction {
         makeRoomInCamera()
         val have = db.inventory().get(e.id)?.count ?: 0
-        if (have <= 0) throw IllegalStateException("Non hai rullini di «${e.name}»: passa dal negozio")
+        if (have <= 0) throw IllegalStateException(context.getString(R.string.err_no_rolls_of, e.name))
         db.inventory().upsert(InventoryEntity(e.id, have - 1))
         db.rolls().insert(
             RollEntity(
@@ -154,9 +155,9 @@ class Repository(private val context: Context, val db: AppDb) {
         }
         val resolver = context.contentResolver
         val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-            ?: throw IllegalStateException("Impossibile salvare nella galleria")
+            ?: throw IllegalStateException(context.getString(R.string.err_gallery_save))
         resolver.openOutputStream(uri)?.use { out -> File(frame.developedPath).inputStream().use { it.copyTo(out) } }
-            ?: throw IllegalStateException("Impossibile scrivere la stampa")
+            ?: throw IllegalStateException(context.getString(R.string.err_print_write))
         values.clear()
         values.put(MediaStore.Images.Media.IS_PENDING, 0)
         resolver.update(uri, values, null, null)
@@ -232,7 +233,7 @@ class Repository(private val context: Context, val db: AppDb) {
     }
 
     suspend fun deleteEmulsion(e: EmulsionEntity) {
-        if (db.rolls().openWithEmulsion(e.id) > 0) throw IllegalStateException("C'è un rullino ancora da sviluppare con questa emulsione")
+        if (db.rolls().openWithEmulsion(e.id) > 0) throw IllegalStateException(context.getString(R.string.err_emulsion_in_use))
         db.emulsions().delete(e.id)
         File(e.dir).deleteRecursively()
     }

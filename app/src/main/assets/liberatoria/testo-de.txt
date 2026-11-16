@@ -1,0 +1,20 @@
+EINVERSTÄNDNISERKLÄRUNG ZUR BILDNUTZUNG
+[PLATZHALTERTEXT – durch einen von einem Anwalt geprüften Text ersetzen]
+
+Ich, {{NOME}} {{COGNOME}}, Kontakt {{CONTATTO}},
+{{TUTORE}}
+erlaube {{FOTOGRAFO}}, das Foto, auf dem ich abgebildet bin, aufgenommen am {{DATA}} in {{LUOGO}}
+(Film „{{RULLINO}}“, Bild {{POSA}}), zu verwenden für:
+
+- die Teilnahme an den Fotowettbewerben der App Rullino, bei denen das Foto nur für die Jury sichtbar ist;
+- die mögliche Ausstellung an der Pinnwand der App für eine Woche, falls das Foto gewinnt.
+
+{{USI_ESTERNI}}
+
+Die Erlaubnis wird unentgeltlich erteilt. Ich kann sie jederzeit widerrufen, indem ich der Person schreibe,
+die das Foto aufgenommen hat, oder über die App; der Widerruf wirkt nicht auf bereits erfolgte Nutzungen.
+
+Meine Daten werden von der App nur so lange gespeichert, wie es für den Wettbewerb und eine mögliche
+Ausstellung nötig ist, und danach gelöscht.
+
+Ort und Datum: {{LUOGO}}, {{DATA}}

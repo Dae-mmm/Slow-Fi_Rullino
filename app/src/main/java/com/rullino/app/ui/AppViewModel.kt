@@ -1,5 +1,8 @@
 package com.rullino.app.ui
 
+import com.rullino.app.R
+import androidx.annotation.StringRes
+import android.content.res.Resources
 import android.app.Application
 import android.content.IntentSender
 import android.net.Uri
@@ -67,11 +70,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun exposuresOnFrame(rollId: Long, frame: Int): Flow<Int> = repo.exposuresOnFrame(rollId, frame)
 
     fun say(text: String) { message.value = text }
+    fun str(@StringRes id: Int, vararg args: Any): String = app.getString(id, *args)
+    fun say(@StringRes id: Int, vararg args: Any) { message.value = str(id, *args) }
 
     fun loadRoll(e: EmulsionEntity, exposures: Int, onDone: () -> Unit) = viewModelScope.launch {
         runCatching { repo.loadRoll(e, exposures) }
             .onSuccess { onDone() }
-            .onFailure { say(it.message ?: "Non riesco a caricare il rullino") }
+            .onFailure { say(it.message ?: str(R.string.load_failed)) }
     }
 
     fun unloadEmptyRoll(r: RollEntity) = viewModelScope.launch { repo.unloadEmptyRoll(r) }
@@ -82,71 +87,49 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     /* ---- Sgancio del rullino ---- */
 
-    fun shelve(r: RollEntity) = viewModelScope.launch { repo.shelve(r.id); say("Rullino messo da parte: lo trovi in Rullini") }
+    fun shelve(r: RollEntity) = viewModelScope.launch { repo.shelve(r.id); say(R.string.shelved_msg) }
 
     fun reload(r: RollEntity, onDone: () -> Unit) = viewModelScope.launch {
-        runCatching { repo.reloadRoll(r.id) }.onSuccess { onDone() }.onFailure { say(it.message ?: "Non riesco a ricaricarlo") }
+        runCatching { repo.reloadRoll(r.id) }.onSuccess { onDone() }.onFailure { say(it.message ?: str(R.string.reload_failed)) }
     }
 
     /** Un giro di manovella: torna indietro di una posa. */
     fun rewindFrame(r: RollEntity) = viewModelScope.launch { repo.rewind(r.id, 1) }
 
-    fun rewind(r: RollEntity, frames: Int?) = viewModelScope.launch {
-        repo.rewind(r.id, frames)
-        say(if (frames == null) "Riavvolto fino all'inizio: i prossimi scatti si sovrappongono" else "Riavvolto di $frames: i prossimi scatti si sovrappongono")
-    }
-
     /** Riavvolge e toglie il rullino: va portato al negozio per lo sviluppo. */
     fun rewindOut(r: RollEntity) = viewModelScope.launch {
         repo.rewindOut(r.id)
-        say("Rullino riavvolto: portalo al negozio per svilupparlo")
+        say(R.string.rewound_out)
     }
 
     /* ---- Negozio ---- */
 
-    /** Consegna al laboratorio: lo sviluppo parte subito, i negativi saranno pronti all'ora indicata. */
-    fun deliver(r: RollEntity) = app.appScope.launch {
-        shopkeeperLine.value = "Vediamo… bel rullino! Lo metto subito in vasca."
-        runCatching { developer.develop(r.id) }
-            .onSuccess {
-                val ready = repo.db.rolls().get(r.id)?.readyAt ?: System.currentTimeMillis()
-                shopkeeperLine.value = if (settings.currentWaitMillis() == 0L) "Ecco fatto, già pronto! Puoi ritirarlo." else "Torna ${formatPickup(ready)}: sarà pronto."
-            }
-            .onFailure { shopkeeperLine.value = "Ahi, qualcosa è andato storto in vasca: ${it.message ?: "riprova"}" }
-    }
-
     /** Consegna in un colpo tutti i rullini scaricati (con almeno una posa). */
     fun deliverAll(rolls: List<RollEntity>) = app.appScope.launch {
         val list = rolls.filter { it.state == RollState.FINISHED && it.shotCount > 0 }
-        if (list.isEmpty()) { shopkeeperLine.value = "Non hai rullini da sviluppare."; return@launch }
-        shopkeeperLine.value = if (list.size == 1) "Vediamo… bel rullino! Lo metto subito in vasca." else "${list.size} rullini! Li metto subito in vasca."
+        if (list.isEmpty()) { shopkeeperLine.value = str(R.string.sk_nothing); return@launch }
+        shopkeeperLine.value = if (list.size == 1) str(R.string.sk_look) else str(R.string.sk_many, list.size)
         var last = System.currentTimeMillis()
         for (r in list) {
-            runCatching { developer.develop(r.id) }.onFailure { say(it.message ?: "Sviluppo non riuscito") }
+            runCatching { developer.develop(r.id) }.onFailure { say(it.message ?: str(R.string.develop_failed)) }
             last = maxOf(last, repo.db.rolls().get(r.id)?.readyAt ?: last)
         }
-        shopkeeperLine.value = if (settings.currentWaitMillis() == 0L) "Fatto! Te li ho già riportati in Rullini."
-        else "Te li riporto io in Rullini ${formatPickup(last)}."
+        shopkeeperLine.value = if (settings.currentWaitMillis() == 0L) str(R.string.sk_done_now)
+        else str(R.string.sk_bring_back, formatPickup(app.resources, last))
     }
 
-    fun pickUp(r: RollEntity) = viewModelScope.launch {
-        if (repo.pickUp(r.id) { settings.isReady(it) }) shopkeeperLine.value = "Ecco i tuoi negativi. Guardali bene sul tavolo luminoso!"
-        else shopkeeperLine.value = "Non è ancora pronto, abbi pazienza."
-    }
-
-    /** Ogni giorno un rullino a scelta è gratis. */
     fun claimDaily(e: EmulsionEntity) = viewModelScope.launch {
-        if (!shop.dailyAvailable()) { shopkeeperLine.value = "Il rullino di oggi l'hai già preso. Torna domani!"; return@launch }
+        if (!shop.dailyAvailable()) { shopkeeperLine.value = str(R.string.sk_daily_taken); return@launch }
         repo.addToInventory(e.id, 1)
         shop.markDailyClaimed()
-        shopkeeperLine.value = "Una ${e.name}, offre la casa. Trattala bene: ogni posa conta."
+        shopkeeperLine.value = str(R.string.sk_daily_given, e.name)
     }
 
     fun buy(e: EmulsionEntity) = viewModelScope.launch {
         if (shop.spend(com.rullino.app.data.Shop.ROLL_PRICE)) {
             repo.addToInventory(e.id, 1)
-            shopkeeperLine.value = "Una ${e.name}, ottima scelta."
-        } else shopkeeperLine.value = "Mi spiace, non hai abbastanza gettoni."
+            shopkeeperLine.value = str(R.string.sk_bought, e.name)
+        } else shopkeeperLine.value = str(R.string.sk_no_coins)
     }
 
     /* ---- Liberatorie ---- */
@@ -155,22 +138,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun saveRelease(roll: RollEntity, draft: ReleaseEntity, signature: Bitmap) = viewModelScope.launch {
         runCatching { repo.saveRelease(draft, signature) }
-            .onSuccess { say("Liberatoria salvata per la posa ${draft.frame}") }
-            .onFailure { say(it.message ?: "Non riesco a salvare la liberatoria") }
+            .onSuccess { say(R.string.release_saved, draft.frame) }
+            .onFailure { say(it.message ?: str(R.string.release_save_failed)) }
     }
 
     fun exportReleasePdf(roll: RollEntity, r: ReleaseEntity, onDone: (Uri) -> Unit) = viewModelScope.launch {
         runCatching { ReleasePdf.export(app, r, releaseTemplate.fill(r, roll.emulsionName)) }
-            .onSuccess { say("PDF salvato in Download/Rullino"); onDone(it) }
-            .onFailure { say(it.message ?: "Non riesco a creare il PDF") }
+            .onSuccess { say(R.string.pdf_saved); onDone(it) }
+            .onFailure { say(it.message ?: str(R.string.pdf_failed)) }
     }
 
-    fun deleteRelease(r: ReleaseEntity) = viewModelScope.launch { repo.deleteRelease(r); say("Liberatoria eliminata") }
+    fun deleteRelease(r: ReleaseEntity) = viewModelScope.launch { repo.deleteRelease(r); say(R.string.release_deleted) }
 
     fun deleteRoll(r: RollEntity, onDone: () -> Unit = {}) = viewModelScope.launch {
         runCatching { repo.deleteRoll(r.id) }
-            .onSuccess { askGalleryConfirm(it); say("Rullino eliminato"); onDone() }
-            .onFailure { say(it.message ?: "Non riesco a eliminarlo") }
+            .onSuccess { askGalleryConfirm(it); say(R.string.roll_deleted); onDone() }
+            .onFailure { say(it.message ?: str(R.string.delete_failed)) }
     }
 
     /* ---- Tavolo luminoso ---- */
@@ -179,20 +162,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         var n = 0
         for (f in frames) {
             if (f.printUri != null) continue
-            runCatching { repo.print(r, f) }.onSuccess { n++ }.onFailure { say(it.message ?: "Stampa non riuscita") }
+            runCatching { repo.print(r, f) }.onSuccess { n++ }.onFailure { say(it.message ?: str(R.string.print_failed)) }
         }
-        if (n > 0) say(if (n == 1) "Stampa pronta in galleria" else "$n stampe pronte in galleria")
+        if (n > 0) say(if (n == 1) str(R.string.print_one) else str(R.string.print_many, n))
     }
 
     fun cutKeeping(r: RollEntity, keep: Set<Int>) = viewModelScope.launch {
         runCatching { repo.cutKeeping(r.id, keep) }
-            .onSuccess { askGalleryConfirm(it); say("Negativi tagliati: tenuti ${keep.size}") }
-            .onFailure { say(it.message ?: "Taglio non riuscito") }
-    }
-
-    private fun sayLab() {
-        val wait = settings.currentWaitMillis()
-        say(if (wait == 0L) "Negativi pronti: li trovi in Rullini" else "Rullino al laboratorio: pronto tra ${formatWait(wait)}")
+            .onSuccess { askGalleryConfirm(it); say(R.string.cut_done, keep.size) }
+            .onFailure { say(it.message ?: str(R.string.cut_failed)) }
     }
 
     private fun askGalleryConfirm(uris: List<Uri>) {
@@ -200,7 +178,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (Build.VERSION.SDK_INT >= 30) {
             galleryDeleteRequest.value = MediaStore.createDeleteRequest(app.contentResolver, uris).intentSender
         } else {
-            say("Alcune stampe vanno cancellate a mano dalla galleria")
+            say(R.string.gallery_manual)
         }
     }
 
@@ -210,16 +188,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun importFrom(uri: Uri, onDone: (EmulsionEntity) -> Unit = {}) = viewModelScope.launch {
         runCatching {
-            val input = app.contentResolver.openInputStream(uri) ?: error("Non riesco ad aprire il file")
+            val input = app.contentResolver.openInputStream(uri) ?: error(str(R.string.open_file_failed))
             input.use { repo.installer.install(it, "import") }
-        }.onSuccess { say("«${it.name}» aggiunta alle tue emulsioni"); onDone(it) }
-            .onFailure { say(it.message ?: "File non valido") }
+        }.onSuccess { say(R.string.emulsion_added, it.name); onDone(it) }
+            .onFailure { say(it.message ?: str(R.string.invalid_file)) }
     }
 
     fun deleteEmulsion(e: EmulsionEntity) = viewModelScope.launch {
         runCatching { repo.deleteEmulsion(e) }
-            .onSuccess { say("«${e.name}» eliminata") }
-            .onFailure { say(it.message ?: "Non riesco a eliminarla") }
+            .onSuccess { say(R.string.emulsion_deleted, e.name) }
+            .onFailure { say(it.message ?: str(R.string.delete_failed)) }
     }
 
     fun refreshStore() {
@@ -227,7 +205,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         store.value = StoreState.Loading
         viewModelScope.launch {
             store.value = runCatching { StoreState.Ready(repo.catalog.list()) }
-                .getOrElse { StoreState.Error(it.message ?: "Il negozio non risponde") }
+                .getOrElse { StoreState.Error(str(R.string.store_unreachable)) }
         }
     }
 
@@ -239,35 +217,39 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 val file = File(app.cacheDir, "download/${item.id}.emulsion")
                 repo.catalog.download(item.fileUrl, file)
                 file.inputStream().use { repo.installer.install(it, "store") }.also { file.delete() }
-            }.onSuccess { say("«${it.name}» scaricata") }
-                .onFailure { say(it.message ?: "Download non riuscito") }
+            }.onSuccess { say(R.string.downloaded, it.name) }
+                .onFailure { say(str(R.string.download_failed)) }
             downloading.value = downloading.value - item.id
         }
     }
 }
 
-/** "1 giorno", "3 h 20 min", "12 min"… */
-fun formatWait(ms: Long): String {
+/** "1 giorno", "3 h 20 min", "12 min"… nella lingua del telefono. */
+fun formatWait(res: Resources, ms: Long): String {
     val min = (ms + 59_999) / 60_000
     val h = min / 60
     val m = min % 60
     return when {
-        h >= 24 && h % 24 == 0L && m == 0L -> if (h == 24L) "1 giorno" else "${h / 24} giorni"
-        h > 0 && m > 0 -> "$h h $m min"
-        h > 0 -> if (h == 1L) "1 ora" else "$h ore"
-        else -> "$m min"
+        h >= 24 && h % 24 == 0L && m == 0L -> if (h == 24L) res.getString(R.string.wait_day1) else res.getString(R.string.wait_days, h / 24)
+        h > 0 && m > 0 -> res.getString(R.string.wait_hm, h, m)
+        h > 0 -> if (h == 1L) res.getString(R.string.wait_h1) else res.getString(R.string.wait_h, h)
+        else -> res.getString(R.string.wait_m, m)
     }
 }
 
-/** "oggi alle 18:30", "domani alle 9:05", "lunedì alle 10:00" */
-fun formatPickup(at: Long): String {
+/** "oggi alle 18:30", "domani alle 9:05", "lunedì alle 10:00" nella lingua del telefono. */
+fun formatPickup(res: Resources, at: Long): String {
     val zone = java.time.ZoneId.systemDefault()
     val t = java.time.Instant.ofEpochMilli(at).atZone(zone)
     val today = java.time.LocalDate.now(zone)
     val time = "%d:%02d".format(t.hour, t.minute)
     return when (t.toLocalDate()) {
-        today -> "oggi alle $time"
-        today.plusDays(1) -> "domani alle $time"
-        else -> t.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ITALIAN) + " alle $time"
+        today -> res.getString(R.string.pickup_today, time)
+        today.plusDays(1) -> res.getString(R.string.pickup_tomorrow, time)
+        else -> res.getString(
+            R.string.pickup_day,
+            t.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, res.configuration.locales[0]),
+            time,
+        )
     }
 }

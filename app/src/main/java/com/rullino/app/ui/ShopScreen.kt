@@ -1,5 +1,7 @@
 package com.rullino.app.ui
 
+import com.rullino.app.R
+import androidx.compose.ui.res.stringResource
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -55,6 +57,7 @@ import java.time.LocalTime
 /** Il negozio-laboratorio anni '80: bancone, negoziante, scaffale e laboratorio. */
 @Composable
 fun ShopScreen(vm: AppViewModel) {
+    val res = LocalContext.current.resources
     val emulsions by vm.emulsions.collectAsState()
     val rolls by vm.rolls.collectAsState()
     val inventory by vm.inventory.collectAsState()
@@ -71,7 +74,7 @@ fun ShopScreen(vm: AppViewModel) {
     // Al laboratorio: in vasca o in attesa. Quelli pronti sono già tornati in Rullini.
     val atLab = rolls.filter { it.state == RollState.DEVELOPING || (it.state == RollState.DEVELOPED && !ready(it)) }
 
-    LaunchedEffect(Unit) { if (vm.shopkeeperLine.value == null) vm.shopkeeperLine.value = greeting() }
+    LaunchedEffect(Unit) { if (vm.shopkeeperLine.value == null) vm.shopkeeperLine.value = greeting(res) }
 
     Row(Modifier.fillMaxSize().background(Color(0xFF1A1420))) {
         // ---- Il bancone con il negoziante ----
@@ -81,7 +84,7 @@ fun ShopScreen(vm: AppViewModel) {
         ) {
             NeonSign("FOTO LAB")
             Spacer(Modifier.height(8.dp))
-            SpeechBubble(line ?: greeting())
+            SpeechBubble(line ?: greeting(res))
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
                 Shopkeeper(Modifier.fillMaxWidth(0.8f).fillMaxHeight(0.95f))
             }
@@ -101,39 +104,39 @@ fun ShopScreen(vm: AppViewModel) {
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Gettoni: $coins", color = Color(0xFFFFD36B), fontFamily = Mono, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                    Text("Magazzino: ${inventory.values.sum()} rullini", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
+                    Text(stringResource(R.string.coins, coins), color = Color(0xFFFFD36B), fontFamily = Mono, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.stock_total, inventory.values.sum()), color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
                 }
             }
 
             item {
-                ShopPanel("Rullino del giorno") {
+                ShopPanel(stringResource(R.string.daily_title)) {
                     Text(
-                        if (dailyAvailable) "Oggi un rullino a tua scelta è gratis: prendilo dallo scaffale qui sotto."
-                        else "Il rullino gratis di oggi l'hai già preso. Domani te ne aspetta un altro.",
+                        if (dailyAvailable) stringResource(R.string.daily_available)
+                        else stringResource(R.string.daily_taken),
                         color = if (dailyAvailable) Palette.Ink else Palette.Muted, fontSize = 13.sp,
                     )
                 }
             }
 
             if (toDeliver.isNotEmpty() || atLab.isNotEmpty()) item {
-                ShopPanel("Laboratorio") {
+                ShopPanel(stringResource(R.string.lab_title)) {
                     if (toDeliver.isNotEmpty()) {
                         Button(onClick = { vm.deliverAll(toDeliver) }, modifier = Modifier.fillMaxWidth()) {
-                            Text(if (toDeliver.size == 1) "Sviluppa il rullino" else "Sviluppa tutti i ${toDeliver.size} rullini")
+                            Text(if (toDeliver.size == 1) stringResource(R.string.develop_one) else stringResource(R.string.develop_all, toDeliver.size))
                         }
                     }
-                    toDeliver.forEach { r -> LabRow(r, "da sviluppare") {} }
+                    toDeliver.forEach { r -> LabRow(r, stringResource(R.string.lab_to_develop)) {} }
                     atLab.forEach { r ->
-                        if (r.state == RollState.DEVELOPING) LabRow(r, "in vasca…") {}
-                        else LabRow(r, "torna in Rullini ${formatPickup(r.readyAt ?: now)}") {}
+                        if (r.state == RollState.DEVELOPING) LabRow(r, stringResource(R.string.lab_in_tank)) {}
+                        else LabRow(r, stringResource(R.string.lab_back, formatPickup(res, r.readyAt ?: now))) {}
                     }
                 }
             }
 
             item {
-                ShopPanel("Scaffale · ${Shop.ROLL_PRICE} gettoni al rullino") {
-                    if (emulsions.isEmpty()) Text("Lo scaffale è vuoto.", color = Palette.Muted)
+                ShopPanel(stringResource(R.string.shelf_title, Shop.ROLL_PRICE)) {
+                    if (emulsions.isEmpty()) Text(stringResource(R.string.shelf_empty), color = Palette.Muted)
                     emulsions.forEach { e ->
                         ShelfRow(
                             e, inventory[e.id] ?: 0,
@@ -144,7 +147,7 @@ fun ShopScreen(vm: AppViewModel) {
                         )
                     }
                     Text(
-                        "I gettoni si vinceranno con i concorsi fotografici. Per ora: rullino del giorno.",
+                        stringResource(R.string.tokens_note),
                         color = Palette.Muted, fontSize = 11.sp,
                     )
                 }
@@ -153,12 +156,12 @@ fun ShopScreen(vm: AppViewModel) {
     }
 }
 
-private fun greeting(): String {
+private fun greeting(res: android.content.res.Resources): String {
     val h = LocalTime.now().hour
     return when (h) {
-        in 5..11 -> "Buongiorno! Cosa sviluppiamo oggi?"
-        in 12..17 -> "Buon pomeriggio! Passi a ritirare o a consegnare?"
-        else -> "Buonasera! Sto per chiudere, ma per te c'è sempre tempo."
+        in 5..11 -> res.getString(R.string.greet_morning)
+        in 12..17 -> res.getString(R.string.greet_afternoon)
+        else -> res.getString(R.string.greet_evening)
     }
 }
 
@@ -206,7 +209,7 @@ private fun LabRow(r: RollEntity, status: String, action: @Composable () -> Unit
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(Modifier.weight(1f)) {
             Text(r.emulsionName, color = Palette.Ink)
-            Text("${r.shotCount} pose · $status", color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
+            Text(stringResource(R.string.shot_status, r.shotCount, status), color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
         }
         action()
     }
@@ -217,10 +220,10 @@ private fun ShelfRow(e: EmulsionEntity, owned: Int, canAfford: Boolean, freeToda
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(Modifier.weight(1f)) {
             Text(e.name, color = Palette.Ink)
-            Text("ISO ${e.iso} · ne hai $owned", color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
+            Text(stringResource(R.string.iso_owned, e.iso, owned), color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
         }
-        if (freeToday) Button(onClick = onFree) { Text("Gratis oggi") }
-        OutlinedButton(enabled = canAfford, onClick = onBuy) { Text("Compra") }
+        if (freeToday) Button(onClick = onFree) { Text(stringResource(R.string.free_today)) }
+        OutlinedButton(enabled = canAfford, onClick = onBuy) { Text(stringResource(R.string.buy)) }
     }
 }
 
@@ -237,7 +240,7 @@ private fun Shopkeeper(modifier: Modifier) {
     if (custom != null) {
         Image(
             bitmap = custom.asImageBitmap(),
-            contentDescription = "Il negoziante",
+            contentDescription = stringResource(R.string.shopkeeper),
             contentScale = ContentScale.Fit,
             filterQuality = FilterQuality.None, // pixel nitidi
             modifier = modifier,

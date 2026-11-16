@@ -53,7 +53,10 @@ android {
         compose = true
         buildConfig = true
     }
-    androidResources { noCompress += "emulsion" }
+    androidResources {
+        noCompress += "emulsion"
+        generateLocaleConfig = true
+    }
 }
 
 dependencies {

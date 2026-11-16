@@ -52,7 +52,7 @@ quindi le build di GitHub e quelle del PC si installano una sopra l'altra.
   (viene ingrandito senza sfocature).
 - **Liberatorie**: per ogni posa (in fotocamera sull'ultima posa, o dal lentino sul tavolo luminoso) modulo con nome,
   cognome, contatto, luogo, usi fuori dall'app, minori con genitore/tutore e firma col dito. PDF in Download/Rullino.
-  Il testo è un **segnaposto** (`assets/liberatoria/testo.txt`) modificabile anche da Opzioni.
+  Il testo è un **segnaposto** (`assets/liberatoria/testo-<lingua>.txt`) modificabile anche da Opzioni.
 - **Laboratorio**: dopo la consegna i negativi sono pronti tra 1 ora, 3 ore o 1 giorno (Opzioni).
 - **Modalità sviluppatore**: in Opzioni tocca 7 volte la versione; poi puoi saltare i tempi del laboratorio.
 - Il database è alla versione 4: passando da una versione precedente l'app riparte da zero (rullini di prova inclusi).

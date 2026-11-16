@@ -1,14 +1,16 @@
 package com.rullino.app.data
 
+import com.rullino.app.R
+import androidx.annotation.StringRes
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /** Quanto resta un rullino al laboratorio prima che i negativi siano pronti. */
-enum class LabTime(val label: String, val millis: Long) {
-    HOUR("1 ora", 60L * 60 * 1000),
-    THREE_HOURS("3 ore", 3L * 60 * 60 * 1000),
-    DAY("1 giorno", 24L * 60 * 60 * 1000),
+enum class LabTime(@StringRes val label: Int, val millis: Long) {
+    HOUR(R.string.lab_1h, 60L * 60 * 1000),
+    THREE_HOURS(R.string.lab_3h, 3L * 60 * 60 * 1000),
+    DAY(R.string.lab_1d, 24L * 60 * 60 * 1000),
 }
 
 /** Opzioni dell'app, salvate sul telefono. */

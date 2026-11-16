@@ -1,5 +1,7 @@
 package com.rullino.app.ui
 
+import com.rullino.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -67,8 +69,8 @@ fun EmulsionsScreen(vm: AppViewModel, onLoaded: () -> Unit) {
     var page by rememberSaveable { mutableIntStateOf(0) }
     Column(Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = page, containerColor = Palette.Body, contentColor = Palette.Ink) {
-            Tab(selected = page == 0, onClick = { page = 0 }, text = { Text("Le tue") })
-            Tab(selected = page == 1, onClick = { page = 1 }, text = { Text("Negozio") })
+            Tab(selected = page == 0, onClick = { page = 0 }, text = { Text(stringResource(R.string.mine)) })
+            Tab(selected = page == 1, onClick = { page = 1 }, text = { Text(stringResource(R.string.catalog_tab)) })
         }
         if (page == 0) MyEmulsions(vm, onLoaded) else Store(vm)
     }
@@ -87,12 +89,12 @@ private fun MyEmulsions(vm: AppViewModel, onLoaded: () -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("${list.size} emulsioni", color = Palette.Muted, modifier = Modifier.weight(1f))
-            if (devMode) OutlinedButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text("Importa .emulsion") }
+            Text(stringResource(R.string.n_emulsions, list.size), color = Palette.Muted, modifier = Modifier.weight(1f))
+            if (devMode) OutlinedButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.import_emulsion)) }
         }
         if (list.isEmpty()) {
             Text(
-                "Nessuna emulsione installata.",
+                stringResource(R.string.no_emulsions),
                 color = Palette.Muted,
                 modifier = Modifier.padding(16.dp),
             )
@@ -128,7 +130,7 @@ private fun EmulsionCard(e: EmulsionEntity, owned: Int, onClick: () -> Unit) {
         Text(e.name, color = Palette.Ink, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Tag("ISO ${e.iso}")
-            Tag(if (e.isBw) "BN" else "COLORE")
+            Tag(if (e.isBw) stringResource(R.string.tag_bw) else stringResource(R.string.tag_color))
             if (owned > 0) Tag("×$owned")
         }
     }
@@ -139,7 +141,7 @@ private fun BoxArt(e: EmulsionEntity, modifier: Modifier) {
     val box = e.boxFile?.let { File(e.dir, it) }
     Box(modifier.clip(RoundedCornerShape(8.dp)).background(Palette.PlateHi), contentAlignment = Alignment.Center) {
         if (box != null && box.exists()) {
-            AsyncImage(model = box, contentDescription = "Scatola di ${e.name}", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize().padding(8.dp))
+            AsyncImage(model = box, contentDescription = stringResource(R.string.box_of, e.name), contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize().padding(8.dp))
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(e.iso.toString(), color = Palette.Safelight, fontFamily = Mono, fontSize = 34.sp, fontWeight = FontWeight.Bold)
@@ -187,7 +189,7 @@ private fun EmulsionDetail(e: EmulsionEntity, vm: AppViewModel, onLoaded: () -> 
                 BoxArt(e, Modifier.size(96.dp))
                 Column(Modifier.weight(1f)) {
                     Text(e.name, color = Palette.Ink, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-                    Text("ISO ${e.iso} · ${if (e.isBw) "bianco e nero" else "colore"}", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
+                    Text("ISO ${e.iso} · " + if (e.isBw) stringResource(R.string.bw_long) else stringResource(R.string.color_long), color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
                     if (e.note.isNotBlank()) Text(e.note, color = Palette.Ink, fontSize = 13.sp)
                 }
             }
@@ -197,7 +199,7 @@ private fun EmulsionDetail(e: EmulsionEntity, vm: AppViewModel, onLoaded: () -> 
                     items(demos) { f ->
                         AsyncImage(
                             model = f,
-                            contentDescription = "Foto di esempio",
+                            contentDescription = stringResource(R.string.sample_photo),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.height(120.dp).aspectRatio(1.5f).clip(RoundedCornerShape(6.dp)),
                         )
@@ -206,40 +208,40 @@ private fun EmulsionDetail(e: EmulsionEntity, vm: AppViewModel, onLoaded: () -> 
             }
             TextButton(onClick = {
                 if (confirmDelete) { vm.deleteEmulsion(e); onDeleted() } else confirmDelete = true
-            }) { Text(if (confirmDelete) "Tocca di nuovo per eliminare" else "Elimina emulsione", color = Color(0xFFFF8A80)) }
+            }) { Text(if (confirmDelete) stringResource(R.string.delete_emulsion_confirm) else stringResource(R.string.delete_emulsion), color = Color(0xFFFF8A80)) }
         }
 
         Column(Modifier.width(300.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                if (owned > 0) "In magazzino: $owned ${if (owned == 1) "rullino" else "rullini"}" else "Nessun rullino in magazzino",
+                if (owned == 1) stringResource(R.string.in_stock_one) else if (owned > 1) stringResource(R.string.in_stock_many, owned) else stringResource(R.string.none_in_stock),
                 color = if (owned > 0) Palette.Ink else Palette.Safelight, fontSize = 14.sp,
             )
             if (owned == 0) {
                 // Si può rimediare subito, senza passare dal negozio.
                 if (freeToday) {
-                    Button(onClick = { vm.claimDaily(e) }, modifier = Modifier.fillMaxWidth()) { Text("Prendilo gratis (rullino di oggi)") }
+                    Button(onClick = { vm.claimDaily(e) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.get_free_today)) }
                 }
                 OutlinedButton(
                     enabled = coins >= Shop.ROLL_PRICE,
                     onClick = { vm.buy(e) },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Compra per ${Shop.ROLL_PRICE} gettoni (ne hai $coins)") }
+                ) { Text(stringResource(R.string.buy_for, Shop.ROLL_PRICE, coins)) }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Pose", color = Palette.Muted, modifier = Modifier.padding(end = 4.dp))
+                Text(stringResource(R.string.exposures_label), color = Palette.Muted, modifier = Modifier.padding(end = 4.dp))
                 listOf(24, 36).forEach { n ->
                     FilterChip(selected = exposures == n, onClick = { exposures = n }, label = { Text("$n") })
                 }
             }
             if (busyRoll) {
-                Text("C'è già un rullino in macchina: finiscilo o sgancialo dal dorso.", color = Palette.Muted, fontSize = 13.sp)
+                Text(stringResource(R.string.roll_in_camera_busy), color = Palette.Muted, fontSize = 13.sp)
             }
             Button(
                 enabled = !busyRoll && owned > 0,
                 onClick = { vm.loadRoll(e, exposures, onLoaded) },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Carica il rullino in macchina") }
+            ) { Text(stringResource(R.string.load_in_camera)) }
         }
     }
 }
@@ -253,20 +255,20 @@ private fun Store(vm: AppViewModel) {
 
     when (val s = state) {
         StoreState.NotConfigured -> Text(
-            "Il negozio non è ancora collegato. Aggiungi supabase.url e supabase.key in local.properties e ricompila l'app.",
+            stringResource(R.string.store_not_configured),
             color = Palette.Muted,
             modifier = Modifier.padding(20.dp),
         )
         StoreState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Apro il negozio…", color = Palette.Muted)
+            Text(stringResource(R.string.store_loading), color = Palette.Muted)
         }
         is StoreState.Error -> Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(s.message, color = Palette.Ink)
-            OutlinedButton(onClick = { vm.refreshStore() }) { Text("Riprova") }
+            OutlinedButton(onClick = { vm.refreshStore() }) { Text(stringResource(R.string.retry)) }
         }
         is StoreState.Ready -> {
             if (s.items.isEmpty()) {
-                Text("Il negozio è vuoto per ora.", color = Palette.Muted, modifier = Modifier.padding(20.dp))
+                Text(stringResource(R.string.store_empty), color = Palette.Muted, modifier = Modifier.padding(20.dp))
             }
             LazyColumn(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
@@ -302,19 +304,19 @@ private fun StoreRow(item: CatalogItem, isInstalled: Boolean, isDownloading: Boo
         Column(Modifier.weight(1f)) {
             Text(item.name, color = Palette.Ink, fontWeight = FontWeight.SemiBold)
             Text(
-                "ISO ${item.iso} · ${if (item.type == "bw") "BN" else "colore"}" + if (item.sizeBytes > 0) " · ${item.sizeBytes / 1024} KB" else "",
+                "ISO ${item.iso} · " + (if (item.type == "bw") stringResource(R.string.tag_bw) else stringResource(R.string.color_long)) + if (item.sizeBytes > 0) " · ${item.sizeBytes / 1024} KB" else "",
                 color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp,
             )
             if (item.note.isNotBlank()) Text(item.note, color = Palette.Muted, fontSize = 12.sp, maxLines = 2)
         }
         when {
-            isInstalled -> Text("Installata", color = Palette.Muted, fontSize = 12.sp)
-            isDownloading -> Text("Scarico…", color = Palette.Muted, fontSize = 12.sp)
+            isInstalled -> Text(stringResource(R.string.installed), color = Palette.Muted, fontSize = 12.sp)
+            isDownloading -> Text(stringResource(R.string.downloading), color = Palette.Muted, fontSize = 12.sp)
             item.priceCents > 0 -> Column(horizontalAlignment = Alignment.End) {
                 Text(price(item.priceCents), color = Palette.Ink, fontFamily = Mono)
-                Text("presto", color = Palette.Muted, fontSize = 11.sp)
+                Text(stringResource(R.string.soon), color = Palette.Muted, fontSize = 11.sp)
             }
-            else -> Button(onClick = onGet) { Text("Gratis") }
+            else -> Button(onClick = onGet) { Text(stringResource(R.string.free)) }
         }
     }
 }

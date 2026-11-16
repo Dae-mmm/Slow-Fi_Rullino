@@ -1,5 +1,6 @@
 package com.rullino.app.develop
 
+import com.rullino.app.R
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -46,7 +47,7 @@ class Developer(private val context: Context, private val repo: Repository, priv
             val start = db.rolls().get(rollId) ?: return@withContext
             if (start.state != RollState.FINISHED && start.state != RollState.DEVELOPING) return@withContext
             val emulsion = db.emulsions().get(start.emulsionId)
-                ?: throw IllegalStateException("L'emulsione «${start.emulsionName}» non è più installata")
+                ?: throw IllegalStateException(context.getString(R.string.dev_emulsion_gone, start.emulsionName))
             val preset = repo.loadPreset(emulsion)
             db.rolls().update(start.copy(state = RollState.DEVELOPING))
 

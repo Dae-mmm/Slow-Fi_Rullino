@@ -1,5 +1,10 @@
 package com.rullino.app.ui
 
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.material3.IconButton
+import com.rullino.app.R
+import androidx.compose.ui.res.stringResource
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
@@ -58,7 +63,10 @@ import java.util.Locale
 
 /** Elenco delle liberatorie di una posa, con la possibilità di aggiungerne una. */
 @Composable
-fun ReleasesDialog(vm: AppViewModel, roll: RollEntity, frame: Int, onClose: () -> Unit) {
+fun ReleasesDialog(vm: AppViewModel, roll: RollEntity, initialFrame: Int, onClose: () -> Unit, maxFrame: Int = 0) {
+    var frame by remember(roll.id) { mutableStateOf(initialFrame) }
+    val prevLabel = stringResource(R.string.prev_frame)
+    val nextLabel = stringResource(R.string.next_frame)
     val all by remember(roll.id) { vm.releases(roll.id) }.collectAsState(initial = emptyList())
     val list = all.filter { it.frame == frame }
     var adding by remember { mutableStateOf(false) }
@@ -75,7 +83,17 @@ fun ReleasesDialog(vm: AppViewModel, roll: RollEntity, frame: Int, onClose: () -
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Liberatorie · posa $frame", color = Palette.Ink, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.releases_title, frame), color = Palette.Ink, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, modifier = Modifier.weight(1f))
+                if (maxFrame > 1 && !adding) {
+                    IconButton(onClick = { frame-- }, enabled = frame > 1) {
+                        Text("◀", color = if (frame > 1) Palette.Ink else Palette.Muted, modifier = Modifier.semantics { contentDescription = prevLabel })
+                    }
+                    IconButton(onClick = { frame++ }, enabled = frame < maxFrame) {
+                        Text("▶", color = if (frame < maxFrame) Palette.Ink else Palette.Muted, modifier = Modifier.semantics { contentDescription = nextLabel })
+                    }
+                }
+            }
             if (adding) {
                 ReleaseForm(
                     vm = vm,
@@ -83,7 +101,7 @@ fun ReleasesDialog(vm: AppViewModel, roll: RollEntity, frame: Int, onClose: () -
                     onSave = { draft, sig -> vm.saveRelease(roll, draft.copy(rollId = roll.id, frame = frame), sig); adding = false },
                 )
             } else {
-                if (list.isEmpty()) Text("Nessuna liberatoria per questa posa.", color = Palette.Muted)
+                if (list.isEmpty()) Text(stringResource(R.string.no_releases), color = Palette.Muted)
                 list.forEach { r ->
                     Row(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Palette.PlateHi).padding(10.dp),
@@ -91,10 +109,10 @@ fun ReleasesDialog(vm: AppViewModel, roll: RollEntity, frame: Int, onClose: () -
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("${r.firstName} ${r.lastName}" + if (r.isMinor) " (minore)" else "", color = Palette.Ink)
+                            Text("${r.firstName} ${r.lastName}" + if (r.isMinor) stringResource(R.string.minor_suffix) else "", color = Palette.Ink)
                             Text(
-                                SimpleDateFormat("d MMM yyyy, HH:mm", Locale.ITALIAN).format(Date(r.signedAt)) +
-                                    if (r.externalUse) " · anche fuori dall'app" else " · solo nell'app",
+                                SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()).format(Date(r.signedAt)) +
+                                    if (r.externalUse) stringResource(R.string.ext_yes) else stringResource(R.string.ext_no),
                                 color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp,
                             )
                         }
@@ -107,15 +125,15 @@ fun ReleasesDialog(vm: AppViewModel, roll: RollEntity, frame: Int, onClose: () -
                                 runCatching { context.startActivity(intent) }
                             }
                         }) { Text("PDF") }
-                        TextButton(onClick = { vm.deleteRelease(r) }) { Text("Elimina", color = Color(0xFFFF8A80)) }
+                        TextButton(onClick = { vm.deleteRelease(r) }) { Text(stringResource(R.string.delete), color = Color(0xFFFF8A80)) }
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { adding = true }) { Text("Nuova liberatoria") }
-                    TextButton(onClick = onClose) { Text("Chiudi") }
+                    Button(onClick = { adding = true }) { Text(stringResource(R.string.new_release)) }
+                    TextButton(onClick = onClose) { Text(stringResource(R.string.close)) }
                 }
                 Text(
-                    "Il PDF va in Download/Rullino ed è tuo: conservalo tu se ti serve oltre l'app.",
+                    stringResource(R.string.pdf_note),
                     color = Palette.Muted, fontSize = 12.sp,
                 )
             }
@@ -141,28 +159,28 @@ private fun ReleaseForm(vm: AppViewModel, onCancel: () -> Unit, onSave: (Release
     val valid = first.isNotBlank() && last.isNotBlank() && strokes.isNotEmpty() && (!minor || guardian.isNotBlank())
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(photographer, { photographer = it }, label = { Text("Fotografo (tu)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(photographer, { photographer = it }, label = { Text(stringResource(R.string.f_photographer)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(first, { first = it }, label = { Text("Nome") }, singleLine = true, modifier = Modifier.weight(1f))
-            OutlinedTextField(last, { last = it }, label = { Text("Cognome") }, singleLine = true, modifier = Modifier.weight(1f))
+            OutlinedTextField(first, { first = it }, label = { Text(stringResource(R.string.f_first)) }, singleLine = true, modifier = Modifier.weight(1f))
+            OutlinedTextField(last, { last = it }, label = { Text(stringResource(R.string.f_last)) }, singleLine = true, modifier = Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(contact, { contact = it }, label = { Text("Email o telefono") }, singleLine = true, modifier = Modifier.weight(1f))
-            OutlinedTextField(place, { place = it }, label = { Text("Luogo") }, singleLine = true, modifier = Modifier.weight(1f))
+            OutlinedTextField(contact, { contact = it }, label = { Text(stringResource(R.string.f_contact)) }, singleLine = true, modifier = Modifier.weight(1f))
+            OutlinedTextField(place, { place = it }, label = { Text(stringResource(R.string.f_place)) }, singleLine = true, modifier = Modifier.weight(1f))
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(external, { external = it })
-            Text("Autorizzo anche usi fuori dall'app: mostre, stampe, pubblicazioni", color = Palette.Ink, fontSize = 13.sp)
+            Text(stringResource(R.string.f_external), color = Palette.Ink, fontSize = 13.sp)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(minor, { minor = it })
-            Text("La persona ritratta è minorenne", color = Palette.Ink, fontSize = 13.sp)
+            Text(stringResource(R.string.f_minor), color = Palette.Ink, fontSize = 13.sp)
         }
         if (minor) {
-            OutlinedTextField(guardian, { guardian = it }, label = { Text("Nome e cognome del genitore o tutore") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(guardian, { guardian = it }, label = { Text(stringResource(R.string.f_guardian)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
         }
 
-        Text(if (minor) "Firma del genitore o tutore" else "Firma col dito", color = Palette.Muted, fontSize = 12.sp)
+        Text(if (minor) stringResource(R.string.sig_guardian) else stringResource(R.string.sig_finger), color = Palette.Muted, fontSize = 12.sp)
         Box(
             Modifier
                 .fillMaxWidth()
@@ -191,13 +209,13 @@ private fun ReleaseForm(vm: AppViewModel, onCancel: () -> Unit, onSave: (Release
                 }
             }
             if (strokes.isEmpty() && current.isEmpty()) {
-                Text("Firma qui", color = Color(0xFFB0A99E), modifier = Modifier.align(Alignment.Center))
+                Text(stringResource(R.string.sign_here), color = Color(0xFFB0A99E), modifier = Modifier.align(Alignment.Center))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = { strokes.clear() }) { Text("Cancella firma") }
+            TextButton(onClick = { strokes.clear() }) { Text(stringResource(R.string.clear_sig)) }
             Spacer1()
-            TextButton(onClick = onCancel) { Text("Annulla") }
+            TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
             Button(enabled = valid, onClick = {
                 vm.settings.setPhotographerName(photographer)
                 val bmp = renderSignature(strokes, padSize)
@@ -210,7 +228,7 @@ private fun ReleaseForm(vm: AppViewModel, onCancel: () -> Unit, onSave: (Release
                     ),
                     bmp,
                 )
-            }) { Text("Firma e salva") }
+            }) { Text(stringResource(R.string.sign_save)) }
         }
     }
 }

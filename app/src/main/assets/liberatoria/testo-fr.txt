@@ -1,0 +1,20 @@
+AUTORISATION D'UTILISATION DE L'IMAGE
+[TEXTE PROVISOIRE – à remplacer par un texte relu par un juriste]
+
+Je soussigné(e) {{NOME}} {{COGNOME}}, contact {{CONTATTO}},
+{{TUTORE}}
+autorise {{FOTOGRAFO}} à utiliser la photographie me représentant, prise le {{DATA}} à {{LUOGO}}
+(pellicule « {{RULLINO}} », vue {{POSA}}), pour :
+
+- la participation aux concours photo de l'application Rullino, où la photo n'est visible que par les juges ;
+- l'éventuelle exposition sur le tableau de l'application pendant une semaine, si la photo gagne.
+
+{{USI_ESTERNI}}
+
+Cette autorisation est accordée à titre gratuit. Je peux la révoquer à tout moment en écrivant à la
+personne qui a pris la photo ou via l'application ; la révocation n'a pas d'effet sur les utilisations déjà faites.
+
+Mes données sont conservées par l'application uniquement le temps nécessaire au concours et à
+l'éventuelle exposition, puis elles sont supprimées.
+
+Lieu et date : {{LUOGO}}, {{DATA}}

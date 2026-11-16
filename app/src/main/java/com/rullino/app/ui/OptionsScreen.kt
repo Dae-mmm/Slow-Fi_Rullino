@@ -1,5 +1,7 @@
 package com.rullino.app.ui
 
+import com.rullino.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,44 +52,44 @@ fun OptionsScreen(vm: AppViewModel) {
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Section("Laboratorio") {
-            Text("Quanto aspetti i negativi dopo aver consegnato un rullino.", color = Palette.Muted, fontSize = 13.sp)
+        Section(stringResource(R.string.lab_title)) {
+            Text(stringResource(R.string.opt_lab_text), color = Palette.Muted, fontSize = 13.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 LabTime.entries.forEach { t ->
-                    FilterChip(selected = labTime == t, onClick = { settings.setLabTime(t) }, label = { Text(t.label) })
+                    FilterChip(selected = labTime == t, onClick = { settings.setLabTime(t) }, label = { Text(stringResource(t.label)) })
                 }
             }
-            Text("Vale per i prossimi rullini: quelli già al laboratorio mantengono il loro tempo.", color = Palette.Muted, fontSize = 12.sp)
+            Text(stringResource(R.string.opt_lab_note), color = Palette.Muted, fontSize = 12.sp)
         }
 
-        Section("Liberatoria") {
+        Section(stringResource(R.string.release)) {
             var editing by remember { mutableStateOf(false) }
             var text by remember { mutableStateOf("") }
             Text(
-                if (vm.releaseTemplate.isCustom) "Stai usando un testo tuo." else "Stai usando il testo segnaposto: sostituiscilo con quello rivisto da un legale.",
+                if (vm.releaseTemplate.isCustom) stringResource(R.string.release_custom) else stringResource(R.string.release_placeholder),
                 color = Palette.Muted, fontSize = 13.sp,
             )
             if (editing) {
-                Text("Segnaposto: {{NOME}} {{COGNOME}} {{CONTATTO}} {{FOTOGRAFO}} {{DATA}} {{LUOGO}} {{RULLINO}} {{POSA}} {{USI_ESTERNI}} {{TUTORE}}", color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
+                Text(stringResource(R.string.placeholders_list, "{{NOME}} {{COGNOME}} {{CONTATTO}} {{FOTOGRAFO}} {{DATA}} {{LUOGO}} {{RULLINO}} {{POSA}} {{USI_ESTERNI}} {{TUTORE}}"), color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
                 OutlinedTextField(text, { text = it }, modifier = Modifier.fillMaxWidth().height(260.dp), textStyle = androidx.compose.ui.text.TextStyle(fontFamily = Mono, fontSize = 12.sp, color = Palette.Ink))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { vm.releaseTemplate.save(text); editing = false; vm.say("Testo della liberatoria salvato") }) { Text("Salva") }
-                    TextButton(onClick = { editing = false }) { Text("Annulla") }
+                    Button(onClick = { vm.releaseTemplate.save(text); editing = false; vm.say(R.string.release_saved_text) }) { Text(stringResource(R.string.save)) }
+                    TextButton(onClick = { editing = false }) { Text(stringResource(R.string.cancel)) }
                 }
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { text = vm.releaseTemplate.text(); editing = true }) { Text("Modifica il testo") }
-                    if (vm.releaseTemplate.isCustom) TextButton(onClick = { vm.releaseTemplate.reset(); vm.say("Ripristinato il testo segnaposto") }) { Text("Ripristina segnaposto") }
+                    OutlinedButton(onClick = { text = vm.releaseTemplate.text(); editing = true }) { Text(stringResource(R.string.edit_text)) }
+                    if (vm.releaseTemplate.isCustom) TextButton(onClick = { vm.releaseTemplate.reset(); vm.say(R.string.placeholder_restored) }) { Text(stringResource(R.string.restore_placeholder)) }
                 }
             }
         }
 
         if (devMode) {
-            Section("Modalità sviluppatore") {
+            Section(stringResource(R.string.dev_mode)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Salta i tempi del laboratorio", color = Palette.Ink)
-                        Text("I negativi sono pronti subito, anche quelli già consegnati.", color = Palette.Muted, fontSize = 12.sp)
+                        Text(stringResource(R.string.skip_lab), color = Palette.Ink)
+                        Text(stringResource(R.string.skip_lab_note), color = Palette.Muted, fontSize = 12.sp)
                     }
                     Switch(
                         checked = skipWait,
@@ -96,11 +98,11 @@ fun OptionsScreen(vm: AppViewModel) {
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { vm.shop.earn(100); vm.say("+100 gettoni") }) { Text("+100 gettoni") }
-                    OutlinedButton(onClick = { vm.shop.resetDaily(); vm.say("Rullino del giorno di nuovo disponibile") }) { Text("Rullino del giorno di nuovo") }
+                    OutlinedButton(onClick = { vm.shop.earn(100); vm.say(R.string.plus100) }) { Text(stringResource(R.string.plus100)) }
+                    OutlinedButton(onClick = { vm.shop.resetDaily(); vm.say(R.string.daily_again_msg) }) { Text(stringResource(R.string.daily_again)) }
                 }
-                TextButton(onClick = { settings.setDeveloperMode(false); taps = 0; vm.say("Modalità sviluppatore disattivata") }) {
-                    Text("Disattiva la modalità sviluppatore", color = Palette.Muted)
+                TextButton(onClick = { settings.setDeveloperMode(false); taps = 0; vm.say(R.string.dev_off_msg) }) {
+                    Text(stringResource(R.string.dev_off), color = Palette.Muted)
                 }
             }
         }
@@ -109,7 +111,7 @@ fun OptionsScreen(vm: AppViewModel) {
         // Il conto alla rovescia sta accanto alla scritta, così niente la copre mentre tocchi.
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                "Rullino · versione ${BuildConfig.VERSION_NAME}",
+                stringResource(R.string.version, BuildConfig.VERSION_NAME),
                 color = Palette.Muted,
                 fontFamily = Mono,
                 fontSize = 12.sp,
@@ -124,8 +126,8 @@ fun OptionsScreen(vm: AppViewModel) {
                     .padding(horizontal = 6.dp, vertical = 10.dp),
             )
             val hint = when {
-                devMode -> "Sei uno sviluppatore"
-                taps >= 3 -> "Ancora ${7 - taps}"
+                devMode -> stringResource(R.string.you_are_dev)
+                taps >= 3 -> stringResource(R.string.taps_left, 7 - taps)
                 else -> null
             }
             if (hint != null) Text(hint, color = Palette.Safelight, fontFamily = Mono, fontSize = 12.sp)

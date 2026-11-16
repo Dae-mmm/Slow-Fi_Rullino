@@ -1,5 +1,6 @@
 package com.rullino.app.release
 
+import com.rullino.app.R
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -40,7 +41,7 @@ object ReleasePdf {
         // Firma
         val sigTop = margin + layout.height + 36f
         val label = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.DKGRAY; textSize = 9f }
-        c.drawText(if (release.isMinor) "Firma del genitore o tutore" else "Firma", margin, sigTop, label)
+        c.drawText(context.getString(if (release.isMinor) R.string.sig_guardian else R.string.pdf_sig), margin, sigTop, label)
         BitmapFactory.decodeFile(release.signaturePath)?.let { sig ->
             val h = 90
             val w = (sig.width * h / sig.height.toFloat()).toInt().coerceAtMost(300)
@@ -49,10 +50,10 @@ object ReleasePdf {
         }
         c.drawLine(margin, sigTop + 100f, margin + 300f, sigTop + 100f, Paint().apply { color = Color.GRAY })
 
-        c.drawText("Generato con Rullino · rullino ${release.rollId}, posa ${release.frame}", margin, 842 - 30f, label)
+        c.drawText(context.getString(R.string.pdf_footer, release.rollId.toString(), release.frame.toString()), margin, 842 - 30f, label)
         doc.finishPage(page)
 
-        val name = "liberatoria_${release.lastName.ifBlank { "senza-nome" }}_${release.rollId}-${release.frame}.pdf"
+        val name = context.getString(R.string.pdf_prefix) + "_${release.lastName.ifBlank { context.getString(R.string.pdf_noname) }}_${release.rollId}-${release.frame}.pdf"
             .replace(Regex("[^\\p{L}\\p{N}._-]"), "_")
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, name)
@@ -62,8 +63,8 @@ object ReleasePdf {
         }
         val resolver = context.contentResolver
         val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-            ?: throw IllegalStateException("Impossibile salvare il PDF")
-        resolver.openOutputStream(uri)?.use { doc.writeTo(it) } ?: throw IllegalStateException("Impossibile scrivere il PDF")
+            ?: throw IllegalStateException(context.getString(R.string.err_pdf_save))
+        resolver.openOutputStream(uri)?.use { doc.writeTo(it) } ?: throw IllegalStateException(context.getString(R.string.err_pdf_write))
         doc.close()
         values.clear()
         values.put(MediaStore.Downloads.IS_PENDING, 0)

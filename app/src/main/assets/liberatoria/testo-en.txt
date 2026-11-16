@@ -1,0 +1,20 @@
+IMAGE RELEASE FORM
+[PLACEHOLDER TEXT – to be replaced with a text reviewed by a lawyer]
+
+I, {{NOME}} {{COGNOME}}, contact {{CONTATTO}},
+{{TUTORE}}
+authorize {{FOTOGRAFO}} to use the photograph portraying me, taken on {{DATA}} in {{LUOGO}}
+(roll “{{RULLINO}}”, frame {{POSA}}), for:
+
+- entry into the photo contests of the Rullino app, where the photo is visible only to the judges;
+- possible display on the app's board for one week, if the photo wins.
+
+{{USI_ESTERNI}}
+
+This authorization is granted free of charge. I may revoke it at any time by writing to the person
+who took the photo or through the app; revocation does not affect uses that have already occurred.
+
+My data is kept by the app only for as long as needed for the contest and any display,
+and is then deleted.
+
+Place and date: {{LUOGO}}, {{DATA}}

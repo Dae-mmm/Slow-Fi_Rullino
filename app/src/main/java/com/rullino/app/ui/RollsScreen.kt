@@ -1,5 +1,8 @@
 package com.rullino.app.ui
 
+import com.rullino.app.R
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -83,7 +86,7 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit, onGoLab: () -> Unit)
     }
 
     if (rolls.isEmpty()) {
-        Text("Ancora nessun rullino. Caricane uno dalla fotocamera.", color = Palette.Muted, modifier = Modifier.padding(20.dp))
+        Text(stringResource(R.string.rolls_empty), color = Palette.Muted, modifier = Modifier.padding(20.dp))
         return
     }
     val toLab = rolls.filter { it.state == RollState.FINISHED && it.shotCount > 0 }
@@ -94,10 +97,10 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit, onGoLab: () -> Unit)
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    if (toLab.size == 1) "1 rullino da sviluppare" else "${toLab.size} rullini da sviluppare",
+                    if (toLab.size == 1) stringResource(R.string.to_develop_one) else stringResource(R.string.to_develop_many, toLab.size),
                     color = Palette.Ink, modifier = Modifier.weight(1f),
                 )
-                Button(onClick = onGoLab) { Text("Vai al laboratorio") }
+                Button(onClick = onGoLab) { Text(stringResource(R.string.go_lab)) }
             }
         }
         items(rolls, key = { it.id }) { r ->
@@ -146,21 +149,21 @@ private fun RollRow(
         }
         Text(
             when {
-                isReady -> "Negativi ›"
-                r.state == RollState.DEVELOPING -> "Al laboratorio · in vasca"
-                r.state == RollState.DEVELOPED -> "Al laboratorio · torna tra ${formatWait(waitLeft)}"
+                isReady -> stringResource(R.string.negatives_arrow)
+                r.state == RollState.DEVELOPING -> stringResource(R.string.at_lab_tank)
+                r.state == RollState.DEVELOPED -> stringResource(R.string.at_lab_back_in, formatWait(LocalContext.current.resources, waitLeft))
                 else -> stateLabel(r)
             },
             color = if (isReady) Palette.Ink else Palette.Safelight,
             fontSize = 12.sp,
         )
         if (r.state == RollState.SHELVED) {
-            OutlinedButton(enabled = cameraFree, onClick = onReload) { Text("Ricarica") }
-            Button(onClick = onDevelop) { Text("Riavvolgi") }
+            OutlinedButton(enabled = cameraFree, onClick = onReload) { Text(stringResource(R.string.reload)) }
+            Button(onClick = onDevelop) { Text(stringResource(R.string.rewind)) }
         }
         if (r.state == RollState.SHELVED || r.state == RollState.FINISHED || isReady) {
             TextButton(onClick = { if (confirmDelete) onDelete() else confirmDelete = true }) {
-                Text(if (confirmDelete) "Conferma" else "Elimina", color = Color(0xFFFF8A80))
+                Text(if (confirmDelete) stringResource(R.string.confirm) else stringResource(R.string.delete), color = Color(0xFFFF8A80))
             }
         }
     }
@@ -213,25 +216,25 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            TextButton(onClick = onBack) { Text("‹ Rullini") }
+            TextButton(onClick = onBack) { Text(stringResource(R.string.back_rolls)) }
             Column(Modifier.weight(1f)) {
                 Text(roll.emulsionName, color = Palette.Ink, fontWeight = FontWeight.SemiBold)
                 val printed = frames.count { it.printUri != null }
-                Text("${frames.size} negativi · $printed stampati", color = Palette.Muted, fontSize = 11.sp, fontFamily = Mono)
+                Text(stringResource(R.string.negatives_printed, frames.size, printed), color = Palette.Muted, fontSize = 11.sp, fontFamily = Mono)
             }
             if (!selecting) {
-                OutlinedButton(onClick = { selecting = true; selected = emptySet() }) { Text("Seleziona") }
+                OutlinedButton(onClick = { selecting = true; selected = emptySet() }) { Text(stringResource(R.string.select)) }
                 TextButton(onClick = { if (confirmDelete) vm.deleteRoll(roll, onBack) else confirmDelete = true }) {
-                    Text(if (confirmDelete) "Conferma: elimina tutto" else "Elimina rullino", color = Color(0xFFFF8A80))
+                    Text(if (confirmDelete) stringResource(R.string.delete_all_confirm) else stringResource(R.string.delete_roll2), color = Color(0xFFFF8A80))
                 }
             } else {
-                Text("${selected.size} scelti", color = Palette.Ink, fontFamily = Mono, fontSize = 12.sp)
+                Text(stringResource(R.string.n_chosen, selected.size), color = Palette.Ink, fontFamily = Mono, fontSize = 12.sp)
                 Button(enabled = selected.isNotEmpty(), onClick = {
                     vm.print(roll, frames.filter { it.frame in selected })
                     selecting = false
-                }) { Text("Stampa") }
-                OutlinedButton(enabled = selected.isNotEmpty(), onClick = { confirmCut = true }) { Text("✂ Tieni solo questi") }
-                TextButton(onClick = { selecting = false; selected = emptySet() }) { Text("Annulla") }
+                }) { Text(stringResource(R.string.print)) }
+                OutlinedButton(enabled = selected.isNotEmpty(), onClick = { confirmCut = true }) { Text(stringResource(R.string.keep_only)) }
+                TextButton(onClick = { selecting = false; selected = emptySet() }) { Text(stringResource(R.string.cancel)) }
             }
         }
 
@@ -257,7 +260,7 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
             }
         }
         Text(
-            if (selecting) "Tocca i fotogrammi da stampare o da tenere" else "Tocca un fotogramma per guardarlo con il lentino",
+            if (selecting) stringResource(R.string.hint_select) else stringResource(R.string.hint_loupe),
             color = Color(0xFF6B655E),
             fontSize = 12.sp,
             modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp),
@@ -277,17 +280,17 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
         AlertDialog(
             onDismissRequest = { confirmCut = false },
             containerColor = Palette.Plate,
-            title = { Text("Taglio dei negativi") },
+            title = { Text(stringResource(R.string.cut_title)) },
             text = {
-                Text("Tieni ${selected.size} fotogrammi su ${frames.size}. Gli altri vengono eliminati per sempre, anche le loro stampe in galleria.")
+                Text(stringResource(R.string.cut_text, selected.size, frames.size))
             },
             confirmButton = {
                 Button(onClick = {
                     vm.cutKeeping(roll, selected)
                     confirmCut = false; selecting = false; selected = emptySet()
-                }) { Text("✂ Taglia") }
+                }) { Text(stringResource(R.string.cut)) }
             },
-            dismissButton = { TextButton(onClick = { confirmCut = false }) { Text("Annulla") } },
+            dismissButton = { TextButton(onClick = { confirmCut = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -313,7 +316,7 @@ private fun NegativeFrame(frame: FrameEntity, roll: RollEntity, hasRelease: Bool
         ) {
             AsyncImage(
                 model = File(frame.developedPath),
-                contentDescription = "Negativo ${frame.frame}",
+                contentDescription = stringResource(R.string.negative_n, frame.frame),
                 contentScale = ContentScale.Crop,
                 colorFilter = ColorFilter.colorMatrix(if (roll.isBw) bwNegative else colorNegative),
                 modifier = Modifier
@@ -322,14 +325,14 @@ private fun NegativeFrame(frame: FrameEntity, roll: RollEntity, hasRelease: Bool
             )
             if (frame.printUri != null) {
                 Text(
-                    "STAMPATA",
+                    stringResource(R.string.printed_badge),
                     color = Color.White, fontFamily = Mono, fontSize = 9.sp,
                     modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp).background(Color(0x99000000)).padding(horizontal = 4.dp),
                 )
             }
             if (hasRelease) {
                 Text(
-                    "LIB",
+                    stringResource(R.string.release_badge),
                     color = Color.White, fontFamily = Mono, fontSize = 9.sp,
                     modifier = Modifier.align(Alignment.BottomStart).padding(4.dp).background(Color(0x99000000)).padding(horizontal = 4.dp),
                 )
@@ -386,29 +389,30 @@ private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, 
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 AsyncImage(
                     model = File(frame.developedPath),
-                    contentDescription = "Positivo ${frame.frame}",
+                    contentDescription = stringResource(R.string.positive_n, frame.frame),
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(4.dp)),
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Posa ${frame.frame}" + if (frame.exposureCount > 1) " · ${frame.exposureCount} esposizioni" else "", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
+                Text(stringResource(R.string.frame_n, frame.frame) + if (frame.exposureCount > 1) stringResource(R.string.n_exposures_suffix, frame.exposureCount) else "", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
                 Spacer(Modifier.width(8.dp))
-                if (frame.printUri == null) Button(onClick = onPrint) { Text("Stampa") }
-                else Text("Già stampata", color = Palette.Ink)
-                OutlinedButton(onClick = onRelease) { Text("Liberatoria") }
-                OutlinedButton(onClick = onClose) { Text("Rimetti sul tavolo") }
+                if (frame.printUri == null) Button(onClick = onPrint) { Text(stringResource(R.string.print)) }
+                else Text(stringResource(R.string.already_printed), color = Palette.Ink)
+                OutlinedButton(onClick = onRelease) { Text(stringResource(R.string.release)) }
+                OutlinedButton(onClick = onClose) { Text(stringResource(R.string.back_on_table)) }
             }
         }
     }
 }
 
+@Composable
 private fun stateLabel(r: RollEntity) = when (r.state) {
-    RollState.LOADED -> "In macchina"
-    RollState.SHELVED -> "Messo da parte"
-    RollState.FINISHED -> "Da sviluppare"
-    RollState.DEVELOPING -> "In sviluppo"
-    else -> "Negativi ›"
+    RollState.LOADED -> stringResource(R.string.state_loaded)
+    RollState.SHELVED -> stringResource(R.string.state_shelved)
+    RollState.FINISHED -> stringResource(R.string.state_finished)
+    RollState.DEVELOPING -> stringResource(R.string.state_developing)
+    else -> stringResource(R.string.negatives_arrow)
 }
 
-private fun date(ms: Long): String = SimpleDateFormat("d MMM yyyy", Locale.ITALIAN).format(Date(ms))
+private fun date(ms: Long): String = SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(Date(ms))

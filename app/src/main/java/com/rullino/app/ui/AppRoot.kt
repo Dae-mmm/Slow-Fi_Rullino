@@ -1,5 +1,8 @@
 package com.rullino.app.ui
 
+import com.rullino.app.R
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -32,12 +35,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-enum class AppTab(val label: String, val glyph: String) {
-    CAMERA("Fotocamera", "◉"),
-    ROLLS("Rullini", "▦"),
-    SHOP("Negozio", "☖"),
-    EMULSIONS("Emulsioni", "▥"),
-    OPTIONS("Opzioni", "⚙"),
+enum class AppTab(@StringRes val label: Int, val glyph: String) {
+    CAMERA(R.string.tab_camera, "◉"),
+    ROLLS(R.string.tab_rolls, "▦"),
+    SHOP(R.string.tab_shop, "☖"),
+    EMULSIONS(R.string.tab_emulsions, "▥"),
+    OPTIONS(R.string.tab_options, "⚙"),
 }
 
 @Composable
@@ -52,7 +55,7 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
                 vm.importFrom(importUri)
                 tab = AppTab.EMULSIONS
             } else {
-                vm.say("Per importare file .emulsion attiva la modalità sviluppatore (Opzioni)")
+                vm.say(R.string.import_needs_dev)
             }
             onImportHandled()
         }
@@ -91,7 +94,7 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
                         selected = tab == t,
                         onClick = { tab = t },
                         icon = { Text(t.glyph, fontSize = 20.sp) },
-                        label = { Text(t.label, fontSize = 11.sp) },
+                        label = { Text(stringResource(t.label), fontSize = 11.sp) },
                         colors = NavigationRailItemDefaults.colors(
                             selectedIconColor = Palette.Safelight,
                             selectedTextColor = Palette.Ink,
