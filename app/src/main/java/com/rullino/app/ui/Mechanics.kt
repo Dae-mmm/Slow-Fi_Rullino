@@ -1,5 +1,8 @@
 package com.rullino.app.ui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.foundation.layout.offset
 import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.view.View
@@ -297,7 +300,13 @@ fun RewindKnob(ready: Boolean, onClick: () -> Unit, modifier: Modifier = Modifie
 
 /** Contafotogrammi: "S" a rullino appena caricato, poi il numero del prossimo scatto. */
 @Composable
-fun FrameCounter(number: Int, total: Int, modifier: Modifier = Modifier) {
+fun FrameCounter(
+    number: Int,
+    total: Int,
+    modifier: Modifier = Modifier,
+    rollTo: Int? = null,
+    rollProgress: Float = 0f,
+) {
     Box(
         modifier
             .size(46.dp)
@@ -306,21 +315,30 @@ fun FrameCounter(number: Int, total: Int, modifier: Modifier = Modifier) {
             .border(3.dp, Color(0xFF8E8983), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        AnimatedContent(
+        if (rollTo != null) {
+            // Riavvolgimento: il numero segue la manovella, quello attuale sale e il precedente arriva dal basso.
+            val p = rollProgress.coerceIn(0f, 1f)
+            CounterDigit(number, total, Modifier.offset(y = (-30f * p).dp))
+            CounterDigit(rollTo, total, Modifier.offset(y = (30f * (1f - p)).dp))
+        } else AnimatedContent(
             targetState = number,
             transitionSpec = { slideInVertically(tween(260)) { it } togetherWith slideOutVertically(tween(260)) { -it } },
             label = "contatore",
-        ) { n ->
-            Text(
-                text = if (n <= 0) "S" else n.toString(),
-                color = if (n >= total) Palette.Safelight else Palette.Ink,
-                fontFamily = Mono,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                textAlign = TextAlign.Center,
-            )
-        }
+        ) { n -> CounterDigit(n, total) }
     }
+}
+
+@Composable
+private fun CounterDigit(n: Int, total: Int, modifier: Modifier = Modifier) {
+    Text(
+        text = if (n <= 0) "S" else n.toString(),
+        color = if (n >= total) Palette.Safelight else Palette.Ink,
+        fontFamily = Mono,
+        fontWeight = FontWeight.Bold,
+        fontSize = 18.sp,
+        textAlign = TextAlign.Center,
+        modifier = modifier,
+    )
 }
 
 /** Striscia di pellicola con le perforazioni, che scorre mentre si carica la leva. */
@@ -372,16 +390,20 @@ fun RewindCrank(
     highlight: Boolean,
     onFullTurn: () -> Unit,
     modifier: Modifier = Modifier,
+    resetKey: Any? = null,
+    onProgress: (Float) -> Unit = {},
 ) {
     val view = LocalView.current
     val angle = remember { mutableFloatStateOf(0f) }   // rotazione visiva totale, in gradi
-    val turn = remember { mutableFloatStateOf(0f) }    // gradi accumulati verso il prossimo giro
-    val quarter = remember { mutableIntStateOf(0) }
+    val turn = remember(resetKey) { mutableFloatStateOf(0f) }    // gradi accumulati verso il prossimo giro
+    val quarter = remember(resetKey) { mutableIntStateOf(0) }
+    val progress by rememberUpdatedState(onProgress)
+    val fullTurn by rememberUpdatedState(onFullTurn)
 
     Canvas(
         modifier
             .size(96.dp, 64.dp)
-            .pointerInput(enabled) {
+            .pointerInput(enabled, resetKey) {
                 if (!enabled) {
                     detectDragGestures(onDragStart = { view.reject() }) { change, _ -> change.consume() }
                     return@pointerInput
@@ -405,8 +427,9 @@ fun RewindCrank(
                         turn.floatValue -= 360f
                         quarter.intValue = 0
                         view.confirm()
-                        onFullTurn()
+                        fullTurn()
                     }
+                    progress(turn.floatValue / 360f)
                 }
             }
     ) {

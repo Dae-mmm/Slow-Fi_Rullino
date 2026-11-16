@@ -192,10 +192,27 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
     var unloadTurns by remember(r?.id) { mutableIntStateOf(0) }
     val turnsNeeded = maxOf(2, ((r?.shotCount ?: 0) + 5) / 6)
 
-    val counter = when {
+    val dbCounter = when {
         r == null -> 0
         r.wound -> r.cursor
         else -> r.cursor - 1
+    }
+    // Numero mostrato subito a fine giro, finché il database non conferma il riavvolgimento.
+    var optimistic by remember(r?.id, r?.cursor, r?.wound) { mutableStateOf<Int?>(null) }
+    val counter = optimistic ?: dbCounter
+    var crank by remember(r?.id, releaseOn) { mutableFloatStateOf(0f) }
+    // Dove sta andando il contatore mentre si gira la manovella (null = fermo).
+    val rollPair: Pair<Int, Pair<Int, Float>>? = when {
+        r == null || r.shotCount == 0 -> null
+        releaseOn -> {
+            val t = ((unloadTurns + crank) / turnsNeeded).coerceIn(0f, 1f)
+            val v = dbCounter * (1f - t)
+            val from = kotlin.math.ceil(v).toInt()
+            if (from <= 0) null else Pair(from, Pair(from - 1, from - v))
+        }
+        crank > 0f && r.cursor > 1 && optimistic == null -> Pair(counter, Pair(r.cursor - 2, crank))
+        crank > 0f && optimistic != null && counter > 0 -> Pair(counter, Pair(counter - 1, crank))
+        else -> null
     }
 
     Column(Modifier.fillMaxSize().background(Palette.Body)) {
@@ -207,13 +224,16 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 RewindCrank(
                     enabled = r != null && r.shotCount > 0,
+                    resetKey = Pair(r?.id, releaseOn),
+                    onProgress = { crank = it },
                     highlight = releaseOn || r?.isAtEnd == true,
                     onFullTurn = {
                         val roll = r ?: return@RewindCrank
                         if (releaseOn) {
                             unloadTurns++
-                            if (unloadTurns >= turnsNeeded) { releaseOn = false; unloadTurns = 0; vm.rewindOut(roll) }
+                            if (unloadTurns >= turnsNeeded) { optimistic = 0; releaseOn = false; unloadTurns = 0; vm.rewindOut(roll) }
                         } else if (roll.cursor > 1) {
+                            optimistic = roll.cursor - 2
                             vm.rewindFrame(roll)
                         } else view.reject()
                     },
@@ -232,7 +252,13 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
             Spacer(Modifier.weight(1f))
             Engraving("RULLINO", modifier = Modifier.padding(bottom = 22.dp), size = 15)
             Spacer(Modifier.weight(1f))
-            FrameCounter(number = counter, total = r?.exposures ?: 36, modifier = Modifier.padding(bottom = 10.dp))
+            FrameCounter(
+                number = rollPair?.first ?: counter,
+                total = r?.exposures ?: 36,
+                modifier = Modifier.padding(bottom = 10.dp),
+                rollTo = rollPair?.second?.first,
+                rollProgress = rollPair?.second?.second ?: 0f,
+            )
             Spacer(Modifier.width(14.dp))
             ShutterButton(armed = armed && !busy, onClick = { shoot() })
             AdvanceLever(
