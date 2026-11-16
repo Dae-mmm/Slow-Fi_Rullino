@@ -1,8 +1,10 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct OptionsScreen: View {
     @EnvironmentObject var store: Store
     @State private var taps = 0
+    @State private var importing = false
 
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
@@ -26,6 +28,7 @@ struct OptionsScreen: View {
                             Text(L("skip_lab_note")).font(.caption).foregroundStyle(.secondary)
                         }
                     }
+                    Button(L("import_emulsion")) { importing = true }
                     Button(L("plus100")) { store.data.coins += 100; store.say("plus100") }
                     Button(L("daily_again")) { store.data.lastDaily = ""; store.say("daily_again_msg") }
                     Button(L("dev_off"), role: .destructive) {
@@ -49,5 +52,8 @@ struct OptionsScreen: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(exportedAs: "com.slowfi.emulsion"), .zip, .data]) { result in
+            if case .success(let url) = result { store.importEmulsion(url) }
+        }
     }
 }

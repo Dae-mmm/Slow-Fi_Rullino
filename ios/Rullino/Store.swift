@@ -24,6 +24,7 @@ final class Store: ObservableObject {
            let list = try? JSONDecoder().decode([Emulsion].self, from: d) {
             emulsions = list
         }
+        mergeInstalled()
         if let d = try? Data(contentsOf: stateFile), let s = try? JSONDecoder().decode(AppData.self, from: d) {
             data = s
         }
@@ -43,6 +44,29 @@ final class Store: ObservableObject {
     }
 
     func emulsion(_ id: String) -> Emulsion? { emulsions.first { $0.id == id } }
+
+    private func mergeInstalled() {
+        for e in EmulsionInstaller.installed(in: root) {
+            if let i = emulsions.firstIndex(where: { $0.id == e.id }) { emulsions[i] = e } else { emulsions.append(e) }
+        }
+    }
+
+    /// Importa un file .emulsion (dal selettore di File o da "Apri con Rullino").
+    func importEmulsion(_ url: URL) {
+        guard data.devMode else { say("import_needs_dev"); return }
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        guard let bytes = try? Data(contentsOf: url) else { say("open_file_failed"); return }
+        do {
+            let e = try EmulsionInstaller.install(bytes, into: root)
+            if let i = emulsions.firstIndex(where: { $0.id == e.id }) { emulsions[i] = e } else { emulsions.append(e) }
+            say("emulsion_added", e.name)
+        } catch let err as EmulsionError {
+            toast = err.message
+        } catch {
+            say("invalid_file")
+        }
+    }
 
     /* ---------------- Rullini ---------------- */
 

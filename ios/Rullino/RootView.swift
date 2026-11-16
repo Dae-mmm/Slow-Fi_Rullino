@@ -56,5 +56,8 @@ struct RootView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: store.toast)
+        .onOpenURL { url in
+            if url.pathExtension.lowercased() == "emulsion" { store.importEmulsion(url); tab = .shop }
+        }
     }
 }
