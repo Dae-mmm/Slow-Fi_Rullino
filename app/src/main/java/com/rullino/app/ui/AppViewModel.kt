@@ -31,6 +31,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val app = application as RullinoApp
     val repo = app.repo
     private val developer = app.developer
+    val settings = app.settings
 
     val emulsions: StateFlow<List<EmulsionEntity>> =
         repo.emulsions.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -82,7 +83,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         runCatching {
             repo.finishNow(r.id)
             developer.develop(r.id)
-        }.onFailure { say(it.message ?: "Sviluppo non riuscito") }
+        }.onSuccess { sayLab() }.onFailure { say(it.message ?: "Sviluppo non riuscito") }
     }
 
     fun deleteRoll(r: RollEntity, onDone: () -> Unit = {}) = viewModelScope.launch {
@@ -108,6 +109,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             .onFailure { say(it.message ?: "Taglio non riuscito") }
     }
 
+    private fun sayLab() {
+        val wait = settings.currentWaitMillis()
+        say(if (wait == 0L) "Negativi pronti: li trovi in Rullini" else "Rullino al laboratorio: pronto tra ${formatWait(wait)}")
+    }
+
     private fun askGalleryConfirm(uris: List<Uri>) {
         if (uris.isEmpty()) return
         if (Build.VERSION.SDK_INT >= 30) {
@@ -121,7 +127,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Lo sviluppo continua anche se si cambia schermata. */
     fun develop(r: RollEntity) = app.appScope.launch {
-        runCatching { developer.develop(r.id) }.onFailure { say(it.message ?: "Sviluppo non riuscito") }
+        runCatching { developer.develop(r.id) }.onSuccess { sayLab() }.onFailure { say(it.message ?: "Sviluppo non riuscito") }
     }
 
     fun importFrom(uri: Uri, onDone: (EmulsionEntity) -> Unit = {}) = viewModelScope.launch {
@@ -159,5 +165,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 .onFailure { say(it.message ?: "Download non riuscito") }
             downloading.value = downloading.value - item.id
         }
+    }
+}
+
+/** "1 giorno", "3 h 20 min", "12 min"… */
+fun formatWait(ms: Long): String {
+    val min = (ms + 59_999) / 60_000
+    val h = min / 60
+    val m = min % 60
+    return when {
+        h >= 24 && h % 24 == 0L && m == 0L -> if (h == 24L) "1 giorno" else "${h / 24} giorni"
+        h > 0 && m > 0 -> "$h h $m min"
+        h > 0 -> if (h == 1L) "1 ora" else "$h ore"
+        else -> "$m min"
     }
 }

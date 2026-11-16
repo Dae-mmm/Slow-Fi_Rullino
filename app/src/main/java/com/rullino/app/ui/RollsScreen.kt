@@ -32,6 +32,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -65,8 +67,15 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit) {
     val active by vm.activeRoll.collectAsState()
     var openId by rememberSaveable { mutableStateOf<Long?>(null) }
     val open = rolls.firstOrNull { it.id == openId }
+    val skipWait by vm.settings.skipLabWait.collectAsState()
+    val devMode by vm.settings.developerMode.collectAsState()
+    // L'orologio del laboratorio: si aggiorna ogni 30 secondi.
+    val now by produceState(System.currentTimeMillis()) {
+        while (true) { delay(30_000); value = System.currentTimeMillis() }
+    }
+    fun ready(r: RollEntity) = r.state == RollState.DEVELOPED && ((devMode && skipWait) || (r.readyAt ?: 0L) <= now)
 
-    if (open != null && open.state == RollState.DEVELOPED) {
+    if (open != null && ready(open)) {
         BackHandler { openId = null }
         LightTable(vm, open, onBack = { openId = null })
         return
@@ -80,6 +89,8 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit) {
         items(rolls, key = { it.id }) { r ->
             RollRow(
                 r = r,
+                isReady = ready(r),
+                waitLeft = ((r.readyAt ?: 0L) - now).coerceAtLeast(0L),
                 cameraFree = active == null || (active?.state == RollState.LOADED && active?.shotCount == 0),
                 onOpen = { openId = r.id },
                 onReload = { vm.reload(r, onOpenCamera) },
@@ -93,6 +104,8 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit) {
 @Composable
 private fun RollRow(
     r: RollEntity,
+    isReady: Boolean,
+    waitLeft: Long,
     cameraFree: Boolean,
     onOpen: () -> Unit,
     onReload: () -> Unit,
@@ -105,7 +118,7 @@ private fun RollRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .background(Palette.Plate)
-            .clickable(enabled = r.state == RollState.DEVELOPED, onClick = onOpen)
+            .clickable(enabled = isReady, onClick = onOpen)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -117,12 +130,16 @@ private fun RollRow(
                 color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp,
             )
         }
-        Text(stateLabel(r), color = if (r.state == RollState.DEVELOPED) Palette.Ink else Palette.Safelight, fontSize = 12.sp)
+        Text(
+            if (r.state == RollState.DEVELOPED && !isReady) "Al laboratorio · pronto tra ${formatWait(waitLeft)}" else stateLabel(r),
+            color = if (isReady) Palette.Ink else Palette.Safelight,
+            fontSize = 12.sp,
+        )
         if (r.state == RollState.SHELVED) {
             OutlinedButton(enabled = cameraFree, onClick = onReload) { Text("Ricarica") }
             Button(onClick = onDevelop) { Text("Sviluppa") }
         }
-        if (r.state == RollState.SHELVED || r.state == RollState.DEVELOPED) {
+        if (r.state == RollState.SHELVED || isReady) {
             TextButton(onClick = { if (confirmDelete) onDelete() else confirmDelete = true }) {
                 Text(if (confirmDelete) "Conferma" else "Elimina", color = Color(0xFFFF8A80))
             }

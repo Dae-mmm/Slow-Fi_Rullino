@@ -1,0 +1,113 @@
+package com.rullino.app.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.rullino.app.BuildConfig
+import com.rullino.app.data.LabTime
+
+@Composable
+fun OptionsScreen(vm: AppViewModel) {
+    val settings = vm.settings
+    val labTime by settings.labTime.collectAsState()
+    val devMode by settings.developerMode.collectAsState()
+    val skipWait by settings.skipLabWait.collectAsState()
+    val view = LocalView.current
+    var taps by remember { mutableIntStateOf(0) }
+
+    Column(
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Section("Laboratorio") {
+            Text("Quanto aspetti i negativi dopo aver consegnato un rullino.", color = Palette.Muted, fontSize = 13.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LabTime.entries.forEach { t ->
+                    FilterChip(selected = labTime == t, onClick = { settings.setLabTime(t) }, label = { Text(t.label) })
+                }
+            }
+            Text("Vale per i prossimi rullini: quelli già al laboratorio mantengono il loro tempo.", color = Palette.Muted, fontSize = 12.sp)
+        }
+
+        if (devMode) {
+            Section("Modalità sviluppatore") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Salta i tempi del laboratorio", color = Palette.Ink)
+                        Text("I negativi sono pronti subito, anche quelli già consegnati.", color = Palette.Muted, fontSize = 12.sp)
+                    }
+                    Switch(
+                        checked = skipWait,
+                        onCheckedChange = { settings.setSkipLabWait(it) },
+                        colors = SwitchDefaults.colors(checkedTrackColor = Palette.Safelight),
+                    )
+                }
+                TextButton(onClick = { settings.setDeveloperMode(false); taps = 0; vm.say("Modalità sviluppatore disattivata") }) {
+                    Text("Disattiva la modalità sviluppatore", color = Palette.Muted)
+                }
+            }
+        }
+
+        // Come su Android: 7 tocchi sulla versione attivano la modalità sviluppatore.
+        Text(
+            "Rullino · versione ${BuildConfig.VERSION_NAME}",
+            color = Palette.Muted,
+            fontFamily = Mono,
+            fontSize = 12.sp,
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .clickable {
+                    if (devMode) return@clickable
+                    taps++
+                    view.tick()
+                    when {
+                        taps >= 7 -> { settings.setDeveloperMode(true); view.confirm(); vm.say("Ora sei uno sviluppatore") }
+                        taps >= 4 -> vm.say("Ancora ${7 - taps} tocchi")
+                    }
+                }
+                .padding(6.dp),
+        )
+    }
+}
+
+@Composable
+private fun Section(title: String, content: @Composable () -> Unit) {
+    Column(
+        Modifier
+            .widthIn(max = 640.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(Palette.Plate)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(title.uppercase(), color = Palette.Ink, fontWeight = FontWeight.Bold, fontFamily = Mono, fontSize = 12.sp, letterSpacing = 2.sp)
+        content()
+    }
+}

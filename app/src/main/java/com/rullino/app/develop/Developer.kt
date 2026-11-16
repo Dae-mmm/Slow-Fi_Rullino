@@ -14,6 +14,7 @@ import com.rullino.app.data.ExposureEntity
 import com.rullino.app.data.FrameEntity
 import com.rullino.app.data.Repository
 import com.rullino.app.data.RollState
+import com.rullino.app.data.Settings
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +33,7 @@ data class DevelopProgress(val rollId: Long, val done: Int, val total: Int)
  * In galleria va solo ciò che si stampa dal tavolo luminoso.
  * Tutto il lavoro OpenGL gira su un thread dedicato.
  */
-class Developer(private val context: Context, private val repo: Repository) {
+class Developer(private val context: Context, private val repo: Repository, private val settings: Settings) {
 
     private val glDispatcher = Executors.newSingleThreadExecutor { r -> Thread(r, "sviluppo") }.asCoroutineDispatcher()
     private val mutex = Mutex()
@@ -71,7 +72,9 @@ class Developer(private val context: Context, private val repo: Repository) {
                 _progress.value = null
             }
             val end = db.rolls().get(rollId) ?: return@withContext
-            db.rolls().update(end.copy(state = RollState.DEVELOPED, developedAt = System.currentTimeMillis()))
+            val now = System.currentTimeMillis()
+            // Lo sviluppo vero è già fatto: i negativi restano "al laboratorio" fino a readyAt.
+            db.rolls().update(end.copy(state = RollState.DEVELOPED, developedAt = now, readyAt = now + settings.currentWaitMillis()))
         }
     }
 

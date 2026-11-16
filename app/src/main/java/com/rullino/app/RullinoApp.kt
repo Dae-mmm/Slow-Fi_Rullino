@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import com.rullino.app.data.AppDb
 import com.rullino.app.data.Repository
+import com.rullino.app.data.Settings
 import com.rullino.app.develop.Developer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,12 +18,15 @@ class RullinoApp : Application() {
         private set
     lateinit var developer: Developer
         private set
+    lateinit var settings: Settings
+        private set
 
     override fun onCreate() {
         super.onCreate()
         val db = AppDb.build(this)
         repo = Repository(this, db)
-        developer = Developer(this, repo)
+        settings = Settings(this)
+        developer = Developer(this, repo, settings)
         appScope.launch {
             installBundledEmulsions()
             // Riprende uno sviluppo interrotto (app chiusa a metà).
@@ -46,6 +50,6 @@ class RullinoApp : Application() {
     }
 
     private companion object {
-        const val BUNDLED_VERSION = 2
+        const val BUNDLED_VERSION = 3
     }
 }

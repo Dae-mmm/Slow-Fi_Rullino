@@ -31,7 +31,9 @@ Requisiti: Android 10 (API 29) o più recente, fotocamera posteriore.
   Si stampa una posa o una selezione: solo le stampe vanno in *Immagini/Rullino/<emulsione data #rullino>*.
 - **Taglio dei negativi**: tieni le pose scelte, il resto (con le eventuali stampe) viene eliminato.
 - La grana usa un seme diverso per ogni posa, come su pellicola vera.
-- Il database è alla versione 2: passando dalla versione precedente l'app riparte da zero (rullini di prova inclusi).
+- **Laboratorio**: dopo lo sviluppo i negativi sono pronti tra 1 ora, 3 ore o 1 giorno (Opzioni).
+- **Modalità sviluppatore**: in Opzioni tocca 7 volte la versione; poi puoi saltare i tempi del laboratorio.
+- Il database è alla versione 3: passando da una versione precedente l'app riparte da zero (rullini di prova inclusi).
 
 ## Formato `.emulsion` (versione 1)
 

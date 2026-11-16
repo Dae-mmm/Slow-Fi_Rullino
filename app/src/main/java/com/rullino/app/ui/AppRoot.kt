@@ -32,6 +32,7 @@ enum class AppTab(val label: String, val glyph: String) {
     CAMERA("Fotocamera", "◉"),
     EMULSIONS("Emulsioni", "▥"),
     ROLLS("Rullini", "▦"),
+    OPTIONS("Opzioni", "⚙"),
 }
 
 @Composable
@@ -91,6 +92,7 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
                     AppTab.CAMERA -> CameraScreen(vm, onPickEmulsion = { tab = AppTab.EMULSIONS }, onOpenRolls = { tab = AppTab.ROLLS })
                     AppTab.EMULSIONS -> EmulsionsScreen(vm, onLoaded = { tab = AppTab.CAMERA })
                     AppTab.ROLLS -> RollsScreen(vm, onOpenCamera = { tab = AppTab.CAMERA })
+                    AppTab.OPTIONS -> OptionsScreen(vm)
                 }
             }
         }

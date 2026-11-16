@@ -68,6 +68,8 @@ data class RollEntity(
     val loadedAt: Long,
     val finishedAt: Long? = null,
     val developedAt: Long? = null,
+    /** Quando i negativi tornano dal laboratorio. */
+    val readyAt: Long? = null,
 ) {
     val canWind get() = state == RollState.LOADED && !wound && cursor <= exposures
 }
@@ -182,7 +184,7 @@ interface FrameDao {
 
 @Database(
     entities = [EmulsionEntity::class, RollEntity::class, ExposureEntity::class, FrameEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class AppDb : RoomDatabase() {
