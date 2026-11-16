@@ -392,6 +392,7 @@ fun RewindCrank(
     modifier: Modifier = Modifier,
     resetKey: Any? = null,
     onProgress: (Float) -> Unit = {},
+    diameter: Dp = 124.dp,
 ) {
     val view = LocalView.current
     val angle = remember { mutableFloatStateOf(0f) }   // rotazione visiva totale, in gradi
@@ -402,7 +403,7 @@ fun RewindCrank(
 
     Canvas(
         modifier
-            .size(124.dp)
+            .size(diameter)
             .pointerInput(enabled, resetKey) {
                 if (!enabled) {
                     detectDragGestures(onDragStart = { view.reject() }) { change, _ -> change.consume() }
@@ -619,5 +620,131 @@ fun ZoomRing(
         // Ombre ai lati: il cilindro gira via dalla vista.
         drawRect(Brush.horizontalGradient(listOf(Color(0xCC000000), Color.Transparent), startX = 0f, endX = w * 0.18f), Offset.Zero, Size(w * 0.18f, h))
         drawRect(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xCC000000)), startX = w * 0.82f, endX = w), Offset(w * 0.82f, 0f), Size(w * 0.18f, h))
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Leva di carica e pulsante di scatto visti dall'alto                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Pulsante di scatto con la leva di carica che gli ruota attorno, visti dall'alto.
+ * Tocca il pulsante al centro per scattare; trascina in cerchio (da sinistra verso il basso)
+ * per caricare la leva: arrivata a fine corsa avanza la pellicola e la molla la riporta a riposo.
+ */
+@Composable
+fun TopLeverShutter(
+    armed: Boolean,
+    leverEnabled: Boolean,
+    onShoot: () -> Unit,
+    onAdvanced: () -> Unit,
+    onProgress: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    diameter: Dp = 150.dp,
+) {
+    val view = LocalView.current
+    val scope = rememberCoroutineScope()
+    val progress = remember { Animatable(0f) }
+    val press = remember { Animatable(0f) }
+    val shoot by rememberUpdatedState(onShoot)
+    val advanced by rememberUpdatedState(onAdvanced)
+    val reportProgress by rememberUpdatedState(onProgress)
+
+    Canvas(
+        modifier
+            .size(diameter)
+            .pointerInput(armed, leverEnabled) {
+                val pivot = Offset(this.size.width * 0.6f, this.size.height * 0.42f)
+                val shutterR = 26.dp.toPx()
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    if ((down.position - pivot).getDistance() <= shutterR) {
+                        scope.launch { press.animateTo(1f, tween(60)) }
+                        val up = waitForUpOrCancellation()
+                        scope.launch { press.animateTo(0f, tween(140)) }
+                        if (up != null) shoot()
+                        return@awaitEachGesture
+                    }
+                    if (!leverEnabled) { view.reject(); return@awaitEachGesture }
+                    var last = down.position - pivot
+                    var v = progress.value
+                    var lastTick = (v * 10).toInt()
+                    while (true) {
+                        val ev = awaitPointerEvent()
+                        val ch = ev.changes.firstOrNull { it.id == down.id } ?: break
+                        if (!ch.pressed) break
+                        ch.consume()
+                        val now = ch.position - pivot
+                        var d = Math.toDegrees(
+                            (kotlin.math.atan2(now.y, now.x) - kotlin.math.atan2(last.y, last.x)).toDouble()
+                        ).toFloat()
+                        if (d > 180f) d -= 360f
+                        if (d < -180f) d += 360f
+                        last = now
+                        v = (v - d / LEVER_DEG).coerceIn(0f, 1f)
+                        val snap = v
+                        scope.launch { progress.snapTo(snap) }
+                        reportProgress(v)
+                        val t = (v * 10).toInt()
+                        if (t > lastTick) view.tick()
+                        lastTick = t
+                    }
+                    val complete = v >= 0.95f
+                    scope.launch {
+                        if (complete) { view.confirm(); advanced() }
+                        progress.animateTo(0f, spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow)) {
+                            reportProgress(if (complete) 0f else value)
+                        }
+                        reportProgress(0f)
+                    }
+                }
+            }
+    ) {
+        val pivot = Offset(this.size.width * 0.6f, this.size.height * 0.42f)
+        val armLen = this.size.width * 0.42f
+        val deg = 180f - progress.value * LEVER_DEG
+        val a = Math.toRadians(deg.toDouble())
+        val tip = Offset(pivot.x + (armLen * kotlin.math.cos(a)).toFloat(), pivot.y + (armLen * kotlin.math.sin(a)).toFloat())
+        val metal = if (leverEnabled) Color(0xFFE4E0DA) else Color(0xFF9A958F)
+
+        // Guida della corsa, appena accennata quando la leva si può caricare.
+        if (leverEnabled) {
+            drawArc(
+                Color(0x40CFCAC4), startAngle = 180f - LEVER_DEG, sweepAngle = LEVER_DEG, useCenter = false,
+                topLeft = Offset(pivot.x - armLen, pivot.y - armLen), size = Size(armLen * 2, armLen * 2),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()),
+            )
+        }
+        // Braccio della leva, rastremato verso la punta.
+        val nx = (-kotlin.math.sin(a)).toFloat(); val ny = kotlin.math.cos(a).toFloat()
+        val w0 = 9.dp.toPx(); val w1 = 5.dp.toPx()
+        val arm = Path().apply {
+            moveTo(pivot.x + nx * w0, pivot.y + ny * w0)
+            lineTo(tip.x + nx * w1, tip.y + ny * w1)
+            lineTo(tip.x - nx * w1, tip.y - ny * w1)
+            lineTo(pivot.x - nx * w0, pivot.y - ny * w0)
+            close()
+        }
+        drawPath(arm, Color(0x55000000), alpha = 1f)
+        drawPath(arm, Brush.linearGradient(listOf(metal, Color(0xFF8F8A84)), start = pivot, end = tip))
+        // Pomello in plastica alla punta, con l'accento quando è pronta.
+        drawCircle(Color(0xFF0C0B0B), radius = 12.dp.toPx(), center = tip)
+        drawCircle(Brush.radialGradient(listOf(Color(0xFF4A4542), Color(0xFF1C1A19)), center = tip, radius = 11.dp.toPx()), radius = 10.dp.toPx(), center = tip)
+        if (leverEnabled) drawCircle(Palette.Safelight, radius = 3.dp.toPx(), center = tip)
+
+        // Collare del pulsante di scatto.
+        drawCircle(Color(0xFF1E1C1B), radius = 27.dp.toPx(), center = pivot)
+        drawCircle(Brush.radialGradient(listOf(Color(0xFFE9E5DF), Color(0xFF8A857F)), center = pivot, radius = 26.dp.toPx()), radius = 25.dp.toPx(), center = pivot)
+        // Pulsante: affonda e si scurisce quando lo premi.
+        val br = (15f - press.value * 1.5f).dp.toPx()
+        drawCircle(Color(0xFF5A5550), radius = br + 2.dp.toPx(), center = pivot)
+        drawCircle(
+            Brush.radialGradient(
+                listOf(if (press.value > 0.5f) Color(0xFFB9B4AE) else Color(0xFFF4F1EC), Color(0xFF8F8A84)),
+                center = Offset(pivot.x - 4.dp.toPx(), pivot.y - 4.dp.toPx()), radius = br * 1.4f,
+            ),
+            radius = br, center = pivot,
+        )
+        if (armed) drawCircle(Palette.Safelight, radius = br + 4.dp.toPx(), center = pivot, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()))
     }
 }

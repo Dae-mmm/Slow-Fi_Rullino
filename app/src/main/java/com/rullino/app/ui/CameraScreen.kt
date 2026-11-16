@@ -242,22 +242,47 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                 rollTo = rollPair?.second?.first,
                 rollProgress = rollPair?.second?.second ?: 0f,
             )
-            Spacer(Modifier.width(14.dp))
-            ShutterButton(armed = armed && !busy, onClick = { shoot() })
-            AdvanceLever(
-                enabled = canWind,
-                onAdvanced = { r?.let { vm.wind(it) } },
-                onProgress = { windProgress = it },
-            )
-            // Margine a destra: il dito non deve arrivare al bordo dello schermo per finire la corsa.
-            Spacer(Modifier.width(48.dp))
+            Spacer(Modifier.width(18.dp))
         }
 
         // ---- Corpo: similpelle, finestrella, mirino ----
         Row(Modifier.fillMaxWidth().weight(1f).leatherette().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(
-                Modifier.width(150.dp).fillMaxHeight().verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
+                Modifier.width(150.dp).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+            // Manovella di riavvolgimento vista dall'alto, con il pulsante R.
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ReleaseButton(
+                    on = releaseOn,
+                    enabled = r != null && r.shotCount > 0,
+                    onToggle = { releaseOn = !releaseOn; unloadTurns = 0 },
+                )
+                Engraving("REWIND", size = 10)
+            }
+            RewindCrank(
+                enabled = r != null && r.shotCount > 0 && releaseOn,
+                resetKey = Pair(r?.id, releaseOn),
+                onProgress = { crank = it },
+                highlight = releaseOn,
+                onFullTurn = {
+                    val roll = r ?: return@RewindCrank
+                    if (roll.isAtEnd) {
+                        unloadTurns++
+                        if (unloadTurns >= turnsNeeded) { optimistic = 0; releaseOn = false; unloadTurns = 0; vm.rewindOut(roll) }
+                    } else if (roll.cursor > 1) {
+                        // Torna alla posa precedente, già pronta: lo scatto successivo ci va sopra.
+                        optimistic = roll.cursor - 1
+                        vm.rewindFrame(roll)
+                    } else view.reject()
+                },
+                diameter = 112.dp,
+                modifier = Modifier.semantics { contentDescription = crankLabel },
+            )
+            Column(
+                Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 BackWindow(emulsion, r)
@@ -284,6 +309,7 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                 } else if (r == null) {
                     TextButton(onClick = onOpenRolls) { Text(stringResource(R.string.cam_developed_rolls), color = Palette.Muted, fontSize = 12.sp) }
                 }
+            }
             }
 
             Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -342,37 +368,18 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                     modifier = Modifier.fillMaxWidth(0.8f),
                 )
             }
-            // Manovella di riavvolgimento vista di fronte, a portata di pollice, con il pulsante R.
+            // Leva di carica e pulsante di scatto visti dall'alto, sotto il pollice destro.
             Column(
                 Modifier.width(150.dp).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
+                verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ReleaseButton(
-                        on = releaseOn,
-                        enabled = r != null && r.shotCount > 0,
-                        onToggle = { releaseOn = !releaseOn; unloadTurns = 0 },
-                    )
-                    Engraving("REWIND", size = 10)
-                }
-                RewindCrank(
-                    enabled = r != null && r.shotCount > 0 && releaseOn,
-                    resetKey = Pair(r?.id, releaseOn),
-                    onProgress = { crank = it },
-                    highlight = releaseOn,
-                    onFullTurn = {
-                        val roll = r ?: return@RewindCrank
-                        if (roll.isAtEnd) {
-                            unloadTurns++
-                            if (unloadTurns >= turnsNeeded) { optimistic = 0; releaseOn = false; unloadTurns = 0; vm.rewindOut(roll) }
-                        } else if (roll.cursor > 1) {
-                            // Torna alla posa precedente, già pronta: lo scatto successivo ci va sopra.
-                            optimistic = roll.cursor - 1
-                            vm.rewindFrame(roll)
-                        } else view.reject()
-                    },
-                    modifier = Modifier.semantics { contentDescription = crankLabel },
+                TopLeverShutter(
+                    armed = armed && !busy,
+                    leverEnabled = canWind,
+                    onShoot = { shoot() },
+                    onAdvanced = { r?.let { vm.wind(it) } },
+                    onProgress = { windProgress = it },
                 )
             }
         }
