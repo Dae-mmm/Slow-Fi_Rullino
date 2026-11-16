@@ -66,9 +66,10 @@ fun ShopScreen(vm: AppViewModel) {
     val now by produceState(System.currentTimeMillis()) { while (true) { delay(30_000); value = System.currentTimeMillis() } }
 
     val dailyAvailable = lastDaily != vm.shop.today()
-    val toDeliver = rolls.filter { it.state == RollState.FINISHED }
-    val atLab = rolls.filter { (it.state == RollState.DEVELOPING || it.state == RollState.DEVELOPED) && !it.pickedUp }
+    val toDeliver = rolls.filter { it.state == RollState.FINISHED && it.shotCount > 0 }
     fun ready(r: RollEntity) = r.state == RollState.DEVELOPED && ((dev && skip) || (r.readyAt ?: 0L) <= now)
+    // Al laboratorio: in vasca o in attesa. Quelli pronti sono già tornati in Rullini.
+    val atLab = rolls.filter { it.state == RollState.DEVELOPING || (it.state == RollState.DEVELOPED && !ready(it)) }
 
     LaunchedEffect(Unit) { if (vm.shopkeeperLine.value == null) vm.shopkeeperLine.value = greeting() }
 
@@ -117,15 +118,15 @@ fun ShopScreen(vm: AppViewModel) {
 
             if (toDeliver.isNotEmpty() || atLab.isNotEmpty()) item {
                 ShopPanel("Laboratorio") {
-                    toDeliver.forEach { r ->
-                        LabRow(r, "Da consegnare") { Button(onClick = { vm.deliver(r) }) { Text("Consegna") } }
-                    }
-                    atLab.forEach { r ->
-                        when {
-                            r.state == RollState.DEVELOPING -> LabRow(r, "In vasca…") {}
-                            ready(r) -> LabRow(r, "Pronto") { Button(onClick = { vm.pickUp(r) }) { Text("Ritira") } }
-                            else -> LabRow(r, "Pronto ${formatPickup(r.readyAt ?: now)}") {}
+                    if (toDeliver.isNotEmpty()) {
+                        Button(onClick = { vm.deliverAll(toDeliver) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (toDeliver.size == 1) "Sviluppa il rullino" else "Sviluppa tutti i ${toDeliver.size} rullini")
                         }
+                    }
+                    toDeliver.forEach { r -> LabRow(r, "da sviluppare") {} }
+                    atLab.forEach { r ->
+                        if (r.state == RollState.DEVELOPING) LabRow(r, "in vasca…") {}
+                        else LabRow(r, "torna in Rullini ${formatPickup(r.readyAt ?: now)}") {}
                     }
                 }
             }

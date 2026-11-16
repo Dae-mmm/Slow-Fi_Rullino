@@ -11,6 +11,7 @@ import com.rullino.app.RullinoApp
 import com.rullino.app.data.CatalogItem
 import com.rullino.app.data.EmulsionEntity
 import com.rullino.app.data.RollEntity
+import com.rullino.app.data.RollState
 import com.rullino.app.data.FrameEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -87,6 +88,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         runCatching { repo.reloadRoll(r.id) }.onSuccess { onDone() }.onFailure { say(it.message ?: "Non riesco a ricaricarlo") }
     }
 
+    /** Un giro di manovella: torna indietro di una posa. */
+    fun rewindFrame(r: RollEntity) = viewModelScope.launch { repo.rewind(r.id, 1) }
+
     fun rewind(r: RollEntity, frames: Int?) = viewModelScope.launch {
         repo.rewind(r.id, frames)
         say(if (frames == null) "Riavvolto fino all'inizio: i prossimi scatti si sovrappongono" else "Riavvolto di $frames: i prossimi scatti si sovrappongono")
@@ -109,6 +113,20 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 shopkeeperLine.value = if (settings.currentWaitMillis() == 0L) "Ecco fatto, già pronto! Puoi ritirarlo." else "Torna ${formatPickup(ready)}: sarà pronto."
             }
             .onFailure { shopkeeperLine.value = "Ahi, qualcosa è andato storto in vasca: ${it.message ?: "riprova"}" }
+    }
+
+    /** Consegna in un colpo tutti i rullini scaricati (con almeno una posa). */
+    fun deliverAll(rolls: List<RollEntity>) = app.appScope.launch {
+        val list = rolls.filter { it.state == RollState.FINISHED && it.shotCount > 0 }
+        if (list.isEmpty()) { shopkeeperLine.value = "Non hai rullini da sviluppare."; return@launch }
+        shopkeeperLine.value = if (list.size == 1) "Vediamo… bel rullino! Lo metto subito in vasca." else "${list.size} rullini! Li metto subito in vasca."
+        var last = System.currentTimeMillis()
+        for (r in list) {
+            runCatching { developer.develop(r.id) }.onFailure { say(it.message ?: "Sviluppo non riuscito") }
+            last = maxOf(last, repo.db.rolls().get(r.id)?.readyAt ?: last)
+        }
+        shopkeeperLine.value = if (settings.currentWaitMillis() == 0L) "Fatto! Te li ho già riportati in Rullini."
+        else "Te li riporto io in Rullini ${formatPickup(last)}."
     }
 
     fun pickUp(r: RollEntity) = viewModelScope.launch {

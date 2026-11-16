@@ -34,9 +34,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 enum class AppTab(val label: String, val glyph: String) {
     CAMERA("Fotocamera", "◉"),
+    ROLLS("Rullini", "▦"),
     SHOP("Negozio", "☖"),
     EMULSIONS("Emulsioni", "▥"),
-    ROLLS("Rullini", "▦"),
     OPTIONS("Opzioni", "⚙"),
 }
 
@@ -105,10 +105,10 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
             }
             Box(Modifier.fillMaxSize()) {
                 when (tab) {
-                    AppTab.CAMERA -> CameraScreen(vm, onPickEmulsion = { tab = AppTab.EMULSIONS }, onOpenRolls = { tab = AppTab.ROLLS })
+                    AppTab.CAMERA -> CameraScreen(vm, onGoShop = { tab = AppTab.SHOP }, onOpenRolls = { tab = AppTab.ROLLS })
                     AppTab.SHOP -> ShopScreen(vm)
                     AppTab.EMULSIONS -> EmulsionsScreen(vm, onLoaded = { tab = AppTab.CAMERA })
-                    AppTab.ROLLS -> RollsScreen(vm, onOpenCamera = { tab = AppTab.CAMERA })
+                    AppTab.ROLLS -> RollsScreen(vm, onOpenCamera = { tab = AppTab.CAMERA }, onGoLab = { tab = AppTab.SHOP })
                     AppTab.OPTIONS -> OptionsScreen(vm)
                 }
             }

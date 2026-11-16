@@ -62,7 +62,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit) {
+fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit, onGoLab: () -> Unit) {
     val rolls by vm.rolls.collectAsState()
     val active by vm.activeRoll.collectAsState()
     var openId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -75,7 +75,8 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit) {
     }
     fun ready(r: RollEntity) = r.state == RollState.DEVELOPED && ((devMode && skipWait) || (r.readyAt ?: 0L) <= now)
 
-    if (open != null && open.pickedUp) {
+    // Il negoziante riporta i negativi da solo: quando sono pronti si aprono qui.
+    if (open != null && ready(open)) {
         BackHandler { openId = null }
         LightTable(vm, open, onBack = { openId = null })
         return
@@ -85,7 +86,20 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit) {
         Text("Ancora nessun rullino. Caricane uno dalla fotocamera.", color = Palette.Muted, modifier = Modifier.padding(20.dp))
         return
     }
+    val toLab = rolls.filter { it.state == RollState.FINISHED && it.shotCount > 0 }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (toLab.isNotEmpty()) item {
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Palette.PlateHi).padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    if (toLab.size == 1) "1 rullino da sviluppare" else "${toLab.size} rullini da sviluppare",
+                    color = Palette.Ink, modifier = Modifier.weight(1f),
+                )
+                Button(onClick = onGoLab) { Text("Vai al laboratorio") }
+            }
+        }
         items(rolls, key = { it.id }) { r ->
             RollRow(
                 r = r,
@@ -118,7 +132,7 @@ private fun RollRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .background(Palette.Plate)
-            .clickable(enabled = r.pickedUp, onClick = onOpen)
+            .clickable(enabled = isReady, onClick = onOpen)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -132,20 +146,19 @@ private fun RollRow(
         }
         Text(
             when {
-                r.pickedUp -> "Negativi ›"
+                isReady -> "Negativi ›"
                 r.state == RollState.DEVELOPING -> "Al laboratorio · in vasca"
-                r.state == RollState.DEVELOPED && !isReady -> "Al laboratorio · pronto tra ${formatWait(waitLeft)}"
-                r.state == RollState.DEVELOPED -> "Pronto: ritiralo al negozio"
+                r.state == RollState.DEVELOPED -> "Al laboratorio · torna tra ${formatWait(waitLeft)}"
                 else -> stateLabel(r)
             },
-            color = if (r.pickedUp) Palette.Ink else Palette.Safelight,
+            color = if (isReady) Palette.Ink else Palette.Safelight,
             fontSize = 12.sp,
         )
         if (r.state == RollState.SHELVED) {
             OutlinedButton(enabled = cameraFree, onClick = onReload) { Text("Ricarica") }
             Button(onClick = onDevelop) { Text("Riavvolgi") }
         }
-        if (r.state == RollState.SHELVED || r.state == RollState.FINISHED || r.pickedUp) {
+        if (r.state == RollState.SHELVED || r.state == RollState.FINISHED || isReady) {
             TextButton(onClick = { if (confirmDelete) onDelete() else confirmDelete = true }) {
                 Text(if (confirmDelete) "Conferma" else "Elimina", color = Color(0xFFFF8A80))
             }
@@ -393,7 +406,7 @@ private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, 
 private fun stateLabel(r: RollEntity) = when (r.state) {
     RollState.LOADED -> "In macchina"
     RollState.SHELVED -> "Messo da parte"
-    RollState.FINISHED -> "Da portare al negozio"
+    RollState.FINISHED -> "Da sviluppare"
     RollState.DEVELOPING -> "In sviluppo"
     else -> "Negativi ›"
 }

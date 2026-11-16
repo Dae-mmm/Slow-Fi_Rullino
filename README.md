@@ -23,8 +23,13 @@ Requisiti: Android 10 (API 29) o più recente, fotocamera posteriore.
 | `ui/` | Schermate Compose: fotocamera (leva, contafotogrammi, finestrella), emulsioni e negozio, rullini e provini |
 
 - Gli scatti restano nella memoria privata dell'app (`files/rolls/<id>/raw`).
-- **Apri il dorso** (in fotocamera): sviluppa subito, metti da parte per finirlo dopo, riavvolgi di 1, 2 pose
-  o tutto per fare doppie esposizioni, oppure elimina il rullino.
+- **Scegli un rullino** (macchina vuota): scegli tra quelli in magazzino, 24 o 36 pose; se non ne hai, vai al negozio.
+- **Manovella di riavvolgimento** (in alto a sinistra), da girare col dito in senso orario:
+  senza **R**, ogni giro torna indietro di una posa (doppia esposizione); con **R** acceso riavvolgi tutta
+  la pellicola e il rullino esce dalla macchina, pronto per il laboratorio.
+- **Apri il dorso**: metti da parte il rullino per finirlo dopo, oppure eliminalo.
+- **Rullini → Vai al laboratorio**: al negozio sviluppi tutti i rullini scaricati in un colpo;
+  quando sono pronti il negoziante li riporta da solo in Rullini.
 - Le esposizioni sullo stesso fotogramma si fondono sommando la luce (fusione *screen*), come sulla pellicola.
 - **Sviluppo** → negativi nella memoria dell'app (`files/rolls/<id>/dev`). In galleria non va niente.
 - **Tavolo luminoso** (Rullini): striscia di negativi con perforazioni e scritte di bordo; il lentino mostra il positivo.

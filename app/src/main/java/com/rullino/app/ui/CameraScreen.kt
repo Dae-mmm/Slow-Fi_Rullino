@@ -47,6 +47,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -76,7 +80,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
-fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -> Unit) {
+fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit) {
     val context = LocalContext.current
     val view = LocalView.current
     val scope = rememberCoroutineScope()
@@ -141,12 +145,22 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
         BackDialog(
             roll = r,
             onDismiss = { showBack = false },
-            onDevelop = { showBack = false; view.confirm(); vm.rewindOut(r) },
             onShelve = { showBack = false; vm.shelve(r) },
-            onRewind = { n -> showBack = false; view.tick(); vm.rewind(r, n) },
             onDelete = { showBack = false; vm.deleteRoll(r) },
         )
     }
+
+    // Scelta del rullino da caricare, tra quelli in magazzino.
+    var showPicker by remember { mutableStateOf(false) }
+    if (showPicker) {
+        RollPickerDialog(vm, onDismiss = { showPicker = false }, onGoShop = { showPicker = false; onGoShop() })
+    }
+
+    // Riavvolgimento: con R spento ogni giro di manovella torna indietro di una posa (doppia esposizione);
+    // con R acceso la manovella riporta tutta la pellicola nel caricatore e il rullino esce dalla macchina.
+    var releaseOn by remember(r?.id) { mutableStateOf(false) }
+    var unloadTurns by remember(r?.id) { mutableIntStateOf(0) }
+    val turnsNeeded = maxOf(2, ((r?.shotCount ?: 0) + 5) / 6)
 
     val counter = when {
         r == null -> 0
@@ -160,7 +174,27 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
             Modifier.fillMaxWidth().height(72.dp).brushedMetal().padding(horizontal = 18.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
-            RewindKnob(ready = r?.isAtEnd == true, onClick = { r?.let { view.confirm(); vm.rewindOut(it) } })
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                RewindCrank(
+                    enabled = r != null && r.shotCount > 0,
+                    highlight = releaseOn || r?.isAtEnd == true,
+                    onFullTurn = {
+                        val roll = r ?: return@RewindCrank
+                        if (releaseOn) {
+                            unloadTurns++
+                            if (unloadTurns >= turnsNeeded) { releaseOn = false; unloadTurns = 0; vm.rewindOut(roll) }
+                        } else if (roll.cursor > 1) {
+                            vm.rewindFrame(roll)
+                        } else view.reject()
+                    },
+                )
+            }
+            ReleaseButton(
+                on = releaseOn,
+                enabled = r != null && r.shotCount > 0,
+                onToggle = { releaseOn = !releaseOn; unloadTurns = 0 },
+                modifier = Modifier.padding(bottom = 10.dp),
+            )
             Column(Modifier.padding(start = 14.dp, bottom = 12.dp)) {
                 Engraving("ISO ${r?.iso ?: "—"}", size = 10)
                 Engraving(r?.emulsionName?.uppercase() ?: "VUOTA", size = 10)
@@ -189,14 +223,15 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
                 Text(
                     when {
                         r == null -> "Nessun rullino"
-                        r.isAtEnd -> "Finito · gira la manovella"
+                        releaseOn -> "Riavvolgimento ${unloadTurns * 100 / turnsNeeded}%\ngira la manovella"
+                        r.isAtEnd -> "Finito · premi R\ne gira la manovella"
                         r.cursor <= r.shotCount -> "Posa ${r.cursor} già esposta\n${r.shotCount} di ${r.exposures} pose"
                         else -> "${r.shotCount} di ${r.exposures} pose"
                     },
                     color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp, textAlign = TextAlign.Center,
                 )
                 if (r != null && r.state == RollState.LOADED && r.shotCount == 0) {
-                    TextButton(onClick = { vm.unloadEmptyRoll(r) }) { Text("Cambia emulsione", color = Palette.Muted, fontSize = 12.sp) }
+                    TextButton(onClick = { vm.unloadEmptyRoll(r) }) { Text("Cambia rullino", color = Palette.Muted, fontSize = 12.sp) }
                 } else if (r != null && r.state == RollState.LOADED) {
                     OutlinedButton(onClick = { showBack = true }) { Text("Apri il dorso", fontSize = 12.sp) }
                     if (r.cursor > 1) {
@@ -224,8 +259,7 @@ fun CameraScreen(vm: AppViewModel, onPickEmulsion: () -> Unit, onOpenRolls: () -
                         r = r,
                         hasPermission = hasPermission,
                         onAskPermission = { permissionLauncher.launch(Manifest.permission.CAMERA) },
-                        onPickEmulsion = onPickEmulsion,
-                        onDevelop = { roll -> view.confirm(); vm.rewindOut(roll) },
+                        onPickEmulsion = { showPicker = true },
                         progress = progress,
                         onReady = { capture = it },
                         doubleExposure = doubleOnNext > 0,
@@ -247,7 +281,6 @@ private fun BoxScope.ViewfinderContent(
     hasPermission: Boolean,
     onAskPermission: () -> Unit,
     onPickEmulsion: () -> Unit,
-    onDevelop: (RollEntity) -> Unit,
     progress: com.rullino.app.develop.DevelopProgress?,
     onReady: (ImageCapture) -> Unit,
     doubleExposure: Boolean,
@@ -256,12 +289,10 @@ private fun BoxScope.ViewfinderContent(
         !hasPermission -> CenterNote("Serve il permesso della fotocamera per scattare.") {
             OutlinedButton(onClick = onAskPermission) { Text("Concedi") }
         }
-        r == null -> CenterNote("La macchina è vuota.\nIl rullino del giorno ti aspetta al negozio.") {
-            Button(onClick = onPickEmulsion) { Text("Carica un rullino") }
+        r == null -> CenterNote("La macchina è vuota.") {
+            Button(onClick = onPickEmulsion) { Text("Scegli un rullino") }
         }
-        r.isAtEnd -> CenterNote("Rullino finito: ${r.exposures} pose.\nGira la manovella per riavvolgerlo, poi portalo al negozio.") {
-            Button(onClick = { onDevelop(r) }) { Text("Riavvolgi") }
-        }
+        r.isAtEnd -> CenterNote("Rullino finito: ${r.exposures} pose.\nPremi R e gira la manovella per riavvolgerlo.") {}
         r.state == RollState.DEVELOPING -> CenterNote("Sviluppo in corso…") {
             if (progress != null && progress.rollId == r.id && progress.total > 0) {
                 LinearProgressIndicator(progress = { progress.done / progress.total.toFloat() }, modifier = Modifier.width(200.dp))
@@ -306,9 +337,7 @@ private fun BoxScope.ViewfinderContent(
 private fun BackDialog(
     roll: RollEntity,
     onDismiss: () -> Unit,
-    onDevelop: () -> Unit,
     onShelve: () -> Unit,
-    onRewind: (Int?) -> Unit,
     onDelete: () -> Unit,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
@@ -317,20 +346,14 @@ private fun BackDialog(
         containerColor = Palette.Plate,
         title = { Text("${roll.emulsionName} · ${roll.shotCount} di ${roll.exposures} pose") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Sgancia il rullino", color = Palette.Muted, fontSize = 12.sp, fontFamily = Mono)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onDevelop) { Text("Riavvolgi e togli") }
-                    OutlinedButton(onClick = onShelve) { Text("Metti da parte") }
-                }
-                Spacer(Modifier.height(4.dp))
-                Text("Riavvolgi per la doppia esposizione", color = Palette.Muted, fontSize = 12.sp, fontFamily = Mono)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(enabled = roll.cursor > 1, onClick = { onRewind(1) }) { Text("1 posa") }
-                    OutlinedButton(enabled = roll.cursor > 2, onClick = { onRewind(2) }) { Text("2 pose") }
-                    OutlinedButton(enabled = roll.cursor > 1, onClick = { onRewind(null) }) { Text("Tutto") }
-                }
-                Spacer(Modifier.height(4.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(onClick = onShelve) { Text("Metti da parte per finirlo più avanti") }
+                Text(
+                    "Per riavvolgere usa la manovella in alto a sinistra:\n" +
+                        "• senza R, ogni giro torna indietro di una posa (doppia esposizione);\n" +
+                        "• con R acceso, riavvolgi tutto e il rullino esce dalla macchina.",
+                    color = Palette.Muted, fontSize = 12.sp,
+                )
                 TextButton(onClick = { if (confirmDelete) onDelete() else confirmDelete = true }) {
                     Text(
                         if (confirmDelete) "Tocca di nuovo: elimini tutte le pose" else "Elimina il rullino",
@@ -340,6 +363,48 @@ private fun BackDialog(
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Chiudi il dorso") } },
+    )
+}
+
+/** I rullini che hai in magazzino: scegline uno da caricare. */
+@Composable
+private fun RollPickerDialog(vm: AppViewModel, onDismiss: () -> Unit, onGoShop: () -> Unit) {
+    val emulsions by vm.emulsions.collectAsState()
+    val inventory by vm.inventory.collectAsState()
+    val owned = emulsions.filter { (inventory[it.id] ?: 0) > 0 }
+    var exposures by remember { mutableIntStateOf(36) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Palette.Plate,
+        title = { Text("Scegli un rullino") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
+                if (owned.isEmpty()) {
+                    Text("Non hai rullini in magazzino. Il negozio ne regala uno al giorno.", color = Palette.Ink)
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Pose", color = Palette.Muted)
+                        listOf(24, 36).forEach { n ->
+                            FilterChip(selected = exposures == n, onClick = { exposures = n }, label = { Text("$n") })
+                        }
+                    }
+                    owned.forEach { e ->
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Palette.PlateHi).padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(e.name, color = Palette.Ink)
+                                Text("ISO ${e.iso} · ne hai ${inventory[e.id]}", color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
+                            }
+                            Button(onClick = { vm.loadRoll(e, exposures, onDismiss) }) { Text("Carica") }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onGoShop) { Text(if (owned.isEmpty()) "Vai al negozio" else "Compra altri rullini") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Chiudi") } },
     )
 }
 

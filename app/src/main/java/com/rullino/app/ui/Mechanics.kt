@@ -16,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
@@ -351,3 +352,104 @@ fun Engraving(text: String, modifier: Modifier = Modifier, size: Int = 11) {
 
 /** Stroke riutilizzabile. */
 internal fun stroke(px: Float) = Stroke(px)
+
+/* ------------------------------------------------------------------ */
+/* Manovella di riavvolgimento manuale e pulsante R                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Manovella da girare col dito in senso orario attorno al pomello.
+ * Ogni giro completo chiama [onFullTurn]; ogni quarto di giro dà un piccolo scatto al tatto.
+ * Vista di profilo: il braccio della manovella oscilla avanti e indietro mentre gira.
+ */
+@Composable
+fun RewindCrank(
+    enabled: Boolean,
+    highlight: Boolean,
+    onFullTurn: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val view = LocalView.current
+    val angle = remember { mutableFloatStateOf(0f) }   // rotazione visiva totale, in gradi
+    val turn = remember { mutableFloatStateOf(0f) }    // gradi accumulati verso il prossimo giro
+    val quarter = remember { mutableIntStateOf(0) }
+
+    Canvas(
+        modifier
+            .size(96.dp, 64.dp)
+            .pointerInput(enabled) {
+                if (!enabled) {
+                    detectDragGestures(onDragStart = { view.reject() }) { change, _ -> change.consume() }
+                    return@pointerInput
+                }
+                val center = Offset(size.width / 2f, size.height * 0.55f)
+                detectDragGestures { change, _ ->
+                    change.consume()
+                    val prev = change.previousPosition - center
+                    val now = change.position - center
+                    var d = Math.toDegrees(
+                        (kotlin.math.atan2(now.y, now.x) - kotlin.math.atan2(prev.y, prev.x)).toDouble()
+                    ).toFloat()
+                    if (d > 180f) d -= 360f
+                    if (d < -180f) d += 360f
+                    if (d <= 0f) return@detectDragGestures // si riavvolge solo in senso orario
+                    angle.floatValue += d
+                    turn.floatValue += d
+                    val q = (turn.floatValue / 90f).toInt()
+                    if (q > quarter.intValue) { view.tick(); quarter.intValue = q }
+                    if (turn.floatValue >= 360f) {
+                        turn.floatValue -= 360f
+                        quarter.intValue = 0
+                        view.confirm()
+                        onFullTurn()
+                    }
+                }
+            }
+    ) {
+        val cx = size.width / 2f
+        val baseY = size.height * 0.86f
+        // Pomello zigrinato
+        drawOval(Color(0xFF6E6964), Offset(cx - 24.dp.toPx(), baseY - 4.dp.toPx()), Size(48.dp.toPx(), 12.dp.toPx()))
+        drawRect(Brush.verticalGradient(listOf(Color(0xFF3A3634), Color(0xFF1E1C1B))), Offset(cx - 24.dp.toPx(), baseY - 18.dp.toPx()), Size(48.dp.toPx(), 16.dp.toPx()))
+        var x = cx - 22.dp.toPx()
+        while (x < cx + 22.dp.toPx()) {
+            drawLine(Color(0xFF55504C), Offset(x, baseY - 17.dp.toPx()), Offset(x, baseY - 3.dp.toPx()), strokeWidth = 1.dp.toPx())
+            x += 4.dp.toPx()
+        }
+        drawOval(Color(0xFF2A2725), Offset(cx - 24.dp.toPx(), baseY - 23.dp.toPx()), Size(48.dp.toPx(), 10.dp.toPx()))
+        // Braccio della manovella che gira (proiezione di profilo)
+        val a = Math.toRadians(angle.floatValue.toDouble())
+        val reach = 26.dp.toPx()
+        val tip = Offset(cx + (reach * kotlin.math.cos(a)).toFloat(), baseY - 26.dp.toPx() + (4.dp.toPx() * kotlin.math.sin(a)).toFloat())
+        val crankColor = when {
+            !enabled -> Color(0xFF6A6560)
+            highlight -> Palette.Safelight
+            else -> Color(0xFFCFCAC4)
+        }
+        drawLine(crankColor, Offset(cx, baseY - 22.dp.toPx()), tip, strokeWidth = 4.dp.toPx())
+        drawRoundRect(crankColor, Offset(tip.x - 4.dp.toPx(), tip.y - 12.dp.toPx()), Size(8.dp.toPx(), 12.dp.toPx()), CornerRadius(3.dp.toPx()))
+        drawCircle(Color(0xFFB9B4AE), radius = 4.dp.toPx(), center = Offset(cx, baseY - 22.dp.toPx()))
+    }
+}
+
+/** Pulsante di sblocco del riavvolgimento ("R"): acceso, la manovella riporta la pellicola nel caricatore. */
+@Composable
+fun ReleaseButton(on: Boolean, enabled: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+    val view = LocalView.current
+    Box(
+        modifier
+            .size(30.dp)
+            .clip(CircleShape)
+            .background(if (on) Palette.Safelight else Color(0xFF2A2725))
+            .border(2.dp, Color(0xFF8E8983), CircleShape)
+            .pointerInput(enabled) {
+                awaitEachGesture {
+                    awaitFirstDown()
+                    if (waitForUpOrCancellation() != null) { if (enabled) { view.tick(); onToggle() } else view.reject() }
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("R", color = if (on) Color(0xFF1A1918) else Palette.Ink, fontFamily = Mono, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+    }
+}
