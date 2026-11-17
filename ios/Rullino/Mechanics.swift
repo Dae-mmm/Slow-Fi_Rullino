@@ -72,7 +72,7 @@ struct FrameCounter: View {
 
     var body: some View {
         ZStack {
-            Circle().fill(Color(hex: 0x0C0B0B))
+            Circle().fill(RadialGradient(colors: [Color(hex: 0x332E2B), Color(hex: 0x080707)], center: UnitPoint(x: 0.45, y: 0.35), startRadius: 0, endRadius: 30))
             if let to = rollTo {
                 let p = min(max(rollProgress, 0), 1)
                 digit(number).offset(y: -30 * p)
@@ -83,15 +83,15 @@ struct FrameCounter: View {
                     .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .move(edge: .top)))
             }
         }
-        .frame(width: 46, height: 46)
+        .frame(width: 55, height: 55)
         .clipShape(Circle())
-        .overlay(Circle().stroke(Color(hex: 0x8E8983), lineWidth: 3))
+        .overlay(Circle().stroke(Color(hex: 0x111111), lineWidth: 4))
         .animation(rollTo == nil ? .easeOut(duration: 0.26) : nil, value: number)
     }
 
     private func digit(_ n: Int) -> some View {
-        Text(n <= 0 ? "S" : "\(n)")
-            .font(.system(size: 18, weight: .bold, design: .monospaced))
+        Text(n <= 0 ? "S" : String(format: "%02d", n))
+            .font(Fonts.mono(25))
             .foregroundStyle(n >= total ? Palette.safelight : Palette.ink)
     }
 }
@@ -104,11 +104,11 @@ struct ReleaseButton: View {
     let toggle: () -> Void
     var body: some View {
         Text("R")
-            .font(.system(size: 13, weight: .bold, design: .monospaced))
-            .foregroundStyle(on ? Color(hex: 0x1A1918) : Palette.ink)
-            .frame(width: 30, height: 30)
-            .background(Circle().fill(on ? Palette.safelight : Color(hex: 0x2A2725)))
-            .overlay(Circle().stroke(Color(hex: 0x8E8983), lineWidth: 2))
+            .font(Fonts.mono(13))
+            .foregroundStyle(on ? Palette.safelight : Palette.ink)
+            .frame(width: 32, height: 32)
+            .background(Circle().fill(RadialGradient(colors: [Color(hex: 0x4A4541), Color(hex: 0x161514)], center: UnitPoint(x: 0.4, y: 0.35), startRadius: 0, endRadius: 22)))
+            .overlay(Circle().stroke(on ? Color(hex: 0x953B23) : Color(hex: 0x050505), lineWidth: 2))
             .contentShape(Circle())
             .onTapGesture { if enabled { Haptics.tick(); toggle() } else { Haptics.reject() } }
     }
@@ -243,18 +243,28 @@ struct LeverShutter: View {
             if leverEnabled {
                 ctx.fill(Path(ellipseIn: CGRect(x: tip.x - 3, y: tip.y - 3, width: 6, height: 6)), with: .color(Palette.safelight))
             }
-            ctx.fill(Path(ellipseIn: CGRect(x: pivot.x - 27, y: pivot.y - 27, width: 54, height: 54)), with: .color(Color(hex: 0x1E1C1B)))
-            ctx.fill(Path(ellipseIn: CGRect(x: pivot.x - 25, y: pivot.y - 25, width: 50, height: 50)),
-                     with: .radialGradient(Gradient(colors: [Color(hex: 0xE9E5DF), Color(hex: 0x8A857F)]), center: pivot, startRadius: 0, endRadius: 26))
-            let br: CGFloat = pressed ? 13.5 : 15
-            ctx.fill(Path(ellipseIn: CGRect(x: pivot.x - br - 2, y: pivot.y - br - 2, width: 2 * br + 4, height: 2 * br + 4)), with: .color(Color(hex: 0x5A5550)))
-            ctx.fill(Path(ellipseIn: CGRect(x: pivot.x - br, y: pivot.y - br, width: 2 * br, height: 2 * br)),
-                     with: .radialGradient(Gradient(colors: [pressed ? Color(hex: 0xB9B4AE) : Color(hex: 0xF4F1EC), Color(hex: 0x8F8A84)]),
-                                           center: CGPoint(x: pivot.x - 4, y: pivot.y - 4), startRadius: 0, endRadius: br * 1.4))
+            // Pulsante di scatto (design): anello zigrinato, cupola cromata, anello arancione quando è armato.
+            let outer: CGFloat = 30
             if armed {
-                ctx.stroke(Path(ellipseIn: CGRect(x: pivot.x - br - 4, y: pivot.y - br - 4, width: 2 * br + 8, height: 2 * br + 8)),
-                           with: .color(Palette.safelight), lineWidth: 2)
+                ctx.fill(Path(ellipseIn: CGRect(x: pivot.x - outer - 5, y: pivot.y - outer - 5, width: 2 * outer + 10, height: 2 * outer + 10)), with: .color(Palette.safelight.opacity(0.35)))
             }
+            ctx.fill(Path(ellipseIn: CGRect(x: pivot.x - outer - 2, y: pivot.y - outer - 2, width: 2 * outer + 4, height: 2 * outer + 4)), with: .color(Color(hex: 0x7B756F)))
+            ctx.fill(Path(ellipseIn: CGRect(x: pivot.x - outer, y: pivot.y - outer, width: 2 * outer, height: 2 * outer)), with: .color(Color(hex: 0x151413)))
+            let ringR = outer - 4
+            for i in 0..<60 {
+                let t = CGFloat(i) * .pi * 2 / 60
+                var l = Path()
+                l.move(to: CGPoint(x: pivot.x + cos(t) * (ringR - 6), y: pivot.y + sin(t) * (ringR - 6)))
+                l.addLine(to: CGPoint(x: pivot.x + cos(t) * ringR, y: pivot.y + sin(t) * ringR))
+                ctx.stroke(l, with: .color(i % 2 == 0 ? Color(hex: 0xBAB4AF) : Color(hex: 0x5F5A56)), lineWidth: 2.2)
+            }
+            if armed {
+                ctx.stroke(Path(ellipseIn: CGRect(x: pivot.x - ringR - 1, y: pivot.y - ringR - 1, width: 2 * ringR + 2, height: 2 * ringR + 2)), with: .color(Palette.safelight), lineWidth: 3)
+            }
+            let br = (ringR - 7) * (pressed ? 0.94 : 1)
+            ctx.fill(Path(ellipseIn: CGRect(x: pivot.x - br, y: pivot.y - br, width: 2 * br, height: 2 * br)),
+                     with: .radialGradient(Gradient(colors: [pressed ? Color(hex: 0xC9C4BF) : Color(hex: 0xF0ECE8), Color(hex: 0x77726E), Color(hex: 0x252321)]),
+                                           center: CGPoint(x: pivot.x - br * 0.2, y: pivot.y - br * 0.4), startRadius: 0, endRadius: br * 1.6))
         }
         .frame(width: side, height: side)
         .contentShape(Rectangle())
@@ -315,21 +325,27 @@ struct ZoomRing: View {
             let w = geo.size.width
             let pxPerLog: CGFloat = w * 0.9 / log(135 / 24)
             Canvas { ctx, size in
-                ctx.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 6),
-                         with: .linearGradient(Gradient(colors: [Color(hex: 0x2A2725), Color(hex: 0x0E0D0D), Color(hex: 0x2A2725)]),
-                                               startPoint: .zero, endPoint: CGPoint(x: 0, y: size.height)))
+                // Ghiera zigrinata vista di profilo (design).
+                ctx.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 7), with: .color(Color(hex: 0x0A0909)))
+                let stripe: CGFloat = 2.9
+                var sx = -(log(focal / 24) * pxPerLog).truncatingRemainder(dividingBy: stripe * 3)
+                while sx < size.width {
+                    ctx.fill(Path(CGRect(x: sx, y: 1, width: stripe * 0.9, height: size.height - 2)), with: .color(Color(hex: 0x171615)))
+                    ctx.fill(Path(CGRect(x: sx + stripe * 0.9, y: 1, width: stripe * 0.9, height: size.height - 2)), with: .color(Color(hex: 0x35312F)))
+                    ctx.fill(Path(CGRect(x: sx + stripe * 1.8, y: 1, width: stripe * 1.2, height: size.height - 2)), with: .color(Color(hex: 0x211F1D)))
+                    sx += stripe * 3
+                }
+                ctx.fill(Path(CGRect(x: 4, y: 1, width: size.width - 8, height: 2)), with: .color(Color(hex: 0x68625E)))
+                ctx.fill(Path(CGRect(x: 4, y: size.height - 3, width: size.width - 8, height: 3)), with: .color(Color(hex: 0x090909)))
                 let center = size.width / 2
                 let off = log(focal / 24) * pxPerLog
-                var x = center - off - 400
-                while x < size.width {
-                    var p = Path(); p.move(to: CGPoint(x: x, y: 2)); p.addLine(to: CGPoint(x: x, y: 8))
-                    ctx.stroke(p, with: .color(Color(hex: 0x3E3A36)), lineWidth: 1)
-                    x += 6
-                }
                 for m in focalMarks where m <= max(maxFocal, 24) + 0.5 {
                     let mx = center - off + log(m / 24) * pxPerLog
-                    ctx.draw(Text("\(Int(m))").font(.system(size: 11, design: .monospaced)).foregroundColor(Palette.ink),
-                             at: CGPoint(x: mx, y: size.height * 0.62))
+                    ctx.fill(Path(roundedRect: CGRect(x: mx - 15, y: size.height * 0.2, width: 30, height: size.height * 0.6), cornerRadius: 2), with: .color(Color(hex: 0x1B1918, alpha: 0.87)))
+                    let near = abs(mx - center) < 6
+                    ctx.draw(Text("\(Int(m))").font(Fonts.mono(11)).foregroundColor(near ? Palette.safelight : Palette.ink),
+                             at: CGPoint(x: mx, y: size.height * 0.5))
+                    if near { ctx.fill(Path(CGRect(x: mx - 10, y: size.height * 0.78, width: 20, height: 1.5)), with: .color(Palette.safelight)) }
                 }
                 var idx = Path(); idx.move(to: CGPoint(x: center, y: 0)); idx.addLine(to: CGPoint(x: center, y: 10))
                 ctx.stroke(idx, with: .color(Palette.safelight), lineWidth: 2)
@@ -350,7 +366,7 @@ struct ZoomRing: View {
                     .onEnded { _ in startFocal = nil }
             )
         }
-        .frame(height: 30)
+        .frame(height: 36)
     }
 }
 
@@ -380,15 +396,18 @@ struct ShutterDial: View {
         let last = CGFloat(shutterSpeeds.count - 1)
         let p = pos ?? CGFloat(index)
         Canvas { ctx, size in
-            ctx.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 5),
-                     with: .linearGradient(Gradient(colors: [Color(hex: 0x151413), Color(hex: 0x3B3836), Color(hex: 0x1A1918)]),
-                                           startPoint: .zero, endPoint: CGPoint(x: 0, y: size.height)))
-            var x = -(p * step).truncatingRemainder(dividingBy: 5)
-            while x < size.width {
-                var l = Path(); l.move(to: CGPoint(x: x, y: size.height * 0.72)); l.addLine(to: CGPoint(x: x, y: size.height - 2))
-                ctx.stroke(l, with: .color(Color(hex: 0x0B0A0A, alpha: 0.8)), lineWidth: 1.8)
-                x += 5
+            // Ghiera zigrinata vista di profilo (design).
+            ctx.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 7), with: .color(Color(hex: 0x0A0909)))
+            let stripe: CGFloat = 2.9
+            var sx = -(p * step).truncatingRemainder(dividingBy: stripe * 3)
+            while sx < size.width {
+                ctx.fill(Path(CGRect(x: sx, y: 1, width: stripe * 0.9, height: size.height - 2)), with: .color(Color(hex: 0x171615)))
+                ctx.fill(Path(CGRect(x: sx + stripe * 0.9, y: 1, width: stripe * 0.9, height: size.height - 2)), with: .color(Color(hex: 0x35312F)))
+                ctx.fill(Path(CGRect(x: sx + stripe * 1.8, y: 1, width: stripe * 1.2, height: size.height - 2)), with: .color(Color(hex: 0x211F1D)))
+                sx += stripe * 3
             }
+            ctx.fill(Path(CGRect(x: 4, y: 1, width: size.width - 8, height: 2)), with: .color(Color(hex: 0x68625E)))
+            ctx.fill(Path(CGRect(x: 4, y: size.height - 3, width: size.width - 8, height: 3)), with: .color(Color(hex: 0x090909)))
             let center = size.width / 2
             for (i, s) in shutterSpeeds.enumerated() {
                 let mx = center + (CGFloat(i) - p) * step
@@ -396,14 +415,16 @@ struct ShutterDial: View {
                 let near = abs(mx - center) < step / 2
                 let fade = 1 - 0.6 * abs(mx - center) / center
                 let color: Color = near ? Palette.safelight : (s == nil ? Color(hex: 0xFFD36B) : Palette.ink)
-                ctx.draw(Text(shutterMark(s)).font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundColor(color.opacity(near ? 1 : fade)),
-                         at: CGPoint(x: mx, y: size.height * 0.42))
+                ctx.fill(Path(roundedRect: CGRect(x: mx - 15, y: size.height * 0.2, width: 30, height: size.height * 0.6), cornerRadius: 2), with: .color(Color(hex: 0x1B1918, alpha: 0.87)))
+                ctx.draw(Text(shutterMark(s)).font(Fonts.mono(11)).foregroundColor(color.opacity(near ? 1 : fade)),
+                         at: CGPoint(x: mx, y: size.height * 0.5))
+                if near { ctx.fill(Path(CGRect(x: mx - 10, y: size.height * 0.78, width: 20, height: 1.5)), with: .color(Palette.safelight)) }
             }
             var tri = Path()
             tri.move(to: CGPoint(x: center - 4, y: 0)); tri.addLine(to: CGPoint(x: center + 4, y: 0)); tri.addLine(to: CGPoint(x: center, y: 5)); tri.closeSubpath()
             ctx.fill(tri, with: .color(Palette.safelight))
         }
-        .frame(height: 34)
+        .frame(height: 40)
         .gesture(
             DragGesture(minimumDistance: 2)
                 .onChanged { v in

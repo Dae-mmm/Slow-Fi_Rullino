@@ -27,18 +27,23 @@ struct CameraScreen: View {
             HStack(spacing: 14) {
                 leftColumn.frame(width: 150)
                 centerColumn
-                LeverShutter(
-                    armed: (r?.wound ?? false) && !busy,
-                    leverEnabled: r?.canWind ?? false,
-                    onShoot: shoot,
-                    onAdvanced: { if let r { store.wind(r) } },
-                    onProgress: { windProgress = $0 }
-                )
+                VStack(spacing: 2) {
+                    let isArmed = (r?.wound ?? false) && !busy
+                    EngravedNote(text: isArmed ? L("eng_armed") : L("eng_wind"), color: isArmed ? Palette.safelight : Color(hex: 0x756E68))
+                    LeverShutter(
+                        armed: isArmed,
+                        leverEnabled: r?.canWind ?? false,
+                        onShoot: shoot,
+                        onAdvanced: { if let r { store.wind(r) } },
+                        onProgress: { windProgress = $0 }
+                    )
+                    EngravedNote(text: L("eng_lever"))
+                }
                 .frame(width: 150)
             }
-            .padding(14)
+            .padding(.horizontal, 15).padding(.vertical, 10)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Leatherette())
+            .background(DottedLeather())
         }
         .background(Palette.body)
         .onAppear { camera.start() }
@@ -94,32 +99,37 @@ struct CameraScreen: View {
         return nil
     }
 
+    /// Calotta del design: ISO e pellicola, targhetta e ghiera dei tempi, contapose.
     private var topPlate: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 2) {
-                Engraving(text: "ISO \(r.map { "\($0.iso)" } ?? "—")", size: 10)
-                Engraving(text: r?.emulsionName.uppercased() ?? L("engr_empty"), size: 10)
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .lastTextBaseline, spacing: 4) {
+                    Text("ISO").font(Fonts.barlow(11)).tracking(1.4).foregroundStyle(Palette.muted)
+                    Text(r.map { "\($0.iso)" } ?? "—").font(Fonts.mono(25)).foregroundStyle(Palette.ink)
+                }
+                Text((r?.emulsionName ?? L("engr_empty")).uppercased()).font(Fonts.barlow(10)).tracking(1.2).foregroundStyle(Palette.muted).lineLimit(1)
             }
-            .padding(.bottom, 12)
-            Spacer()
-            // Ghiera dei tempi al centro della calotta, con la targhetta sopra.
-            VStack(spacing: 2) {
-                Engraving(text: "RULLINO", size: 11)
-                ShutterDial(index: $store.data.shutterIndex).frame(width: 300)
+            .frame(width: 150, alignment: .leading)
+            VStack(spacing: 3) {
+                Text("RULLINO").font(Fonts.barlow(13, .semibold)).tracking(4).foregroundStyle(Color(hex: 0xD9D3CC))
+                    .padding(.horizontal, 10).overlay(Rectangle().stroke(Color(hex: 0x4B4642), lineWidth: 1))
+                ShutterDial(index: $store.data.shutterIndex).frame(maxWidth: 440)
             }
-            .padding(.bottom, 6)
-            Spacer()
-            FrameCounter(
-                number: rolling?.0 ?? counter,
-                total: r?.exposures ?? 36,
-                rollTo: rolling?.1,
-                rollProgress: rolling?.2 ?? 0
-            )
-            .padding(.bottom, 10)
+            .frame(maxWidth: .infinity)
+            HStack(spacing: 8) {
+                Text(L("eng_frame")).font(Fonts.barlow(10)).tracking(1).foregroundStyle(Palette.ink)
+                FrameCounter(
+                    number: rolling?.0 ?? counter,
+                    total: r?.exposures ?? 36,
+                    rollTo: rolling?.1,
+                    rollProgress: rolling?.2 ?? 0
+                )
+            }
+            .frame(width: 150, alignment: .trailing)
         }
-        .padding(.horizontal, 32)
-        .frame(height: 72)
-        .background(BrushedMetal())
+        .padding(.horizontal, 16)
+        .frame(height: 78)
+        .background(DarkMetal())
     }
 
     /* ---------------- Colonna sinistra: R, manovella, dorso ---------------- */
@@ -128,13 +138,14 @@ struct CameraScreen: View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
                 ReleaseButton(on: releaseOn, enabled: (r?.shotCount ?? 0) > 0) { releaseOn.toggle(); unloadTurns = 0 }
-                Engraving(text: "REWIND", size: 10)
+                EngravedNote(text: "REWIND")
+                Spacer()
             }
             RewindCrank(
                 enabled: (r?.shotCount ?? 0) > 0 && releaseOn,
                 highlight: releaseOn,
                 resetKey: AnyHashable("\(r?.id ?? 0)-\(releaseOn)"),
-                diameter: 112,
+                diameter: 100,
                 onProgress: { crank = $0 },
                 onFullTurn: fullTurn
             )
@@ -143,13 +154,13 @@ struct CameraScreen: View {
                 VStack(spacing: 10) {
                     backWindow
                     Text(statusText)
-                        .font(mono).foregroundStyle(Palette.muted).multilineTextAlignment(.center)
+                        .font(Fonts.barlow(12)).tracking(0.6).foregroundStyle(Palette.muted).multilineTextAlignment(.center)
                     if let r, r.shotCount == 0 {
                         Button(L("cam_change_roll")) { store.unloadEmptyRoll(r) }
                             .font(.system(size: 12)).foregroundStyle(Palette.muted)
                     } else if r != nil {
                         Button(L("cam_open_back")) { showBack = true }
-                            .font(.system(size: 12)).buttonStyle(.bordered).tint(Palette.ink)
+                            .buttonStyle(.secondary)
                     } else {
                         Button(L("cam_developed_rolls"), action: goRolls)
                             .font(.system(size: 12)).foregroundStyle(Palette.muted)
@@ -188,18 +199,16 @@ struct CameraScreen: View {
 
     private var backWindow: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x0C0B0B))
-            RoundedRectangle(cornerRadius: 8).stroke(Palette.line, lineWidth: 2)
+            RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0x211F1D))
             if let r {
-                VStack(spacing: 2) {
-                    Text(r.emulsionName.uppercased()).font(.system(size: 11, weight: .bold)).foregroundStyle(Palette.ink).lineLimit(1)
-                    Text("ISO \(r.iso) · \(r.exposures)").font(.system(size: 10, design: .monospaced)).foregroundStyle(Palette.safelight)
-                }
+                Cartridge(name: r.emulsionName, iso: r.iso, bw: r.isBw, exposures: r.exposures, scale: 0.62)
             } else {
-                Text(L("window_empty")).font(.system(size: 12, design: .monospaced)).foregroundStyle(Palette.muted)
+                Text(L("window_empty").uppercased()).font(Fonts.mono(10)).foregroundStyle(Color(hex: 0x625D57))
             }
+            RoundedRectangle(cornerRadius: 4).stroke(Color(hex: 0x080808), lineWidth: 3)
         }
-        .frame(width: 132, height: 70)
+        .frame(width: 120, height: 56)
+        .clipped()
     }
 
     /* ---------------- Mirino ---------------- */
@@ -207,16 +216,19 @@ struct CameraScreen: View {
     private var centerColumn: some View {
         VStack(spacing: 8) {
             ZStack {
-                Color.black
+                Color(hex: 0x090909)
                 viewfinderContent
+                ViewfinderGlass().allowsHitTesting(false)
                 if blackout { Color.black }
             }
-            .aspectRatio(1.5, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(hex: 0x0B0A0A), lineWidth: 3))
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 15).fill(Color(hex: 0x080808)))
+            .shadow(color: .black.opacity(0.6), radius: 6, y: 6)
+            .aspectRatio(1.5, contentMode: .fit)
             .frame(maxHeight: .infinity)
             ZoomRing(focal: $focal, maxFocal: camera.maxFocal, enabled: camera.authorized == true)
-                .frame(maxWidth: 360)
+                .frame(maxWidth: 350)
         }
     }
 
@@ -227,18 +239,17 @@ struct CameraScreen: View {
                 Text(L("cam_need_permission")).foregroundStyle(Palette.ink)
                 Button(L("grant")) {
                     if let u = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(u) }
-                }.buttonStyle(.borderedProminent).tint(Palette.safelight)
+                }.buttonStyle(.primary)
             }
         } else if let r {
             CameraPreview(camera: camera)
             VStack {
                 HStack {
                     if r.wound && store.exposuresOnFrame(r) > 0 {
-                        badge(L("double_exposure_badge", r.cursor))
+                        ViewfinderBadge(text: L("double_exposure_badge", r.cursor), color: Color(hex: 0xFFC0AA))
                     }
                     Spacer()
-                    Text(shutterLabel(shutterSpeeds[min(max(store.data.shutterIndex, 0), shutterSpeeds.count - 1)]) + " · \(Int(focal.rounded())) mm").font(.system(size: 13, design: .monospaced)).foregroundStyle(Palette.ink)
-                        .padding(.horizontal, 8).padding(.vertical, 3).background(Color.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 4))
+                    ViewfinderBadge(text: shutterLabel(shutterSpeeds[min(max(store.data.shutterIndex, 0), shutterSpeeds.count - 1)]) + " · \(Int(focal.rounded())) MM")
                 }
                 Spacer()
                 if r.isAtEnd {
@@ -252,16 +263,12 @@ struct CameraScreen: View {
         } else {
             VStack(spacing: 12) {
                 Text(L("cam_empty")).foregroundStyle(Palette.ink)
-                Button(L("choose_roll")) { showPicker = true }.buttonStyle(.borderedProminent).tint(Palette.safelight)
+                Button(L("choose_roll")) { showPicker = true }.buttonStyle(.primary)
             }
         }
     }
 
-    private func badge(_ s: String) -> some View {
-        Text(s).font(.system(size: 12)).foregroundStyle(Palette.ink).multilineTextAlignment(.center)
-            .padding(.horizontal, 10).padding(.vertical, 5)
-            .background(Color.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 12))
-    }
+    private func badge(_ s: String) -> some View { ViewfinderBadge(text: s, round: true) }
 
     /* ---------------- Scatto ---------------- */
 
@@ -307,7 +314,7 @@ struct RollPicker: View {
                             }
                             Spacer()
                             Button(L("load")) { store.loadRoll(e, exposures: exposures); dismiss() }
-                                .buttonStyle(.borderedProminent).tint(Palette.safelight)
+                                .buttonStyle(.primary)
                         }
                     }
                     Button(L("buy_more"), action: goShop)
@@ -315,6 +322,26 @@ struct RollPicker: View {
             }
             .navigationTitle(L("choose_roll"))
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button(L("close")) { dismiss() } } }
+        }
+    }
+}
+
+/// Vetro del mirino: vignettatura, righe sottili e angoli di messa a fuoco.
+struct ViewfinderGlass: View {
+    var body: some View {
+        Canvas { ctx, size in
+            ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .radialGradient(
+                Gradient(stops: [.init(color: .clear, location: 0.55), .init(color: .black.opacity(0.53), location: 1)]),
+                center: CGPoint(x: size.width / 2, y: size.height / 2), startRadius: 0, endRadius: max(size.width, size.height) * 0.62))
+            var y: CGFloat = 3
+            while y < size.height { ctx.fill(Path(CGRect(x: 0, y: y, width: size.width, height: 1)), with: .color(.black.opacity(0.04))); y += 4 }
+            let c = Color(hex: 0xF2EEE9, alpha: 0.67), l: CGFloat = 20
+            var p = Path()
+            let tl = CGPoint(x: size.width * 0.28, y: size.height * 0.28)
+            p.move(to: CGPoint(x: tl.x + l, y: tl.y)); p.addLine(to: tl); p.addLine(to: CGPoint(x: tl.x, y: tl.y + l))
+            let br = CGPoint(x: size.width * 0.72, y: size.height * 0.72)
+            p.move(to: CGPoint(x: br.x - l, y: br.y)); p.addLine(to: br); p.addLine(to: CGPoint(x: br.x, y: br.y - l))
+            ctx.stroke(p, with: .color(c), lineWidth: 1)
         }
     }
 }

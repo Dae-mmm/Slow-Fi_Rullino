@@ -4,31 +4,44 @@ enum Tab: CaseIterable { case camera, rolls, shop, options
     var key: String {
         switch self { case .camera: "tab_camera"; case .rolls: "tab_rolls"; case .shop: "tab_shop"; case .options: "tab_options" }
     }
-    var icon: String {
-        switch self { case .camera: "camera"; case .rolls: "film.stack"; case .shop: "storefront"; case .options: "gearshape" }
+    var glyph: String {
+        switch self { case .camera: "◉"; case .rolls: "▣"; case .shop: "⌂"; case .options: "⚙" }
     }
 }
 
 struct RootView: View {
     @EnvironmentObject var store: Store
+    @EnvironmentObject var account: Account
     @State private var tab = Tab.camera
 
     var body: some View {
         HStack(spacing: 0) {
-            VStack(spacing: 18) {
+            // Fascia di navigazione del design: marchio S—F e voci con segno e nome.
+            VStack(spacing: 0) {
+                Text("S—F").font(Fonts.mono(10, .semibold)).tracking(2).foregroundStyle(Palette.muted)
+                    .padding(.horizontal, 6).padding(.vertical, 4)
+                    .overlay(Rectangle().stroke(Color(hex: 0x514A46), lineWidth: 1))
+                    .padding(.top, 8)
+                Spacer()
                 ForEach(Tab.allCases, id: \.self) { t in
+                    let on = tab == t
                     Button { tab = t } label: {
-                        VStack(spacing: 3) {
-                            Image(systemName: t.icon).font(.system(size: 20))
-                            Text(L(t.key)).font(.system(size: 9))
+                        VStack(spacing: 2) {
+                            Text(t.glyph).font(Fonts.mono(20))
+                            Text(L(t.key).uppercased()).font(Fonts.barlow(9)).tracking(0.8).lineLimit(1)
                         }
-                        .foregroundStyle(tab == t ? Palette.safelight : Palette.muted)
-                        .frame(width: 64)
+                        .foregroundStyle(on ? Palette.safelight : Palette.faint)
+                        .frame(width: 68, height: 58)
+                        .background(on ? LinearGradient(colors: [Color(hex: 0x291711), .clear], startPoint: .leading, endPoint: .trailing) : LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing))
+                        .overlay(alignment: .leading) { if on { Rectangle().fill(Palette.safelight).frame(width: 2) } }
                     }
                 }
+                Spacer()
             }
+            .frame(width: 68)
             .frame(maxHeight: .infinity)
-            .background(Palette.plate)
+            .background(Palette.deep)
+            .overlay(alignment: .trailing) { Rectangle().fill(Color(hex: 0x282422)).frame(width: 1) }
 
             ZStack {
                 Palette.body.ignoresSafeArea()
@@ -46,7 +59,8 @@ struct RootView: View {
                 Text(t)
                     .font(.callout).foregroundStyle(Palette.ink)
                     .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Color.black.opacity(0.85), in: Capsule())
+                    .background(RoundedRectangle(cornerRadius: 3).fill(Color(hex: 0x272321)))
+                    .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color(hex: 0x5D554F), lineWidth: 1))
                     .padding(.bottom, 16)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .task(id: t) {
@@ -56,6 +70,11 @@ struct RootView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: store.toast)
+        // La modalità sviluppatore segue il ruolo dell'account: solo gli OP la vedono.
+        .onChange(of: account.profile?.role) { _, role in
+            if let role { store.data.devMode = role == .op; if role != .op { store.data.skipLab = false } }
+        }
+        .onChange(of: account.signedIn) { _, on in if !on { store.data.devMode = false; store.data.skipLab = false } }
         .onOpenURL { url in
             if url.pathExtension.lowercased() == "emulsion" { store.importEmulsion(url); tab = .shop }
         }

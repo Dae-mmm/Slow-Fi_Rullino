@@ -22,15 +22,19 @@ struct RollsScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     let n = store.toDevelop.count
-                    if n > 0 {
-                        HStack {
-                            Text(n == 1 ? L("to_develop_one") : L("to_develop_many", n)).foregroundStyle(Palette.ink)
-                            Spacer()
-                            Button(L("go_lab")) { store.deliverAll() }
-                                .buttonStyle(.borderedProminent).tint(Palette.safelight)
+                    PageHeading(kicker: L("kick_archive", String(format: "%02d", rolls.count)), title: L("rolls_title")) {
+                        if n > 0 {
+                            HStack(spacing: 16) {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text(n == 1 ? L("to_develop_one") : L("to_develop_many", n)).font(Fonts.barlow(18, .semibold)).foregroundStyle(Palette.ink)
+                                    Text(L("lab_dont_wait")).font(Fonts.barlow(12)).foregroundStyle(Palette.muted)
+                                }
+                                Button(L("go_lab")) { store.deliverAll() }.buttonStyle(.primary)
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 10)
+                            .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0x241714)))
+                            .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color(hex: 0x6E3322), lineWidth: 1))
                         }
-                        .padding(12)
-                        .background(Palette.plateHi, in: RoundedRectangle(cornerRadius: 10))
                     }
                     if let p = store.developProgress {
                         Text(L("developing") + " " + L("x_of_y", p.done + 1, p.total)).font(mono).foregroundStyle(Palette.muted)
@@ -40,8 +44,9 @@ struct RollsScreen: View {
                     }
                     ForEach(rolls) { r in row(r, now: tl.date) }
                 }
-                .padding(18)
+                .padding(.horizontal, 24).padding(.vertical, 20)
             }
+            .background(DottedPage())
         }
         .alert(L("delete_roll_confirm"), isPresented: Binding(get: { toDelete != nil }, set: { if !$0 { toDelete = nil } })) {
             Button(L("delete"), role: .destructive) { if let r = toDelete { store.deleteRoll(r) } }
@@ -50,27 +55,33 @@ struct RollsScreen: View {
     }
 
     private func row(_ r: Roll, now: Date) -> some View {
-        HStack(spacing: 12) {
-            Canister(name: r.emulsionName, iso: r.iso, bw: r.isBw).frame(width: 56, height: 40)
+        HStack(spacing: 14) {
+            Cartridge(name: r.emulsionName, iso: r.iso, bw: r.isBw, exposures: r.exposures, scale: 0.9)
             VStack(alignment: .leading, spacing: 3) {
-                Text(r.emulsionName).font(.headline).foregroundStyle(Palette.ink)
-                Text(L("shot_status", r.shotCount, status(r, now: now))).font(.caption).foregroundStyle(Palette.muted)
+                ChipView(text: status(r, now: now), active: store.isReady(r, now: now))
+                Text(r.emulsionName).font(Fonts.barlow(22, .semibold)).foregroundStyle(Palette.ink).lineLimit(1)
+                Text("ISO \(r.iso) · \(r.shotCount)/\(r.exposures)").font(Fonts.barlow(13)).tracking(0.4).foregroundStyle(Palette.muted)
             }
             Spacer()
+            Text(String(format: "%02d", r.id)).font(Fonts.mono(28)).foregroundStyle(Color(hex: 0x4A4541))
             switch r.state {
             case .shelved:
-                Button(L("reload")) { store.reload(r) }.buttonStyle(.bordered).tint(Palette.ink)
+                Button(L("reload")) { store.reload(r) }.buttonStyle(.secondary)
                 Button(L("delete")) { toDelete = r }.foregroundStyle(Color(hex: 0xFF8A80))
             case .developed where store.isReady(r, now: now):
-                Button(L("negatives_arrow")) { open = r }.buttonStyle(.borderedProminent).tint(Palette.safelight)
+                Button(L("negatives_arrow")) { open = r }.buttonStyle(.primary)
             case .finished:
                 // Come vuoi lo sviluppo: pull, normale o push.
                 HStack(spacing: 4) {
                     ForEach([-1, 0, 1, 2], id: \.self) { p in
-                        Button(p > 0 ? "+\(p)" : (p < 0 ? "−1" : "N")) { store.setPush(r, p) }
-                            .font(.system(size: 12, design: .monospaced))
-                            .buttonStyle(.bordered)
-                            .tint(r.push == p ? Palette.safelight : Palette.muted)
+                        let on = r.push == p
+                        Button { store.setPush(r, p) } label: {
+                            Text(p > 0 ? "+\(p)" : (p < 0 ? "−1" : "N")).font(Fonts.mono(12))
+                                .foregroundStyle(on ? Palette.safelight : Palette.ink)
+                                .frame(width: 34, height: 32)
+                                .background(Rectangle().fill(on ? Color(hex: 0x2D1710) : Color(hex: 0x161514)))
+                                .overlay(Rectangle().stroke(on ? Palette.safelight : Color(hex: 0x4A4541), lineWidth: 1))
+                        }
                     }
                 }
                 .accessibilityLabel(L("push_title"))
@@ -79,8 +90,8 @@ struct RollsScreen: View {
                 EmptyView()
             }
         }
-        .padding(12)
-        .background(Palette.plate, in: RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .card()
     }
 
     private func status(_ r: Roll, now: Date) -> String {
@@ -128,26 +139,38 @@ struct LightTable: View {
     var body: some View {
         let frames = store.frames(of: roll)
         VStack(spacing: 0) {
-            HStack {
-                Button(L("back_rolls"), action: close).foregroundStyle(Palette.ink)
-                Text(roll.emulsionName).font(.headline).foregroundStyle(Palette.ink).padding(.leading, 8)
-                Text(L("negatives_printed", frames.count, frames.filter(\.printed).count)).font(.caption).foregroundStyle(Palette.muted)
+            HStack(spacing: 14) {
+                Button(L("back_rolls").uppercased(), action: close).font(Fonts.barlow(16, .semibold)).tracking(1).foregroundStyle(Palette.safelight)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(L("developed_on", roll.readyAt.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "—").uppercased())
+                        .font(Fonts.mono(9)).tracking(0.6).foregroundStyle(Palette.muted)
+                    Text(roll.emulsionName + " · " + L("negatives_printed", frames.count, frames.filter(\.printed).count))
+                        .font(Fonts.barlow(20, .semibold)).foregroundStyle(Palette.ink).lineLimit(1)
+                }
                 Spacer()
                 if selecting {
                     Text(L("n_chosen", chosen.count)).font(.caption).foregroundStyle(Palette.muted)
                     Button(L("print")) {
                         store.printFrames(frames.filter { chosen.contains($0.frame) })
                         selecting = false; chosen = []
-                    }.buttonStyle(.borderedProminent).tint(Palette.safelight).disabled(chosen.isEmpty)
+                    }.buttonStyle(.primary).disabled(chosen.isEmpty)
                     Button(L("cancel")) { selecting = false; chosen = [] }.foregroundStyle(Palette.ink)
                 } else {
-                    Button(L("select")) { selecting = true }.buttonStyle(.bordered).tint(Palette.ink)
+                    Button(L("select")) { selecting = true }.buttonStyle(.secondary)
                     Button(L("delete_roll2")) { confirmDelete = true }.foregroundStyle(Color(hex: 0xFF8A80))
                 }
             }
-            .padding(12)
-            Text(selecting ? L("hint_select") : L("hint_loupe")).font(.caption).foregroundStyle(Palette.muted)
+            .padding(.horizontal, 16).padding(.vertical, 8)
+            .background(Color(hex: 0x221F1D))
             ScrollView {
+                HStack {
+                    Text(L("contact_sheet", String(format: "%02d", roll.id)).uppercased()).font(Fonts.barlow(12, .bold)).tracking(0.6)
+                    Spacer()
+                    Text("\(roll.exposures) · " + (roll.isBw ? "B&W" : "COLOR") + (roll.push != 0 ? " · PUSH \(roll.push > 0 ? "+" : "")\(roll.push)" : ""))
+                        .font(Fonts.mono(10))
+                }
+                .foregroundStyle(Color(hex: 0x2A2522))
+                .padding(.horizontal, 24).padding(.top, 12)
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 0)], spacing: 14) {
                     ForEach(frames, id: \.frame) { f in
                         NegativeFrame(url: store.url(f), number: f.frame, bw: roll.isBw, printed: f.printed,
@@ -160,8 +183,9 @@ struct LightTable: View {
                     }
                 }
                 .padding(14)
+                Text(selecting ? L("hint_select") : L("hint_loupe")).font(Fonts.barlow(12)).foregroundStyle(Color(hex: 0x6B655E))
             }
-            .background(LinearGradient(colors: [Color(hex: 0xF2EEE6), Color(hex: 0xD8D2C6)], startPoint: .top, endPoint: .bottom))
+            .background(DottedPage(base: Color(hex: 0xE6DCC6), dot: Color(hex: 0xD2C6AC), step: 6))
         }
         .background(Palette.body)
         .fullScreenCover(item: Binding(get: { loupe.map { LoupeItem(f: $0) } }, set: { loupe = $0?.f })) { item in
@@ -244,8 +268,8 @@ struct Loupe: View {
                     Spacer()
                     let printed = store.data.frames.first { $0.file == frame.file }?.printed ?? false
                     Button(printed ? L("already_printed") : L("print")) { store.printFrames([frame]) }
-                        .buttonStyle(.borderedProminent).tint(Palette.safelight).disabled(printed)
-                    Button(L("back_on_table"), action: close).buttonStyle(.bordered).tint(Palette.ink)
+                        .buttonStyle(.primary).disabled(printed)
+                    Button(L("back_on_table"), action: close).buttonStyle(.secondary)
                 }
                 .padding(16)
                 Spacer()
