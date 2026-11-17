@@ -23,6 +23,7 @@ data class Contest(
     val giftExposures: Int,
     val prizeCoins: List<Int>,
     val prizeEmulsion: String?,
+    val prizeEmulsionUrl: String? = null,
     val status: String,
     val boardUntil: Long?,
 ) {
@@ -41,6 +42,28 @@ data class Contest(
         if (giftRoll) return roll.contestId == id && roll.contestRef != null
         if (requiredEmulsion != null && roll.emulsionId != requiredEmulsion) return false
         return roll.loadedAt >= startsAt
+    }
+}
+
+/** Quello che un OP compila nel modulo per creare o modificare un concorso. */
+data class ContestDraft(
+    val title: String = "",
+    val theme: String = "",
+    val description: String = "",
+    val startsAt: Long = System.currentTimeMillis(),
+    val endsAt: Long = System.currentTimeMillis() + 7 * 86_400_000L,
+    val requiredEmulsion: String? = null,
+    val giftRoll: Boolean = false,
+    val giftExposures: Int = 24,
+    val prizeCoins: List<Int> = listOf(50, 30, 20),
+    val prizeEmulsion: String? = null,
+    val prizeEmulsionUrl: String? = null,
+) {
+    companion object {
+        fun from(c: Contest) = ContestDraft(
+            c.title, c.theme, c.description, c.startsAt, c.endsAt, c.requiredEmulsion, c.giftRoll, c.giftExposures,
+            c.prizeCoins.ifEmpty { listOf(0, 0, 0) }, c.prizeEmulsion, c.prizeEmulsionUrl,
+        )
     }
 }
 
@@ -168,6 +191,49 @@ class ContestsClient(private val baseUrl: String, private val key: String, priva
         ok(c, t)
     }
 
+    /* ---------------- Gestione (solo OP: la RLS lo impone) ---------------- */
+
+    private fun ContestDraft.json(status: String?) = JSONObject()
+        .put("title", title.trim()).put("theme", theme.trim()).put("description", description.trim())
+        .put("starts_at", iso(startsAt)).put("ends_at", iso(endsAt))
+        .put("required_emulsion", requiredEmulsion ?: JSONObject.NULL)
+        .put("gift_roll", giftRoll).put("gift_exposures", giftExposures)
+        .put("prize_coins", JSONArray(prizeCoins))
+        .put("prize_emulsion", prizeEmulsion?.ifBlank { null } ?: JSONObject.NULL)
+        .put("prize_emulsion_url", prizeEmulsionUrl ?: JSONObject.NULL)
+        .apply { if (status != null) put("status", status) }
+
+    suspend fun create(d: ContestDraft, publish: Boolean) {
+        val body = d.json(if (publish) "open" else "draft").put("created_by", uid())
+        val (c, t) = call("POST", "/rest/v1/contests", body.toString().toByteArray(), "application/json", token())
+        ok(c, t)
+    }
+
+    /** [status] null lascia lo stato com'è. */
+    suspend fun update(id: String, d: ContestDraft, status: String?) {
+        // HttpURLConnection non conosce PATCH: un upsert sull'id fa lo stesso lavoro.
+        val body = d.json(status).put("id", id)
+        val (c, t) = call(
+            "POST", "/rest/v1/contests?on_conflict=id", body.toString().toByteArray(), "application/json", token(),
+            prefer = "resolution=merge-duplicates",
+        )
+        ok(c, t)
+    }
+
+    suspend fun delete(id: String) {
+        val (c, t) = call("DELETE", "/rest/v1/contests?id=eq.$id", token = token())
+        ok(c, t)
+    }
+
+    /** Carica un'emulsione esclusiva (premio) fuori dal catalogo pubblico; restituisce il suo indirizzo. */
+    suspend fun uploadExclusive(bytes: ByteArray, fileName: String): String {
+        val safe = fileName.substringBeforeLast('.').replace(Regex("[^A-Za-z0-9_-]"), "-").take(40).ifBlank { "premio" }
+        val path = "exclusive/${java.util.UUID.randomUUID().toString().take(8)}-$safe.emulsion"
+        val (c, t) = call("POST", "/storage/v1/object/emulsions/$path", bytes, "application/octet-stream", token(), upsert = true)
+        ok(c, t)
+        return baseUrl.trimEnd('/') + "/storage/v1/object/public/emulsions/$path"
+    }
+
     /** Le foto premiate dei concorsi chiusi da meno di una settimana. */
     suspend fun board(): List<Pair<Contest, ContestEntry>> {
         val (c, t) = call(
@@ -278,6 +344,7 @@ class ContestsClient(private val baseUrl: String, private val key: String, priva
         giftExposures = j.optInt("gift_exposures", 24),
         prizeCoins = j.optJSONArray("prize_coins")?.let { a -> (0 until a.length()).map { a.optInt(it) } } ?: emptyList(),
         prizeEmulsion = j.str("prize_emulsion"),
+        prizeEmulsionUrl = j.str("prize_emulsion_url"),
         status = j.optString("status"),
         boardUntil = ms(j.str("board_until")),
     )

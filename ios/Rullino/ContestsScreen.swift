@@ -9,11 +9,16 @@ struct ContestsScreen: View {
     let goAccount: () -> Void
 
     private var role: Role { account.profile?.role ?? .user }
+    /// Modulo dei concorsi (solo OP).
+    @State private var editor: EditorItem?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 PageHeading(kicker: L("ct_kicker"), title: L("tab_contests")) {
+                    if account.signedIn && role == .op {
+                        Button(L("cm_new")) { editor = EditorItem(contest: nil) }.buttonStyle(.primary)
+                    }
                     if account.signedIn {
                         if model.loading { ProgressView().tint(Palette.safelight) }
                         else { Button(L("ct_refresh")) { Task { await model.refresh() } }.buttonStyle(.secondary) }
@@ -38,7 +43,9 @@ struct ContestsScreen: View {
                         let group = visible.filter { $0.phase() == ph }
                         if !group.isEmpty {
                             section(phaseLabel(ph))
-                            ForEach(group) { c in ContestCard(contest: c, goCamera: goCamera) }
+                            ForEach(group) { c in
+                                ContestCard(contest: c, goCamera: goCamera, onEdit: role == .op && ph != .closed ? { editor = EditorItem(contest: c) } : nil)
+                            }
                         }
                     }
                 }
@@ -47,6 +54,9 @@ struct ContestsScreen: View {
         }
         .background(DottedPage())
         .task(id: account.signedIn) { await model.refresh() }
+        .fullScreenCover(item: $editor) { item in
+            ContestEditor(existing: item.contest) { editor = nil }.environmentObject(model).environmentObject(store)
+        }
         .fullScreenCover(item: Binding(get: { model.judging }, set: { if $0 == nil { model.closeJudging() } })) { c in
             JudgingView(contest: c, isOp: role == .op).environmentObject(model)
         }
@@ -73,6 +83,11 @@ struct ContestsScreen: View {
     }
 }
 
+struct EditorItem: Identifiable {
+    let contest: Contest?
+    let id = UUID()
+}
+
 func phaseLabel(_ p: Contest.Phase) -> String {
     switch p {
     case .draft: L("ct_phase_draft")
@@ -91,6 +106,7 @@ struct ContestCard: View {
     @EnvironmentObject var model: ContestsModel
     let contest: Contest
     let goCamera: () -> Void
+    var onEdit: (() -> Void)? = nil
 
     var body: some View {
         let c = contest
@@ -156,6 +172,7 @@ struct ContestCard: View {
                 } else if phase == .upcoming {
                     EngravedNote(text: L("ct_starts", c.startsAt.formatted(date: .abbreviated, time: .omitted)))
                 }
+                if let onEdit { Button(L("cm_edit_short"), action: onEdit).buttonStyle(.secondary) }
                 if isJudge && phase == .judging {
                     Button(L("ct_judge")) { Task { await model.openJudging(c) } }.buttonStyle(.primary).disabled(model.busy)
                 } else if phase == .judging && entry == nil {

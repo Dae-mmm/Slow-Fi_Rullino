@@ -16,6 +16,7 @@ struct Contest: Identifiable, Equatable {
     var giftExposures: Int
     var prizeCoins: [Int]
     var prizeEmulsion: String?
+    var prizeEmulsionUrl: String?
     var status: String
     var boardUntil: Date?
 
@@ -46,6 +47,7 @@ struct Contest: Identifiable, Equatable {
         giftExposures = j["gift_exposures"] as? Int ?? 24
         prizeCoins = j["prize_coins"] as? [Int] ?? []
         prizeEmulsion = j["prize_emulsion"] as? String
+        prizeEmulsionUrl = j["prize_emulsion_url"] as? String
         status = j["status"] as? String ?? ""
         boardUntil = (j["board_until"] as? String).flatMap(ISO8601DateFormatter.flexible)
     }
@@ -71,6 +73,43 @@ struct ContestEntry: Identifiable, Equatable {
         avgScore = (j["avg_score"] as? NSNumber)?.doubleValue ?? (j["avg_score"] as? String).flatMap(Double.init)
         let p = j["profiles"] as? [String: Any]
         author = (p?["display_name"] as? String) ?? (p?["username"] as? String)
+    }
+}
+
+/// Quello che un OP compila nel modulo per creare o modificare un concorso.
+struct ContestDraft {
+    var title = "", theme = "", description = ""
+    var startsAt = Date()
+    var endsAt = Date().addingTimeInterval(7 * 86_400)
+    var requiredEmulsion: String?
+    var giftRoll = false
+    var giftExposures = 24
+    var prizeCoins = [50, 30, 20]
+    var prizeEmulsion: String?
+    var prizeEmulsionUrl: String?
+
+    init() {}
+    init(_ c: Contest) {
+        title = c.title; theme = c.theme; description = c.description; startsAt = c.startsAt; endsAt = c.endsAt
+        requiredEmulsion = c.requiredEmulsion; giftRoll = c.giftRoll; giftExposures = c.giftExposures
+        prizeCoins = (c.prizeCoins + [0, 0, 0]).prefix(3).map { $0 }
+        prizeEmulsion = c.prizeEmulsion; prizeEmulsionUrl = c.prizeEmulsionUrl
+    }
+
+    func json(_ status: String?) -> [String: Any] {
+        let f = ISO8601DateFormatter()
+        var j: [String: Any] = [
+            "title": title.trimmingCharacters(in: .whitespacesAndNewlines),
+            "theme": theme.trimmingCharacters(in: .whitespacesAndNewlines),
+            "description": description.trimmingCharacters(in: .whitespacesAndNewlines),
+            "starts_at": f.string(from: startsAt), "ends_at": f.string(from: endsAt),
+            "required_emulsion": requiredEmulsion.map { $0 as Any } ?? NSNull(),
+            "gift_roll": giftRoll, "gift_exposures": giftExposures, "prize_coins": prizeCoins,
+            "prize_emulsion": prizeEmulsion.flatMap { $0.isEmpty ? nil : $0 as Any } ?? NSNull(),
+            "prize_emulsion_url": prizeEmulsionUrl.map { $0 as Any } ?? NSNull(),
+        ]
+        if let status { j["status"] = status }
+        return j
     }
 }
 
@@ -255,6 +294,58 @@ final class ContestsModel: ObservableObject {
                 ContestScore(entryId: e.id, score: $0["score"] as? Int ?? 0, note: $0["note"] as? String)
             }
         }
+    }
+
+    /* ---------------- Gestione concorsi (OP) ---------------- */
+
+    /// Crea o aggiorna. status: "draft", "open", oppure nil per lasciarlo com'è.
+    func save(_ existing: Contest?, _ d: ContestDraft, status: String?) async -> Bool {
+        let ok = await act {
+            if d.title.trimmingCharacters(in: .whitespaces).isEmpty { throw ContestError.message(L("cm_err_title")) }
+            if d.endsAt <= d.startsAt { throw ContestError.message(L("cm_err_dates")) }
+            if d.giftRoll && d.requiredEmulsion == nil { throw ContestError.message(L("cm_err_gift")) }
+            let t = try await token(), me = try uid()
+            if let existing {
+                try await send("PATCH", "/rest/v1/contests?id=eq.\(existing.id)", json: d.json(status), t)
+            } else {
+                var j = d.json(status ?? "draft"); j["created_by"] = me
+                try await send("POST", "/rest/v1/contests", json: j, t)
+            }
+            store?.say(status == "open" ? "cm_published" : "cm_saved")
+        }
+        if ok { await reloadContests() }
+        return ok
+    }
+
+    func delete(_ c: Contest) async -> Bool {
+        let ok = await act {
+            let t = try await token()
+            try await send("DELETE", "/rest/v1/contests?id=eq.\(c.id)", t)
+            store?.say("cm_deleted")
+        }
+        if ok { await reloadContests() }
+        return ok
+    }
+
+    private func reloadContests() async {
+        if let t = try? await token(), let l = try? await list("/rest/v1/contests?select=*&order=ends_at.desc", t) { contests = l.map(Contest.init) }
+    }
+
+    /// Carica un'emulsione esclusiva (premio) fuori dal catalogo pubblico; restituisce nome e indirizzo.
+    func uploadPrize(_ url: URL) async -> (String, String)? {
+        var out: (String, String)?
+        _ = await act {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            guard let bytes = try? Data(contentsOf: url) else { throw ContestError.message(L("open_file_failed")) }
+            let name = url.deletingPathExtension().lastPathComponent
+            let safe = String(name.map { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" ? $0 : "-" }.prefix(40))
+            let path = "exclusive/\(UUID().uuidString.prefix(8).lowercased())-\(safe.isEmpty ? "premio" : safe).emulsion"
+            let t = try await token()
+            try await send("POST", "/storage/v1/object/emulsions/\(path)", body: bytes, type: "application/octet-stream", t, upsert: true)
+            out = (name, base + "/storage/v1/object/public/emulsions/" + path)
+        }
+        return out
     }
 
     /* ---------------- Premi ---------------- */

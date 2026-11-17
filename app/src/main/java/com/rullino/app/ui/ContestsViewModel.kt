@@ -174,6 +174,46 @@ class ContestsViewModel(application: Application) : AndroidViewModel(application
         results.value = results.value + (e.id to client.scoresOf(e.id))
     }
 
+    /* ---------------- Gestione concorsi (OP) ---------------- */
+
+    /** Emulsioni del catalogo, per scegliere quella imposta. */
+    val catalog = MutableStateFlow<List<com.rullino.app.data.CatalogItem>>(emptyList())
+
+    fun loadCatalog() = viewModelScope.launch {
+        if (catalog.value.isEmpty()) catalog.value = runCatching { repo.catalog.list() }.getOrDefault(emptyList())
+    }
+
+    /** Crea o aggiorna. [status]: "draft", "open", oppure null per lasciarlo com'è. */
+    fun save(existing: Contest?, d: com.rullino.app.data.ContestDraft, status: String?, onDone: () -> Unit) = action {
+        when {
+            d.title.isBlank() -> throw IllegalStateException(str(R.string.cm_err_title))
+            d.endsAt <= d.startsAt -> throw IllegalStateException(str(R.string.cm_err_dates))
+            d.giftRoll && d.requiredEmulsion == null -> throw IllegalStateException(str(R.string.cm_err_gift))
+        }
+        if (existing == null) client.create(d, publish = status == "open") else client.update(existing.id, d, status)
+        message.value = str(if (status == "open") R.string.cm_published else R.string.cm_saved)
+        contests.value = client.list()
+        onDone()
+    }
+
+    fun delete(c: Contest, onDone: () -> Unit) = action {
+        client.delete(c.id)
+        message.value = str(R.string.cm_deleted)
+        contests.value = client.list()
+        onDone()
+    }
+
+    /** Carica il file .emulsion scelto come premio esclusivo; [onUrl] riceve nome e indirizzo. */
+    fun uploadPrize(uri: android.net.Uri, onUrl: (String, String) -> Unit) = action {
+        val bytes = withContext(Dispatchers.IO) {
+            app.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: throw IllegalStateException(str(R.string.open_file_failed))
+        }
+        val name = app.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+            ?.use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: "premio.emulsion"
+        val url = client.uploadExclusive(bytes, name)
+        onUrl(name.substringBeforeLast('.'), url)
+    }
+
     /* ---------------- Premi ---------------- */
 
     private suspend fun claimRewards() {

@@ -81,9 +81,18 @@ fun ContestsScreen(vm: AppViewModel, cvm: ContestsViewModel, onOpenCamera: () ->
     val isJudge = role == Role.JUDGE || role == Role.OP
 
     LaunchedEffect(signedIn) { cvm.refresh() }
+    // Modulo dei concorsi (solo OP): "new" per crearne uno, altrimenti il concorso da modificare.
+    var editing by remember { mutableStateOf<Contest?>(null) }
+    var creating by remember { mutableStateOf(false) }
+    if (creating) ContestEditor(cvm, null, onClose = { creating = false })
+    editing?.let { c -> ContestEditor(cvm, c, onClose = { editing = null }) }
 
     Column(Modifier.fillMaxSize().dottedPage()) {
         PageHeading(stringResource(R.string.ct_kicker), stringResource(R.string.tab_contests), Modifier.padding(start = 24.dp, end = 24.dp, top = 18.dp)) {
+            if (signedIn && role == Role.OP) {
+                PrimaryButton(onClick = { creating = true }) { Text(stringResource(R.string.cm_new)) }
+                Spacer(Modifier.width(8.dp))
+            }
             if (signedIn) {
                 if (loading) CircularProgressIndicator(Modifier.size(22.dp), color = Palette.Safelight, strokeWidth = 2.dp)
                 else SecondaryButton(onClick = { cvm.refresh() }) { Text(stringResource(R.string.ct_refresh)) }
@@ -118,7 +127,7 @@ fun ContestsScreen(vm: AppViewModel, cvm: ContestsViewModel, onOpenCamera: () ->
                 if (group.isEmpty()) continue
                 item(key = "h-$ph") { SectionLabel(phaseLabel(ph)) }
                 items(group, key = { it.id }) { c ->
-                    ContestCard(vm, cvm, c, mine[c.id], isJudge, onOpenCamera)
+                    ContestCard(vm, cvm, c, mine[c.id], isJudge, onOpenCamera, onEdit = if (role == Role.OP && ph != Contest.Phase.CLOSED) ({ editing = c }) else null)
                 }
             }
         }
@@ -148,7 +157,7 @@ private fun dayTime(ms: Long) = DateFormat.getDateTimeInstance(DateFormat.MEDIUM
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ContestCard(vm: AppViewModel, cvm: ContestsViewModel, c: Contest, entry: ContestEntry?, isJudge: Boolean, onOpenCamera: () -> Unit) {
+private fun ContestCard(vm: AppViewModel, cvm: ContestsViewModel, c: Contest, entry: ContestEntry?, isJudge: Boolean, onOpenCamera: () -> Unit, onEdit: (() -> Unit)? = null) {
     val emulsions by vm.emulsions.collectAsState()
     val gifts by cvm.gifts.collectAsState()
     val busy by cvm.busy.collectAsState()
@@ -215,6 +224,7 @@ private fun ContestCard(vm: AppViewModel, cvm: ContestsViewModel, c: Contest, en
                 phase == Contest.Phase.OPEN -> EngravedNote(stringResource(R.string.ct_how_to_send))
                 phase == Contest.Phase.UPCOMING -> EngravedNote(stringResource(R.string.ct_starts, day(c.startsAt)))
             }
+            if (onEdit != null) SecondaryButton(onClick = onEdit) { Text(stringResource(R.string.cm_edit_short)) }
             if (isJudge && (phase == Contest.Phase.JUDGING)) {
                 PrimaryButton(enabled = !busy, onClick = { cvm.openJudging(c) }) { Text(stringResource(R.string.ct_judge)) }
             } else if (phase == Contest.Phase.JUDGING && entry == null) {
