@@ -24,6 +24,9 @@ uniform int uMono; uniform vec3 uMix;
 uniform vec3 uGrain;        // quantità effettiva (già x ISO), dimensione, ruvidità
 uniform float uVignette;
 uniform float uSeed;
+uniform float uExpErr;      // errore di esposizione della compatta virtuale, in stop (+ = sovra)
+uniform int uPush;          // sviluppo: -1 pull, 0 normale, +1/+2 push
+uniform int uSlide;         // 1 = diapositiva (invertibile), 0 = negativa
 
 const float HC[8] = float[8](0.,30.,60.,120.,180.,240.,270.,300.);
 const vec3 LW = vec3(0.2126,0.7152,0.0722);
@@ -75,8 +78,24 @@ void main(){
   }
   if(uMode==2){ outColor=vec4(c,1.); return; }
 
-  // 1. Bilanciamento del bianco + esposizione (in lineare)
+  // 0. Esposizione e sviluppo. La foto del telefono è sempre ben esposta: qui la "rovina"
+  //    come farebbe la pellicola. Negativa: il laboratorio recupera in stampa buona parte
+  //    dell'errore, ma le ombre sottoesposte restano vuote e le luci sovraesposte si comprimono.
+  //    Diapositiva: niente recupero, le luci bruciano.
+  float push = float(uPush);
+  float eff = uExpErr + push * 0.85;
+  float under = uSlide == 1 ? 0. : max(-eff, 0.);
+  float over = uSlide == 1 ? 0. : max(eff, 0.);
   vec3 lin = toLin(c);
+  if (uSlide == 1) {
+    lin *= exp2(uExpErr * 0.9 + push * 0.6);
+  } else {
+    lin *= exp2(eff * 0.3);
+    lin = max(lin - 0.004 * under * under, 0.);
+    lin = lin / (1. + lin * 0.12 * over);
+  }
+
+  // 1. Bilanciamento del bianco + esposizione (in lineare)
   vec3 wb = vec3(1.+uTemp*0.3, 1.-uTint*0.25, 1.-uTemp*0.3);
   wb /= dot(wb, LW);
   lin *= wb * exp2(uExposure);
@@ -87,7 +106,7 @@ void main(){
   float L = dot(c, LW);
   c += uShadows*0.3*(1.-smoothstep(0.,0.55,L)) + uHighlights*0.3*smoothstep(0.45,1.,L);
   c = clamp(c,0.,1.);
-  float k = exp(uContrast*0.9);
+  float k = exp(uContrast*0.9 + push*0.18 + (uSlide == 1 ? 0. : -0.05*over));
   c = vec3(scurve(c.r,k), scurve(c.g,k), scurve(c.b,k));
   c = uFade*0.22 + c*(1.-uFade*0.22);
 
@@ -109,7 +128,7 @@ void main(){
 
   // 4. Saturazione e vividezza
   L = dot(c, LW);
-  c = mix(vec3(L), c, 1.+uSat);
+  c = mix(vec3(L), c, 1.+uSat - 0.07*under + 0.04*push);
   float s = max(c.r,max(c.g,c.b)) - min(c.r,min(c.g,c.b));
   c = mix(vec3(L), c, 1.+uVib*(1.-clamp(s,0.,1.)));
   c = clamp(c,0.,1.);
@@ -148,7 +167,8 @@ void main(){
     }
     L = dot(c, LW);
     float mid = 0.35 + 0.65*(4.*L*(1.-L));
-    c += g * uGrain.x * 0.22 * mid;
+    float gm = (1. + 0.4*under - min(0.08*over, 0.3)) * (1. + 0.35*max(push, 0.) - 0.15*max(-push, 0.));
+    c += g * uGrain.x * gm * 0.22 * mid;
   }
   outColor = vec4(clamp(c,0.,1.), 1.);
 }"""

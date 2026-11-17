@@ -280,4 +280,8 @@ T = [
 ('role_judge', 'judge', 'giudice', 'juge', 'juez', 'Juror'),
 ('role_op', 'OP', 'OP', 'OP', 'OP', 'OP'),
 ('acc_judge_area', "Judges' area: coming with contests", 'Area giudici: arriva con i concorsi', 'Espace juges : arrive avec les concours', 'Área de jueces: llega con los concursos', 'Jurybereich: kommt mit den Wettbewerben'),
+('push_title', 'Development', 'Sviluppo', 'Développement', 'Revelado', 'Entwicklung'),
+('sk_push', 'Push +%1$s? Sure: more contrast and grain, and the dark shots come back.', 'Push di +%1$s? Va bene: più contrasto e più grana, e le foto buie si riprendono.', "Push de +%1$s ? D'accord : plus de contraste et de grain, et les photos sombres reviennent.", '¿Push de +%1$s? Vale: más contraste y más grano, y las fotos oscuras se recuperan.', 'Push um +%1$s? Gern: mehr Kontrast und Korn, und die dunklen Bilder kommen zurück.'),
+('sk_pull', 'Pull −1: softer contrast and finer grain, good if you overexposed.', 'Pull di −1: contrasto più morbido e grana più fine, bene se hai sovraesposto.', 'Pull de −1 : contraste plus doux et grain plus fin, bien si tu as surexposé.', 'Pull de −1: contraste más suave y grano más fino, bien si sobreexpusiste.', 'Pull um −1: weicherer Kontrast und feineres Korn, gut bei Überbelichtung.'),
+('sk_normal', 'Normal development, as the box says.', 'Sviluppo normale, come dice la scatola.', 'Développement normal, comme indiqué sur la boîte.', 'Revelado normal, como dice la caja.', 'Normale Entwicklung, wie auf der Packung.'),
 ]

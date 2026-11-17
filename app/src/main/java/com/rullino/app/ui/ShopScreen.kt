@@ -1,5 +1,6 @@
 package com.rullino.app.ui
 
+import androidx.compose.material3.FilterChip
 import com.rullino.app.R
 import androidx.compose.ui.res.stringResource
 import android.graphics.BitmapFactory
@@ -126,10 +127,25 @@ fun ShopScreen(vm: AppViewModel) {
                             Text(if (toDeliver.size == 1) stringResource(R.string.develop_one) else stringResource(R.string.develop_all, toDeliver.size))
                         }
                     }
-                    toDeliver.forEach { r -> LabRow(r, stringResource(R.string.lab_to_develop)) {} }
+                    toDeliver.forEach { r ->
+                        LabRow(r, stringResource(R.string.lab_to_develop)) {
+                            // Come vuoi lo sviluppo: pull, normale o push.
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                listOf(-1, 0, 1, 2).forEach { p ->
+                                    FilterChip(
+                                        selected = r.push == p,
+                                        onClick = { vm.setPush(r, p) },
+                                        label = { Text(if (p > 0) "+$p" else if (p < 0) "−1" else "N", fontFamily = Mono, fontSize = 12.sp) },
+                                    )
+                                }
+                            }
+                        }
+                    }
                     atLab.forEach { r ->
                         if (r.state == RollState.DEVELOPING) LabRow(r, stringResource(R.string.lab_in_tank)) {}
-                        else LabRow(r, stringResource(R.string.lab_back, formatPickup(res, r.readyAt ?: now))) {}
+                        else LabRow(r, stringResource(R.string.lab_back, formatPickup(res, r.readyAt ?: now))) {
+                            if (r.push != 0) Text(if (r.push > 0) "+${r.push}" else "−1", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
+                        }
                     }
                 }
             }

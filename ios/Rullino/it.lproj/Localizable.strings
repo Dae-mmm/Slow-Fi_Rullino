@@ -279,3 +279,7 @@
 "role_judge" = "giudice";
 "role_op" = "OP";
 "acc_judge_area" = "Area giudici: arriva con i concorsi";
+"push_title" = "Sviluppo";
+"sk_push" = "Push di +%1$@? Va bene: più contrasto e più grana, e le foto buie si riprendono.";
+"sk_pull" = "Pull di −1: contrasto più morbido e grana più fine, bene se hai sovraesposto.";
+"sk_normal" = "Sviluppo normale, come dice la scatola.";

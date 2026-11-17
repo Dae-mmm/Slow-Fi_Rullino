@@ -219,6 +219,12 @@ final class Store: ObservableObject {
 
     var toDevelop: [Roll] { data.rolls.filter { $0.state == .finished && $0.shotCount > 0 } }
 
+    /// Push/pull chiesto al negoziante per un rullino da sviluppare.
+    func setPush(_ r: Roll, _ push: Int) {
+        update(r.id) { if $0.state == .finished { $0.push = min(max(push, -1), 2) } }
+        if push > 0 { say("sk_push", push) } else if push < 0 { say("sk_pull") } else { say("sk_normal") }
+    }
+
     /// Consegna in un colpo tutti i rullini riavvolti.
     func deliverAll() {
         let ids = toDevelop.map(\.id)
@@ -241,9 +247,10 @@ final class Store: ObservableObject {
             let files = groups[f]!.map { root.appendingPathComponent($0.file) }
             let rel = String(format: "rolls/%d/dev/%02d.jpg", id, f)
             let out = dir.appendingPathComponent(String(format: "dev/%02d.jpg", f))
-            let params = e.params, iso = e.iso
+            let params = e.params, iso = e.iso, push = r.push, slide = e.isSlide
             let ok = await Task.detached(priority: .userInitiated) {
-                Developer.develop(files: files, params: params, iso: iso, out: out, seed: Float.random(in: 0..<997))
+                Developer.develop(files: files, params: params, iso: iso, out: out, seed: Float.random(in: 0..<997),
+                                  push: push, slide: slide)
             }.value
             if ok { data.frames.append(DevFrame(rollId: id, frame: f, file: rel, layers: files.count)) }
         }

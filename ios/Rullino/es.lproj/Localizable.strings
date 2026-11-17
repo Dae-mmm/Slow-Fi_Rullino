@@ -279,3 +279,7 @@
 "role_judge" = "juez";
 "role_op" = "OP";
 "acc_judge_area" = "Área de jueces: llega con los concursos";
+"push_title" = "Revelado";
+"sk_push" = "¿Push de +%1$@? Vale: más contraste y más grano, y las fotos oscuras se recuperan.";
+"sk_pull" = "Pull de −1: contraste más suave y grano más fino, bien si sobreexpusiste.";
+"sk_normal" = "Revelado normal, como dice la caja.";

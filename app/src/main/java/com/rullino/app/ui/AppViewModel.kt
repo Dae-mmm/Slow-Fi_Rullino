@@ -111,6 +111,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     /* ---- Negozio ---- */
 
     /** Consegna in un colpo tutti i rullini scaricati (con almeno una posa). */
+    /** Push/pull chiesto al negoziante per un rullino da sviluppare. */
+    fun setPush(r: RollEntity, push: Int) = viewModelScope.launch {
+        val fresh = repo.db.rolls().get(r.id) ?: return@launch
+        if (fresh.state != RollState.FINISHED) return@launch
+        repo.db.rolls().update(fresh.copy(push = push.coerceIn(-1, 2)))
+        shopkeeperLine.value = when {
+            push > 0 -> str(R.string.sk_push, push)
+            push < 0 -> str(R.string.sk_pull)
+            else -> str(R.string.sk_normal)
+        }
+    }
+
     fun deliverAll(rolls: List<RollEntity>) = app.appScope.launch {
         val list = rolls.filter { it.state == RollState.FINISHED && it.shotCount > 0 }
         if (list.isEmpty()) { shopkeeperLine.value = str(R.string.sk_nothing); return@launch }

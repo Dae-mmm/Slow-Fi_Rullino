@@ -280,4 +280,8 @@
     <string name="role_judge">juge</string>
     <string name="role_op">OP</string>
     <string name="acc_judge_area">Espace juges : arrive avec les concours</string>
+    <string name="push_title">Développement</string>
+    <string name="sk_push">Push de +%1$s ? D\'accord : plus de contraste et de grain, et les photos sombres reviennent.</string>
+    <string name="sk_pull">Pull de −1 : contraste plus doux et grain plus fin, bien si tu as surexposé.</string>
+    <string name="sk_normal">Développement normal, comme indiqué sur la boîte.</string>
 </resources>

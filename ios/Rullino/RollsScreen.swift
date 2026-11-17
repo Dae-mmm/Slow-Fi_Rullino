@@ -64,6 +64,16 @@ struct RollsScreen: View {
             case .developed where store.isReady(r, now: now):
                 Button(L("negatives_arrow")) { open = r }.buttonStyle(.borderedProminent).tint(Palette.safelight)
             case .finished:
+                // Come vuoi lo sviluppo: pull, normale o push.
+                HStack(spacing: 4) {
+                    ForEach([-1, 0, 1, 2], id: \.self) { p in
+                        Button(p > 0 ? "+\(p)" : (p < 0 ? "−1" : "N")) { store.setPush(r, p) }
+                            .font(.system(size: 12, design: .monospaced))
+                            .buttonStyle(.bordered)
+                            .tint(r.push == p ? Palette.safelight : Palette.muted)
+                    }
+                }
+                .accessibilityLabel(L("push_title"))
                 Button(L("delete")) { toDelete = r }.foregroundStyle(Color(hex: 0xFF8A80))
             default:
                 EmptyView()

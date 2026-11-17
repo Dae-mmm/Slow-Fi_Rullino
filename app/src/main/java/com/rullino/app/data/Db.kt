@@ -1,5 +1,8 @@
 package com.rullino.app.data
 
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room.migration.Migration
+import androidx.room.ColumnInfo
 import android.content.Context
 import androidx.room.Dao
 import androidx.room.Database
@@ -72,6 +75,8 @@ data class RollEntity(
     val readyAt: Long? = null,
     /** Negativi ritirati al negozio: ora sono sul tavolo luminoso. */
     val pickedUp: Boolean = false,
+    /** Sviluppo chiesto al laboratorio: -1 pull, 0 normale, +1/+2 push. */
+    @ColumnInfo(defaultValue = "0") val push: Int = 0,
 ) {
     val canWind get() = state == RollState.LOADED && !wound && cursor <= exposures
     /** Tutte le pose esposte: va riavvolto. */
@@ -254,7 +259,7 @@ interface FrameDao {
         EmulsionEntity::class, RollEntity::class, ExposureEntity::class, FrameEntity::class,
         InventoryEntity::class, ReleaseEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class AppDb : RoomDatabase() {
@@ -266,9 +271,17 @@ abstract class AppDb : RoomDatabase() {
     abstract fun releases(): ReleaseDao
 
     companion object {
+        /** Push/pull: si aggiunge la colonna senza perdere i rullini. */
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE rolls ADD COLUMN push INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun build(context: Context): AppDb =
             Room.databaseBuilder(context, AppDb::class.java, "rullino.db")
                 // App ancora in sviluppo: cambiando schema si riparte da zero.
+                .addMigrations(MIGRATION_4_5)
                 .fallbackToDestructiveMigration(true)
                 .build()
     }

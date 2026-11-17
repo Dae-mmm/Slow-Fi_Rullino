@@ -75,7 +75,7 @@ class FilmRenderer {
     }
 
     /** Restituisce una nuova bitmap sviluppata delle stesse dimensioni di [src]. */
-    fun render(src: Bitmap, preset: Preset, seed: Float): Bitmap {
+    fun render(src: Bitmap, preset: Preset, seed: Float, look: DevelopLook = DevelopLook()): Bitmap {
         val w = src.width
         val h = src.height
         require(w <= maxSide && h <= maxSide) { "Immagine troppo grande per la GPU" }
@@ -103,7 +103,7 @@ class FilmRenderer {
         GLES30.glUseProgram(program)
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, inTex)
-        setUniforms(preset, w, h, seed)
+        setUniforms(preset, w, h, seed, look)
 
         val aPos = GLES30.glGetAttribLocation(program, "aPos")
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
@@ -144,7 +144,7 @@ class FilmRenderer {
     private fun loc(name: String): Int = locations.getOrPut(name) { GLES30.glGetUniformLocation(program, name) }
 
     /** Stesse conversioni di setUniforms() in Camera Oscura. */
-    private fun setUniforms(preset: Preset, w: Int, h: Int, seed: Float) {
+    private fun setUniforms(preset: Preset, w: Int, h: Int, seed: Float, look: DevelopLook) {
         val p = preset.params
         GLES30.glUniform1i(loc("uImg"), 0)
         GLES30.glUniform1i(loc("uMode"), 0)
@@ -175,6 +175,9 @@ class FilmRenderer {
         GLES30.glUniform3f(loc("uGrain"), p.grain.amount / 100f * isoFactor, p.grain.size, p.grain.roughness / 100f)
         GLES30.glUniform1f(loc("uVignette"), p.vignette / 100f)
         GLES30.glUniform1f(loc("uSeed"), seed)
+        GLES30.glUniform1f(loc("uExpErr"), look.exposureError)
+        GLES30.glUniform1i(loc("uPush"), look.push)
+        GLES30.glUniform1i(loc("uSlide"), if (look.slide) 1 else 0)
     }
 
     private fun buildProgram(vs: String, fs: String): Int {

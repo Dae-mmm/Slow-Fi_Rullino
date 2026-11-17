@@ -49,6 +49,7 @@ class Developer(private val context: Context, private val repo: Repository, priv
             val emulsion = db.emulsions().get(start.emulsionId)
                 ?: throw IllegalStateException(context.getString(R.string.dev_emulsion_gone, start.emulsionName))
             val preset = repo.loadPreset(emulsion)
+            val slide = VirtualCamera.isSlide(preset.params.process, emulsion.id, emulsion.name)
             db.rolls().update(start.copy(state = RollState.DEVELOPING))
 
             val byFrame: Map<Int, List<ExposureEntity>> = db.exposures().forRoll(rollId).groupBy { it.frame }
@@ -60,8 +61,16 @@ class Developer(private val context: Context, private val repo: Repository, priv
                 for ((frame, layers) in byFrame.toSortedMap()) {
                     _progress.value = DevelopProgress(rollId, i++, byFrame.size)
                     if (already[frame]?.let { File(it.developedPath).exists() } == true) continue
-                    val merged = mergeExposures(layers.map { File(it.rawPath) }, renderer.maxSide) ?: continue
-                    val out = renderer.render(merged, preset, seed = Random.nextFloat() * 997f)
+                    val files = layers.map { File(it.rawPath) }
+                    val merged = mergeExposures(files, renderer.maxSide) ?: continue
+                    // Errore medio della compatta virtuale sulle esposizioni di questo fotogramma.
+                    val errors = files.mapNotNull { VirtualCamera.errorStops(it, start.iso) }
+                    val look = DevelopLook(
+                        exposureError = if (errors.isEmpty()) 0f else errors.average().toFloat(),
+                        push = start.push,
+                        slide = slide,
+                    )
+                    val out = renderer.render(merged, preset, seed = Random.nextFloat() * 997f, look = look)
                     merged.recycle()
                     val file = File(outDir, "%02d.jpg".format(frame))
                     file.outputStream().use { out.compress(Bitmap.CompressFormat.JPEG, 94, it) }

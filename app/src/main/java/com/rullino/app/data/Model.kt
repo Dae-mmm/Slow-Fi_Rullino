@@ -55,6 +55,8 @@ data class FilmParams(
     val mono: MonoMix = MonoMix(),
     val grain: GrainParams = GrainParams(),
     val vignette: Float = 0f,
+    /** "negative" (predefinito) o "slide": decide come la pellicola reagisce agli errori di esposizione. */
+    val process: String = "",
 )
 
 @Serializable

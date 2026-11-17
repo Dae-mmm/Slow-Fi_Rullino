@@ -61,8 +61,23 @@ kernel void film(texture2d<float, access::read> src [[texture(0)]],
   float2 uv = frag / res;
   float3 c = src.read(gid).rgb;
 
-  // 1. Bilanciamento del bianco + esposizione (in lineare)
+  // 0. Esposizione e sviluppo (come nello shader Android): negativa recuperata in stampa
+  //    con ombre vuote e luci compresse, diapositiva senza recupero.
+  bool slide = u[52] > 0.5;
+  float push = u[51];
+  float eff = u[50] + push * 0.85;
+  float under = slide ? 0. : max(-eff, 0.);
+  float over = slide ? 0. : max(eff, 0.);
   float3 lin = toLin(c);
+  if (slide) {
+    lin *= exp2(u[50] * 0.9 + push * 0.6);
+  } else {
+    lin *= exp2(eff * 0.3);
+    lin = max(lin - 0.004 * under * under, 0.);
+    lin = lin / (1. + lin * 0.12 * over);
+  }
+
+  // 1. Bilanciamento del bianco + esposizione (in lineare)
   float3 wb = float3(1. + u[3] * 0.3, 1. - u[4] * 0.25, 1. - u[3] * 0.3);
   wb /= dot(wb, LW);
   lin *= wb * exp2(u[2]);
@@ -73,7 +88,7 @@ kernel void film(texture2d<float, access::read> src [[texture(0)]],
   float L = dot(c, LW);
   c += u[8] * 0.3 * (1. - smoothstep(0., 0.55, L)) + u[7] * 0.3 * smoothstep(0.45, 1., L);
   c = clamp(c, 0., 1.);
-  float k = exp(u[6] * 0.9);
+  float k = exp(u[6] * 0.9 + push * 0.18 + (slide ? 0. : -0.05 * over));
   c = float3(scurve(c.r, k), scurve(c.g, k), scurve(c.b, k));
   c = u[9] * 0.22 + c * (1. - u[9] * 0.22);
 
@@ -96,7 +111,7 @@ kernel void film(texture2d<float, access::read> src [[texture(0)]],
 
   // 4. Saturazione e vividezza
   L = dot(c, LW);
-  c = mix(float3(L), c, 1. + u[10]);
+  c = mix(float3(L), c, 1. + u[10] - 0.07 * under + 0.04 * push);
   float s = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));
   c = mix(float3(L), c, 1. + u[11] * (1. - clamp(s, 0., 1.)));
   c = clamp(c, 0., 1.);
@@ -136,7 +151,8 @@ kernel void film(texture2d<float, access::read> src [[texture(0)]],
   }
   L = dot(c, LW);
   float mid = 0.35 + 0.65 * (4. * L * (1. - L));
-  c += g * u[45] * 0.22 * mid;
+  float gm = (1. + 0.4 * under - min(0.08 * over, 0.3)) * (1. + 0.35 * max(push, 0.) - 0.15 * max(-push, 0.));
+  c += g * u[45] * gm * 0.22 * mid;
   dst.write(float4(clamp(c, 0., 1.), 1.), gid);
 }
 """
@@ -162,8 +178,10 @@ final class FilmRenderer {
     }
 
     /// Stesse conversioni di setUniforms() in Camera Oscura.
-    static func uniforms(_ p: FilmParams, iso: Int, w: Int, h: Int, seed: Float) -> [Float] {
-        var u = [Float](repeating: 0, count: 50)
+    static func uniforms(_ p: FilmParams, iso: Int, w: Int, h: Int, seed: Float,
+                         exposureError: Float = 0, push: Int = 0, slide: Bool = false) -> [Float] {
+        var u = [Float](repeating: 0, count: 53)
+        u[50] = exposureError; u[51] = Float(push); u[52] = slide ? 1 : 0
         u[0] = Float(w); u[1] = Float(h)
         u[2] = p.exposure; u[3] = p.temperature / 100; u[4] = p.tint / 100
         u[5] = min(max(p.gamma, 0.1), 5); u[6] = p.contrast / 100; u[7] = p.highlights / 100

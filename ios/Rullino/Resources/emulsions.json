@@ -320,7 +320,8 @@
     "size": 1,
     "roughness": 35
    },
-   "vignette": 15
+   "vignette": 15,
+   "process": "slide"
   }
  },
  {

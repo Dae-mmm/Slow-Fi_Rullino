@@ -280,4 +280,8 @@
     <string name="role_judge">Juror</string>
     <string name="role_op">OP</string>
     <string name="acc_judge_area">Jurybereich: kommt mit den Wettbewerben</string>
+    <string name="push_title">Entwicklung</string>
+    <string name="sk_push">Push um +%1$s? Gern: mehr Kontrast und Korn, und die dunklen Bilder kommen zurück.</string>
+    <string name="sk_pull">Pull um −1: weicherer Kontrast und feineres Korn, gut bei Überbelichtung.</string>
+    <string name="sk_normal">Normale Entwicklung, wie auf der Packung.</string>
 </resources>

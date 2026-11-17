@@ -281,4 +281,8 @@
     <string name="role_judge">judge</string>
     <string name="role_op">OP</string>
     <string name="acc_judge_area">Judges\' area: coming with contests</string>
+    <string name="push_title">Development</string>
+    <string name="sk_push">Push +%1$s? Sure: more contrast and grain, and the dark shots come back.</string>
+    <string name="sk_pull">Pull −1: softer contrast and finer grain, good if you overexposed.</string>
+    <string name="sk_normal">Normal development, as the box says.</string>
 </resources>

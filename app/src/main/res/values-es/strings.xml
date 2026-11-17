@@ -280,4 +280,8 @@
     <string name="role_judge">juez</string>
     <string name="role_op">OP</string>
     <string name="acc_judge_area">Área de jueces: llega con los concursos</string>
+    <string name="push_title">Revelado</string>
+    <string name="sk_push">¿Push de +%1$s? Vale: más contraste y más grano, y las fotos oscuras se recuperan.</string>
+    <string name="sk_pull">Pull de −1: contraste más suave y grano más fino, bien si sobreexpusiste.</string>
+    <string name="sk_normal">Revelado normal, como dice la caja.</string>
 </resources>

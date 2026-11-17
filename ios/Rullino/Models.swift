@@ -61,9 +61,11 @@ struct FilmParams: Decodable {
     var mono = MonoMix()
     var grain = GrainParams()
     var vignette: Float = 0
+    /// "negative" (predefinito) o "slide": decide come la pellicola reagisce agli errori di esposizione.
+    var process = ""
 
     enum CodingKeys: String, CodingKey {
-        case exposure, temperature, tint, gamma, contrast, highlights, shadows, fade, saturation, vibrance, hsl, split, mono, grain, vignette
+        case exposure, temperature, tint, gamma, contrast, highlights, shadows, fade, saturation, vibrance, hsl, split, mono, grain, vignette, process
     }
     init() {}
     init(from d: Decoder) throws {
@@ -73,6 +75,7 @@ struct FilmParams: Decodable {
         shadows = c.v(.shadows, 0); fade = c.v(.fade, 0); saturation = c.v(.saturation, 0)
         vibrance = c.v(.vibrance, 0); hsl = c.v(.hsl, [:]); split = c.v(.split, SplitTone())
         mono = c.v(.mono, MonoMix()); grain = c.v(.grain, GrainParams()); vignette = c.v(.vignette, 0)
+        process = c.v(.process, "")
     }
 }
 
@@ -87,6 +90,13 @@ struct Emulsion: Decodable, Identifiable {
     var params: FilmParams
 
     var isBw: Bool { type == "bw" || params.mono.enabled }
+    var isSlide: Bool {
+        switch params.process.lowercased() {
+        case "slide", "reversal", "positive": return true
+        case "negative": return false
+        default: return [id, name].contains { s in let l = s.lowercased(); return l.contains("diapositiva") || l.contains("slide") || l.contains("chrome") }
+        }
+    }
 
     enum CodingKeys: String, CodingKey { case id, name, iso, exposures, type, note, params }
     init(from d: Decoder) throws {
@@ -113,6 +123,28 @@ struct Roll: Codable, Identifiable, Equatable {
     var state = RollState.loaded
     var createdAt = Date()
     var readyAt: Date?
+    /// Sviluppo chiesto al laboratorio: -1 pull, 0 normale, +1/+2 push.
+    var push = 0
+
+    init(id: Int, emulsionId: String, emulsionName: String, iso: Int, exposures: Int, isBw: Bool) {
+        self.id = id; self.emulsionId = emulsionId; self.emulsionName = emulsionName
+        self.iso = iso; self.exposures = exposures; self.isBw = isBw
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, emulsionId, emulsionName, iso, exposures, isBw, cursor, shotCount, wound, state, createdAt, readyAt, push
+    }
+
+    // Decodifica tollerante: i campi nuovi non fanno perdere i rullini salvati.
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        emulsionId = try c.decode(String.self, forKey: .emulsionId)
+        emulsionName = c.v(.emulsionName, ""); iso = c.v(.iso, 400); exposures = c.v(.exposures, 36)
+        isBw = c.v(.isBw, false); cursor = c.v(.cursor, 1); shotCount = c.v(.shotCount, 0)
+        wound = c.v(.wound, false); state = c.v(.state, .loaded); createdAt = c.v(.createdAt, Date())
+        readyAt = c.v(.readyAt, nil); push = c.v(.push, 0)
+    }
 
     var canWind: Bool { state == .loaded && !wound && cursor <= exposures }
     var isAtEnd: Bool { state == .loaded && cursor > exposures }
