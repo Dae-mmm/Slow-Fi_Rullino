@@ -10,6 +10,8 @@ data class DevelopLook(
     val exposureError: Float = 0f,
     val push: Int = 0,
     val slide: Boolean = false,
+    /** Stop da dare alla foto del telefono per riportarla a un'esposizione "media" (quando il telefono non ce l'ha fatta). */
+    val base: Float = 0f,
 )
 
 /**
@@ -30,15 +32,68 @@ object VirtualCamera {
     /** Diaframma fisso quando si usa la ghiera dei tempi. */
     private const val MANUAL_APERTURE = 4.0
 
-    fun errorStops(file: File, filmIso: Int, shutter: Double? = null): Float? = runCatching {
+    /**
+     * [offset] = quanto la foto del telefono è più chiara (+) o più scura (−) di un'esposizione media,
+     * in stop (vedi [lumaOffset]). Di notte il telefono arriva al limite di tempo e ISO e la foto resta
+     * scura anche se i dati EXIF "sembrano" giusti: la luce vera della scena è EXIF + offset.
+     */
+    fun errorStops(file: File, filmIso: Int, shutter: Double? = null, offset: Float = 0f): Float? = runCatching {
         val exif = ExifInterface(file.path)
         val t = exif.getAttributeDouble(ExifInterface.TAG_EXPOSURE_TIME, -1.0)
         val n = exif.getAttributeDouble(ExifInterface.TAG_F_NUMBER, -1.0)
         val iso = exif.getAttributeInt(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY, -1)
         if (t <= 0 || n <= 0 || iso <= 0) return null
-        val ev100 = log2(n * n / t) - log2(iso / 100.0)
+        val ev100 = log2(n * n / t) - log2(iso / 100.0) + offset
         if (shutter != null) manualError(ev100, filmIso, shutter) else errorFor(ev100, filmIso)
     }.getOrNull()
+
+    /** Grigio medio in luce lineare: l'esposimetro porta la media della scena qui. */
+    private const val MID_GREY = 0.18
+
+    /**
+     * Di quanti stop un'immagine è più chiara o più scura del grigio medio (media pesata al centro,
+     * come un esposimetro). Mezzo stop di tolleranza, così le foto normali di giorno non cambiano.
+     */
+    fun lumaOffset(meanLinear: Double): Float {
+        if (meanLinear <= 0) return -4f
+        val k = log2(meanLinear / MID_GREY)
+        val dead = 0.5
+        val v = if (k > 0) maxOf(k - dead, 0.0) else minOf(k + dead, 0.0)
+        return v.toFloat().coerceIn(-4f, 1.5f)
+    }
+
+    /** Luminanza lineare media pesata al centro di una bitmap (campiona una griglia, non serve tutta). */
+    fun meanLinear(bmp: android.graphics.Bitmap): Double {
+        val w = bmp.width; val h = bmp.height
+        if (w <= 0 || h <= 0) return MID_GREY
+        val steps = 40
+        var sum = 0.0; var weights = 0.0
+        for (j in 0 until steps) for (i in 0 until steps) {
+            val x = (i + 0.5) / steps; val y = (j + 0.5) / steps
+            val p = bmp.getPixel((x * w).toInt().coerceIn(0, w - 1), (y * h).toInt().coerceIn(0, h - 1))
+            val wgt = 1.0 + 1.5 * kotlin.math.exp(-((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5)) / 0.05)
+            sum += wgt * lumLin(android.graphics.Color.red(p), android.graphics.Color.green(p), android.graphics.Color.blue(p))
+            weights += wgt
+        }
+        return sum / weights
+    }
+
+    /** Luminanza lineare di un pixel sRGB (0–255 per canale). */
+    fun lumLin(r: Int, g: Int, b: Int): Double {
+        fun lin(c: Int): Double { val v = c / 255.0; return if (v <= 0.04045) v / 12.92 else ((v + 0.055) / 1.055).pow(2.4) }
+        return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+    }
+
+    /** L'offset di una posa, letto da una versione piccola del file. */
+    fun lumaOffset(file: File): Float = runCatching {
+        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeFile(file.path, bounds)
+        var sample = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 256) sample *= 2
+        val bmp = android.graphics.BitmapFactory.decodeFile(file.path, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample })
+            ?: return@runCatching 0f
+        lumaOffset(meanLinear(bmp)).also { bmp.recycle() }
+    }.getOrDefault(0f)
 
     /** Tempo giusto (secondi) a f/4 per una scena di luminosità [ev100] con una pellicola da [filmIso]. */
     fun neededShutter(ev100: Double, filmIso: Int): Double =

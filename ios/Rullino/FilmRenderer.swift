@@ -68,7 +68,7 @@ kernel void film(texture2d<float, access::read> src [[texture(0)]],
   float eff = u[50] + push * 0.85;
   float under = slide ? 0. : max(-eff, 0.);
   float over = slide ? 0. : max(eff, 0.);
-  float3 lin = toLin(c);
+  float3 lin = toLin(c) * exp2(u[54]);   // foto del telefono riportata a un'esposizione media
   if (slide) {
     lin *= exp2(u[50] * 0.9 + push * 0.6);
   } else {
@@ -197,8 +197,9 @@ final class FilmRenderer {
 
     /// Stesse conversioni di setUniforms() in Camera Oscura.
     static func uniforms(_ p: FilmParams, iso: Int, w: Int, h: Int, seed: Float,
-                         exposureError: Float = 0, push: Int = 0, slide: Bool = false) -> [Float] {
-        var u = [Float](repeating: 0, count: 54)
+                         exposureError: Float = 0, push: Int = 0, slide: Bool = false, base: Float = 0) -> [Float] {
+        var u = [Float](repeating: 0, count: 55)
+        u[54] = base
         u[53] = p.halation / 100
         u[50] = exposureError; u[51] = Float(push); u[52] = slide ? 1 : 0
         u[0] = Float(w); u[1] = Float(h)

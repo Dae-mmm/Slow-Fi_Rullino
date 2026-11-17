@@ -560,6 +560,7 @@ private fun BackWindow(emulsion: EmulsionEntity?, roll: RollEntity?) {
 @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
 private fun Viewfinder(onReady: (ImageCapture, Camera) -> Unit, onMeter: (Double) -> Unit) {
     val meterCallback = androidx.compose.runtime.rememberUpdatedState(onMeter)
+    val lastEv = remember { java.util.concurrent.atomic.AtomicReference<Double?>(null) }
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember {
@@ -614,8 +615,7 @@ private fun Viewfinder(onReady: (ImageCapture, Camera) -> Unit, onMeter: (Double
                         val n = result.get(android.hardware.camera2.CaptureResult.LENS_APERTURE) ?: 1.8f
                         if (ns <= 0 || iso <= 0) return
                         lastRead = now
-                        val ev = com.rullino.app.develop.VirtualCamera.ev100(ns / 1e9, n.toDouble(), iso)
-                        ContextCompat.getMainExecutor(context).execute { meterCallback.value(ev) }
+                        lastEv.set(com.rullino.app.develop.VirtualCamera.ev100(ns / 1e9, n.toDouble(), iso))
                     }
                 }
             )
@@ -625,6 +625,19 @@ private fun Viewfinder(onReady: (ImageCapture, Camera) -> Unit, onMeter: (Double
             onReady(imageCapture, cam)
         }, ContextCompat.getMainExecutor(context))
         onDispose { provider?.unbindAll() }
+    }
+
+    // I dati del telefono dicono come ha esposto, non quanto è venuta chiara l'immagine: di notte arriva
+    // al limite e l'anteprima resta scura. Si corregge con la luminosità vera dell'anteprima.
+    LaunchedEffect(previewView) {
+        while (true) {
+            kotlinx.coroutines.delay(400)
+            val ev = lastEv.get() ?: continue
+            val bmp = previewView.bitmap
+            val offset = bmp?.let { com.rullino.app.develop.VirtualCamera.lumaOffset(com.rullino.app.develop.VirtualCamera.meanLinear(it)) } ?: 0f
+            bmp?.recycle()
+            meterCallback.value(ev + offset)
+        }
     }
 
     AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())

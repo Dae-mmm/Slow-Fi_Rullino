@@ -80,7 +80,10 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
                 let t = CMTimeGetSeconds(d.exposureDuration)
                 let iso = Double(d.iso), n = Double(d.lensAperture)
                 guard t > 0, iso > 0, n > 0 else { return }
-                self.ev100 = VirtualCamera.ev100(seconds: t, fNumber: n, iso: iso)
+                // exposureTargetOffset: di quanto l'immagine è sotto (−) o sopra (+) l'esposizione giusta,
+                // per esempio di notte quando il telefono è arrivato al limite di tempo e ISO.
+                let offset = VirtualCamera.deadZone(Double(d.exposureTargetOffset))
+                self.ev100 = VirtualCamera.ev100(seconds: t, fNumber: n, iso: iso) + Double(offset)
             }
         }
     }

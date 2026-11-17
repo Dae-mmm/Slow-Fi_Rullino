@@ -64,8 +64,12 @@ class Developer(private val context: Context, private val repo: Repository, priv
                     val files = layers.map { File(it.rawPath) }
                     val merged = mergeExposures(files, renderer.maxSide) ?: continue
                     // Errore medio della compatta virtuale sulle esposizioni di questo fotogramma.
-                    val errors = layers.mapNotNull { VirtualCamera.errorStops(File(it.rawPath), start.iso, it.shutter) }
+                    // La luce vera della scena: dati EXIF corretti da quanto è chiara davvero la foto del telefono.
+                    val offsets = layers.map { VirtualCamera.lumaOffset(File(it.rawPath)) }
+                    val errors = layers.mapIndexedNotNull { k, it -> VirtualCamera.errorStops(File(it.rawPath), start.iso, it.shutter, offsets[k]) }
                     val look = DevelopLook(
+                        // La foto del telefono si riporta prima a un'esposizione media, poi la pellicola fa il resto.
+                        base = -offsets.average().toFloat(),
                         exposureError = if (errors.isEmpty()) 0f else errors.average().toFloat(),
                         push = start.push,
                         slide = slide,

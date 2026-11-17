@@ -20,9 +20,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // Schermo pieno: niente barre di sistema, come il dorso di una macchina.
+        // Si nasconde solo la barra di stato; la barra di navigazione resta, così da ogni telefono
+        // (anche i pieghevoli come il RAZR, o con i tre tasti) si può sempre tornare indietro o uscire.
         WindowCompat.getInsetsController(window, window.decorView).apply {
-            hide(WindowInsetsCompat.Type.systemBars())
+            hide(WindowInsetsCompat.Type.statusBars())
+            show(WindowInsetsCompat.Type.navigationBars())
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
         if (savedInstanceState == null) pendingImport.value = importUri(intent)

@@ -31,11 +31,15 @@ enum Developer {
             ctx.draw(img, in: CGRect(x: (CGFloat(W) - dw) / 2, y: (CGFloat(H) - dh) / 2, width: dw, height: dh))
         }
         guard let px = ctx.data else { return false }
+        // La luce vera della scena: dati EXIF corretti da quanto è chiara davvero la foto del telefono.
+        let offsets = files.map { VirtualCamera.lumaOffset($0) }
         let errors = files.enumerated().compactMap { i, u in
-            VirtualCamera.errorStops(u, filmIso: iso, shutter: i < shutters.count ? shutters[i] : nil)
+            VirtualCamera.errorStops(u, filmIso: iso, shutter: i < shutters.count ? shutters[i] : nil, offset: offsets[i])
         }
         let err = errors.isEmpty ? 0 : errors.reduce(0, +) / Float(errors.count)
-        let u = FilmRenderer.uniforms(params, iso: iso, w: W, h: H, seed: seed, exposureError: err, push: push, slide: slide)
+        // La foto del telefono si riporta prima a un'esposizione media, poi la pellicola fa il resto.
+        let base = offsets.isEmpty ? 0 : -offsets.reduce(0, +) / Float(offsets.count)
+        let u = FilmRenderer.uniforms(params, iso: iso, w: W, h: H, seed: seed, exposureError: err, push: push, slide: slide, base: base)
         guard FilmRenderer.shared.render(pixels: px, width: W, height: H, uniforms: u),
               let result = ctx.makeImage() else { return false }
 
@@ -71,7 +75,9 @@ enum Developer {
 /// Il telefono fa da esposimetro: dai dati EXIF ricava la luce della scena e calcola di quanti
 /// stop sbaglia la compatta con la sensibilità della pellicola caricata.
 enum VirtualCamera {
-    static func errorStops(_ url: URL, filmIso: Int, shutter: Double? = nil) -> Float? {
+    /// offset = quanto la foto del telefono è più chiara (+) o più scura (−) di un'esposizione media, in stop.
+    /// Di notte il telefono arriva al limite e la foto resta scura anche se l'EXIF "sembra" giusto.
+    static func errorStops(_ url: URL, filmIso: Int, shutter: Double? = nil, offset: Float = 0) -> Float? {
         guard let src = CGImageSourceCreateWithURL(url as CFURL, nil),
               let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any],
               let exif = props[kCGImagePropertyExifDictionary] as? [CFString: Any],
@@ -79,9 +85,39 @@ enum VirtualCamera {
               let n = exif[kCGImagePropertyExifFNumber] as? Double, n > 0,
               let isos = exif[kCGImagePropertyExifISOSpeedRatings] as? [Double], let iso = isos.first, iso > 0
         else { return nil }
-        let ev100 = log2(n * n / t) - log2(iso / 100)
+        let ev100 = log2(n * n / t) - log2(iso / 100) + Double(offset)
         if let shutter { return manualError(ev100: ev100, filmIso: filmIso, shutter: shutter) }
         return errorFor(ev100: ev100, filmIso: filmIso)
+    }
+
+    /// Mezzo stop di tolleranza (le foto normali non cambiano), poi limitato a −4…+1,5 stop.
+    static func deadZone(_ k: Double) -> Float {
+        let v = k > 0 ? max(k - 0.5, 0) : min(k + 0.5, 0)
+        return Float(min(max(v, -4), 1.5))
+    }
+
+    /// Di quanti stop la foto è più chiara o più scura del grigio medio (media pesata al centro).
+    static func lumaOffset(_ url: URL) -> Float {
+        guard let img = Developer.thumbnail(url, maxPixel: 128), let space = CGColorSpace(name: CGColorSpace.sRGB) else { return 0 }
+        let w = img.width, h = img.height
+        guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4, space: space,
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return 0 }
+        ctx.draw(img, in: CGRect(x: 0, y: 0, width: w, height: h))
+        guard let data = ctx.data else { return 0 }
+        let p = data.bindMemory(to: UInt8.self, capacity: w * h * 4)
+        func lin(_ c: UInt8) -> Double { let v = Double(c) / 255; return v <= 0.04045 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
+        var sum = 0.0, weights = 0.0
+        for y in stride(from: 0, to: h, by: 2) {
+            for x in stride(from: 0, to: w, by: 2) {
+                let i = (y * w + x) * 4
+                let fx = (Double(x) + 0.5) / Double(w) - 0.5, fy = (Double(y) + 0.5) / Double(h) - 0.5
+                let wgt = 1 + 1.5 * exp(-(fx * fx + fy * fy) / 0.05)
+                sum += wgt * (0.2126 * lin(p[i]) + 0.7152 * lin(p[i + 1]) + 0.0722 * lin(p[i + 2]))
+                weights += wgt
+            }
+        }
+        let mean = sum / max(weights, 1)
+        return mean <= 0 ? -4 : deadZone(log2(mean / 0.18))
     }
 
     /// Tempo giusto (secondi) a f/4 per una scena di luminosità ev100 con la pellicola caricata.

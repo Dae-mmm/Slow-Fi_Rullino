@@ -24,6 +24,7 @@ uniform int uMono; uniform vec3 uMix;
 uniform vec3 uGrain;        // quantità effettiva (già x ISO), dimensione, ruvidità
 uniform float uVignette;
 uniform float uSeed;
+uniform float uBase;        // stop per riportare la foto del telefono a un'esposizione media
 uniform float uExpErr;      // errore di esposizione della compatta virtuale, in stop (+ = sovra)
 uniform int uPush;          // sviluppo: -1 pull, 0 normale, +1/+2 push
 uniform int uSlide;         // 1 = diapositiva (invertibile), 0 = negativa
@@ -87,7 +88,7 @@ void main(){
   float eff = uExpErr + push * 0.85;
   float under = uSlide == 1 ? 0. : max(-eff, 0.);
   float over = uSlide == 1 ? 0. : max(eff, 0.);
-  vec3 lin = toLin(c);
+  vec3 lin = toLin(c) * exp2(uBase);
   if (uSlide == 1) {
     lin *= exp2(uExpErr * 0.9 + push * 0.6);
   } else {

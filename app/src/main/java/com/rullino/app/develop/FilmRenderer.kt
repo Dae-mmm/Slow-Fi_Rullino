@@ -177,6 +177,7 @@ class FilmRenderer {
         GLES30.glUniform1f(loc("uHalation"), p.halation / 100f)
         GLES30.glUniform1f(loc("uSeed"), seed)
         GLES30.glUniform1f(loc("uExpErr"), look.exposureError)
+        GLES30.glUniform1f(loc("uBase"), look.base)
         GLES30.glUniform1i(loc("uPush"), look.push)
         GLES30.glUniform1i(loc("uSlide"), if (look.slide) 1 else 0)
     }
