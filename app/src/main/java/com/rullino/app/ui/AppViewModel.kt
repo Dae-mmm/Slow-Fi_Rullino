@@ -95,6 +95,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun shelve(r: RollEntity) = viewModelScope.launch { repo.shelve(r.id); say(R.string.shelved_msg) }
 
+    /** Scarica il rullino dalla macchina così com'è: se è vergine torna in magazzino, altrimenti va in Rullini. */
+    fun unload(r: RollEntity) = viewModelScope.launch {
+        if (r.shotCount == 0) { repo.unloadEmptyRoll(r); say(R.string.unloaded_empty) }
+        else { repo.shelve(r.id); say(R.string.shelved_msg) }
+    }
+
     fun reload(r: RollEntity, onDone: () -> Unit) = viewModelScope.launch {
         runCatching { repo.reloadRoll(r.id) }.onSuccess { onDone() }.onFailure { say(it.message ?: str(R.string.reload_failed)) }
     }
@@ -203,6 +209,60 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun recordShot(rollId: Long, file: File, shutter: Double? = null) = app.appScope.launch { repo.recordShot(rollId, file, shutter) }
 
 
+
+    /* ---- Rullini condivisi ---- */
+
+    /** Prepara il file .rullino e apre la scelta di Android per mandarlo (chat, email, Drive…). */
+    fun shareRoll(r: RollEntity) = viewModelScope.launch {
+        say(R.string.share_preparing)
+        runCatching {
+            val from = account.profile.value?.let { it.displayName ?: it.username }
+            com.rullino.app.data.RollShare.export(app, repo, r, from)
+        }.onSuccess { file ->
+            val uri = androidx.core.content.FileProvider.getUriForFile(app, app.packageName + ".files", file)
+            val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = com.rullino.app.data.RollShare.MIMETYPE
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                putExtra(android.content.Intent.EXTRA_TEXT, str(R.string.share_text, r.emulsionName))
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            app.startActivity(
+                android.content.Intent.createChooser(send, str(R.string.share_title)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }.onFailure { say(it.message ?: str(R.string.share_failed)) }
+    }
+
+    /** È un rullino condiviso? Dal nome o, se manca, guardando dentro lo ZIP. */
+    private suspend fun isRollFile(uri: Uri): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val name = runCatching {
+            app.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        }.getOrNull() ?: uri.lastPathSegment ?: ""
+        if (name.endsWith(".rullino", ignoreCase = true)) return@withContext true
+        if (name.endsWith(".emulsion", ignoreCase = true)) return@withContext false
+        runCatching {
+            app.contentResolver.openInputStream(uri)?.use { s ->
+                java.util.zip.ZipInputStream(s).use { z ->
+                    var found = false
+                    while (true) { val e = z.nextEntry ?: break; if (e.name == "roll.json") { found = true; break } }
+                    found
+                }
+            } ?: false
+        }.getOrDefault(false)
+    }
+
+    /** Un file aperto da fuori: rullino condiviso (per tutti) o emulsione (solo modalità sviluppatore). */
+    fun openFile(uri: Uri, onRoll: () -> Unit, onEmulsion: () -> Unit) = viewModelScope.launch {
+        if (isRollFile(uri)) {
+            runCatching {
+                val input = app.contentResolver.openInputStream(uri) ?: error(str(R.string.open_file_failed))
+                input.use { com.rullino.app.data.RollShare.import(app, repo, it) }
+            }.onSuccess { say(R.string.share_received, it.emulsionName, it.shotCount); onRoll() }
+                .onFailure { say(it.message ?: str(R.string.share_invalid)) }
+        } else if (settings.developerMode.value) {
+            importFrom(uri); onEmulsion()
+        } else say(R.string.import_needs_dev)
+    }
 
     fun importFrom(uri: Uri, onDone: (EmulsionEntity) -> Unit = {}) = viewModelScope.launch {
         runCatching {

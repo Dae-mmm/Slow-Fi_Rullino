@@ -10,7 +10,7 @@
     <string name="engr_empty">LEER</string>
     <string name="cam_no_roll">Kein Film</string>
     <string name="cam_rewinding">Zurückspulen %1$s%%\ndreh die Kurbel</string>
-    <string name="cam_at_end">Voll · drück R\nund dreh die Kurbel</string>
+    <string name="cam_at_end">Voll · nimm ihn heraus</string>
     <string name="cam_frame_exposed">Bild %1$s schon belichtet\n%2$s von %3$s Aufnahmen</string>
     <string name="cam_count">%1$s von %2$s Aufnahmen</string>
     <string name="cam_change_roll">Film wechseln</string>
@@ -21,7 +21,7 @@
     <string name="grant">Erlauben</string>
     <string name="cam_empty">Die Kamera ist leer.</string>
     <string name="choose_roll">Film auswählen</string>
-    <string name="cam_finished_note">Film voll: %1$s Aufnahmen.\nDrück R und dreh die Kurbel zum Zurückspulen.</string>
+    <string name="cam_finished_note">Film voll: %1$s Aufnahmen.\nNimm ihn heraus und entwickle ihn unter Filme.</string>
     <string name="developing">Wird entwickelt…</string>
     <string name="x_of_y">%1$s von %2$s</string>
     <string name="double_exposure_badge">DOPPELBELICHTUNG · BILD %1$s</string>
@@ -76,7 +76,7 @@
     <string name="release">Freigabe</string>
     <string name="back_on_table">Zurück auf den Leuchttisch</string>
     <string name="state_loaded">In der Kamera</string>
-    <string name="state_shelved">Beiseitegelegt</string>
+    <string name="state_shelved">Herausgenommen</string>
     <string name="state_finished">Zu entwickeln</string>
     <string name="state_developing">In Entwicklung</string>
     <string name="mine">Deine</string>
@@ -173,7 +173,7 @@
     <string name="clear_sig">Unterschrift löschen</string>
     <string name="sign_save">Unterschreiben und speichern</string>
     <string name="load_failed">Der Film konnte nicht eingelegt werden</string>
-    <string name="shelved_msg">Film beiseitegelegt: du findest ihn unter Filme</string>
+    <string name="shelved_msg">Film herausgenommen: du findest ihn unter Filme</string>
     <string name="reload_failed">Konnte nicht wieder eingelegt werden</string>
     <string name="rewound_out">Film zurückgespult: du findest ihn unter Filme, bereit fürs Labor</string>
     <string name="develop_failed">Entwicklung fehlgeschlagen</string>
@@ -409,4 +409,19 @@
     <string name="cm_saved">Wettbewerb gespeichert</string>
     <string name="cm_published">Wettbewerb veröffentlicht</string>
     <string name="cm_deleted">Wettbewerb gelöscht</string>
+    <string name="cam_load">Film einlegen</string>
+    <string name="cam_unload">Herausnehmen</string>
+    <string name="unloaded_empty">Unbenutzter Film: zurück ins Lager</string>
+    <string name="picker_continue">Film weiterführen</string>
+    <string name="picker_new">Neuer Film</string>
+    <string name="share">Teilen</string>
+    <string name="develop_it">Entwickeln</string>
+    <string name="share_preparing">Film wird vorbereitet…</string>
+    <string name="share_text">Ein %1$s-Film zum Weiterfotografieren: öffne ihn mit Rullino.</string>
+    <string name="share_title">Film weitergeben an…</string>
+    <string name="share_failed">Film konnte nicht vorbereitet werden</string>
+    <string name="share_received">Film erhalten: %1$s, %2$s Aufnahmen. Du findest ihn unter Filme.</string>
+    <string name="share_invalid">Das ist kein gültiger Rullino-Film</string>
+    <string name="share_newer">Dieser Film stammt aus einer neueren Version: Aktualisiere die App</string>
+    <string name="share_no_emulsion">Die Emulsion des Films fehlt</string>
 </resources>

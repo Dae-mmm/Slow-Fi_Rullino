@@ -72,12 +72,7 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
 
     LaunchedEffect(importUri) {
         if (importUri != null) {
-            if (vm.settings.developerMode.value) {
-                vm.importFrom(importUri)
-                tab = AppTab.EMULSIONS
-            } else {
-                vm.say(R.string.import_needs_dev)
-            }
+            vm.openFile(importUri, onRoll = { tab = AppTab.ROLLS }, onEmulsion = { tab = AppTab.EMULSIONS })
             onImportHandled()
         }
     }

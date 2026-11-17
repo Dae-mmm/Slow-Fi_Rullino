@@ -9,7 +9,7 @@
 "engr_empty" = "VIDE";
 "cam_no_roll" = "Pas de pellicule";
 "cam_rewinding" = "Rembobinage %1$@%%\ntourne la manivelle";
-"cam_at_end" = "Terminée · appuie sur R\net tourne la manivelle";
+"cam_at_end" = "Terminée · décharge-la";
 "cam_frame_exposed" = "Vue %1$@ déjà exposée\n%2$@ sur %3$@ poses";
 "cam_count" = "%1$@ sur %2$@ poses";
 "cam_change_roll" = "Changer de pellicule";
@@ -20,7 +20,7 @@
 "grant" = "Autoriser";
 "cam_empty" = "L'appareil est vide.";
 "choose_roll" = "Choisir une pellicule";
-"cam_finished_note" = "Pellicule terminée : %1$@ poses.\nAppuie sur R et tourne la manivelle pour la rembobiner.";
+"cam_finished_note" = "Pellicule terminée : %1$@ poses.\nDécharge-la, puis développe-la depuis Pellicules.";
 "developing" = "Développement en cours…";
 "x_of_y" = "%1$@ sur %2$@";
 "double_exposure_badge" = "DOUBLE EXPOSITION · VUE %1$@";
@@ -75,7 +75,7 @@
 "release" = "Autorisation";
 "back_on_table" = "Remettre sur la table";
 "state_loaded" = "Dans l'appareil";
-"state_shelved" = "Mise de côté";
+"state_shelved" = "Déchargée";
 "state_finished" = "À développer";
 "state_developing" = "En développement";
 "mine" = "Les tiennes";
@@ -172,7 +172,7 @@
 "clear_sig" = "Effacer la signature";
 "sign_save" = "Signer et enregistrer";
 "load_failed" = "Impossible de charger la pellicule";
-"shelved_msg" = "Pellicule mise de côté : tu la retrouves dans Pellicules";
+"shelved_msg" = "Pellicule déchargée : elle est dans Pellicules";
 "reload_failed" = "Impossible de la recharger";
 "rewound_out" = "Pellicule rembobinée : tu la trouves dans Pellicules, prête pour le labo";
 "develop_failed" = "Le développement a échoué";
@@ -408,3 +408,18 @@
 "cm_saved" = "Concours enregistré";
 "cm_published" = "Concours publié";
 "cm_deleted" = "Concours supprimé";
+"cam_load" = "Charger une pellicule";
+"cam_unload" = "Décharger";
+"unloaded_empty" = "Pellicule inutilisée : retour en stock";
+"picker_continue" = "Continuer une pellicule";
+"picker_new" = "Nouvelle pellicule";
+"share" = "Partager";
+"develop_it" = "Développer";
+"share_preparing" = "Je prépare la pellicule…";
+"share_text" = "Une pellicule %1$@ à terminer : ouvre-la avec Rullino.";
+"share_title" = "Passer la pellicule à…";
+"share_failed" = "Impossible de préparer la pellicule";
+"share_received" = "Pellicule reçue : %1$@, %2$@ poses. Elle est dans Pellicules.";
+"share_invalid" = "Ce n'est pas une pellicule Rullino valide";
+"share_newer" = "Cette pellicule vient d'une version plus récente : mets l'app à jour";
+"share_no_emulsion" = "L'émulsion de la pellicule manque";

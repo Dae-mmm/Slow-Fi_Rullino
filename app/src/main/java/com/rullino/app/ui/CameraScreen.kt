@@ -172,22 +172,12 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
         })
     }
 
-    var showBack by remember { mutableStateOf(false) }
     var releaseFrame by remember { mutableStateOf<Int?>(null) }
     releaseFrame?.let { f -> r?.let { roll -> ReleasesDialog(vm, roll, f, onClose = { releaseFrame = null }, maxFrame = roll.shotCount) } }
     val doubleOnNext by remember(r?.id, r?.cursor) {
         if (r == null) kotlinx.coroutines.flow.flowOf(0) else vm.exposuresOnFrame(r.id, r.cursor)
     }.collectAsState(initial = 0)
 
-    if (showBack && r != null) {
-        BackDialog(
-            roll = r,
-            onDismiss = { showBack = false },
-            onShelve = { showBack = false; vm.shelve(r) },
-            onDelete = { showBack = false; vm.deleteRoll(r) },
-            onRewindOut = { showBack = false; vm.rewindOut(r) },
-        )
-    }
 
     // Scelta del rullino da caricare, tra quelli in magazzino.
     var showPicker by remember { mutableStateOf(false) }
@@ -195,14 +185,15 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
         RollPickerDialog(vm, onDismiss = { showPicker = false }, onGoShop = { showPicker = false; onGoShop() })
     }
 
-    // Riavvolgimento: con R spento ogni giro di manovella torna indietro di una posa (doppia esposizione);
-    // con R acceso la manovella riporta tutta la pellicola nel caricatore e il rullino esce dalla macchina.
+    // Riavvolgimento: con R premuto ogni giro di manovella torna indietro di una posa (doppia esposizione).
     var releaseOn by remember(r?.id) { mutableStateOf(false) }
-    var unloadTurns by remember(r?.id) { mutableIntStateOf(0) }
     val crankLabel = stringResource(R.string.crank)
     // Dopo uno scatto il pulsante R torna su da solo.
-    LaunchedEffect(lastShotAt) { if (lastShotAt > 0) { releaseOn = false; unloadTurns = 0 } }
-    val turnsNeeded = maxOf(2, ((r?.shotCount ?: 0) + 5) / 6)
+    LaunchedEffect(lastShotAt) { if (lastShotAt > 0) releaseOn = false }
+
+    // Esposimetro: la luce della scena letta dall'anteprima, poi confrontata con pellicola e tempo.
+    var ev100 by remember { mutableStateOf<Double?>(null) }
+    val meter = if (r != null && r.state == RollState.LOADED) ev100?.let { meterReading(it, r.iso, shutterIndex) } else null
 
     val dbCounter = when {
         r == null -> 0
@@ -216,12 +207,6 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
     // Dove sta andando il contatore mentre si gira la manovella (null = fermo).
     val rollPair: Pair<Int, Pair<Int, Float>>? = when {
         r == null || r.shotCount == 0 -> null
-        releaseOn && r.isAtEnd -> {
-            val t = ((unloadTurns + crank) / turnsNeeded).coerceIn(0f, 1f)
-            val v = dbCounter * (1f - t)
-            val from = kotlin.math.ceil(v).toInt()
-            if (from <= 0) null else Pair(from, Pair(from - 1, from - v))
-        }
         !releaseOn || crank <= 0f -> null
         optimistic == null && r.cursor > 1 && counter != r.cursor - 1 -> Pair(counter, Pair(r.cursor - 1, crank))
         optimistic != null && counter > 1 -> Pair(counter, Pair(counter - 1, crank))
@@ -245,13 +230,11 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                 )
             }
             Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Engraving(
-                    "RULLINO", size = 11,
-                    modifier = Modifier.padding(top = 4.dp).border(1.dp, Color(0xFF4B4642)).padding(horizontal = 10.dp),
-                )
+                EngravedNote("SHUTTER SPEED", modifier = Modifier.padding(top = 7.dp))
                 ShutterDial(
                     index = shutterIndex,
                     onIndex = { vm.settings.setShutterIndex(it) },
+                    recommended = meter?.recommendedIndex,
                     modifier = Modifier.widthIn(max = 440.dp).fillMaxWidth(0.95f).padding(top = 3.dp).semantics { contentDescription = shutterCd },
                 )
             }
@@ -277,8 +260,8 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ReleaseButton(
                     on = releaseOn,
-                    enabled = r != null && r.shotCount > 0,
-                    onToggle = { releaseOn = !releaseOn; unloadTurns = 0 },
+                    enabled = r != null && r.shotCount > 0 && r.state == RollState.LOADED,
+                    onToggle = { releaseOn = !releaseOn },
                 )
                 EngravedNote("REWIND")
             }
@@ -289,47 +272,33 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                 highlight = releaseOn,
                 onFullTurn = {
                     val roll = r ?: return@RewindCrank
-                    if (roll.isAtEnd) {
-                        unloadTurns++
-                        if (unloadTurns >= turnsNeeded) { optimistic = 0; releaseOn = false; unloadTurns = 0; vm.rewindOut(roll) }
-                    } else if (roll.cursor > 1) {
+                    if (roll.cursor > 1) {
                         // Torna alla posa precedente, già pronta: lo scatto successivo ci va sopra.
                         optimistic = roll.cursor - 1
                         vm.rewindFrame(roll)
                     } else view.reject()
                 },
-                diameter = 100.dp,
+                diameter = 84.dp,
                 modifier = Modifier.semantics { contentDescription = crankLabel },
             )
-            Column(
-                Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                BackWindow(emulsion, r)
-                Text(
-                    when {
-                        r == null -> stringResource(R.string.cam_no_roll)
-                        releaseOn && r.isAtEnd -> stringResource(R.string.cam_rewinding, unloadTurns * 100 / turnsNeeded)
-                        releaseOn -> stringResource(R.string.cam_r_hint)
-                        r.isAtEnd -> stringResource(R.string.cam_at_end)
-                        r.cursor <= r.shotCount -> stringResource(R.string.cam_frame_exposed, r.cursor, r.shotCount, r.exposures)
-                        else -> stringResource(R.string.cam_count, r.shotCount, r.exposures)
-                    },
-                    color = Palette.Muted, fontSize = 12.sp, letterSpacing = 0.6.sp, textAlign = TextAlign.Center,
-                )
-                if (r != null && r.state == RollState.LOADED && r.shotCount == 0) {
-                    TextButton(onClick = { vm.unloadEmptyRoll(r) }) { Text(stringResource(R.string.cam_change_roll), color = Palette.Muted, fontSize = 12.sp) }
-                } else if (r != null && r.state == RollState.LOADED) {
-                    SecondaryButton(onClick = { showBack = true }) { Text(stringResource(R.string.cam_open_back), fontSize = 12.sp) }
-                    if (r.shotCount > 0) {
-                        SecondaryButton(onClick = { releaseFrame = (lastShot ?: (r.cursor - 1)).coerceIn(1, r.shotCount) }) {
-                            Text(stringResource(R.string.cam_releases), fontSize = 12.sp)
-                        }
-                    }
-                } else if (r == null) {
-                    TextButton(onClick = onOpenRolls) { Text(stringResource(R.string.cam_developed_rolls), color = Palette.Muted, fontSize = 12.sp) }
-                }
+            BackWindow(emulsion, r)
+            Text(
+                when {
+                    r == null -> stringResource(R.string.cam_no_roll)
+                    releaseOn -> stringResource(R.string.cam_r_hint)
+                    r.isAtEnd -> stringResource(R.string.cam_at_end)
+                    r.cursor <= r.shotCount -> stringResource(R.string.cam_frame_exposed, r.cursor, r.shotCount, r.exposures)
+                    else -> stringResource(R.string.cam_count, r.shotCount, r.exposures)
+                },
+                color = Palette.Muted, fontSize = 12.sp, lineHeight = 14.sp, letterSpacing = 0.6.sp, textAlign = TextAlign.Center,
+                maxLines = 2,
+            )
+            Spacer(Modifier.weight(1f))
+            // Un solo tasto: carica un rullino, o scaricalo (lo ritrovi in Rullini).
+            if (r == null) {
+                PrimaryButton(onClick = { showPicker = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.cam_load)) }
+            } else {
+                SecondaryButton(onClick = { releaseOn = false; vm.unload(r) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.cam_unload)) }
             }
             }
 
@@ -353,8 +322,16 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                         onPickEmulsion = { showPicker = true },
                         progress = progress,
                         onReady = { cap, cam -> capture = cap; camera = cam },
+                        onMeter = { ev100 = it },
                         doubleExposure = doubleOnNext > 0,
                     )
+                    if (meter != null && r != null && !r.isAtEnd) {
+                        ExposureMeter(
+                            meter,
+                            Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp).widthIn(max = 260.dp).fillMaxWidth(0.62f)
+                                .clip(RoundedCornerShape(3.dp)).background(Color(0xB30A0908)).padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
                     if (showFocal && camera != null) {
                         ViewfinderBadge(
                             shutterLabel(SHUTTER_SPEEDS.getOrNull(shutterIndex)) + " · ${focal.roundToInt()} MM",
@@ -386,6 +363,7 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                     enabled = camera != null,
                     modifier = Modifier.widthIn(max = 350.dp).fillMaxWidth(0.9f),
                 )
+                EngravedNote("FOCAL LENGTH · MM", modifier = Modifier.padding(top = 3.dp))
             }
             // Leva di carica e pulsante di scatto visti dall'alto, sotto il pollice destro.
             Column(
@@ -445,6 +423,7 @@ private fun BoxScope.ViewfinderContent(
     onPickEmulsion: () -> Unit,
     progress: com.rullino.app.develop.DevelopProgress?,
     onReady: (ImageCapture, Camera) -> Unit,
+    onMeter: (Double) -> Unit,
     doubleExposure: Boolean,
 ) {
     when {
@@ -464,7 +443,7 @@ private fun BoxScope.ViewfinderContent(
             }
         }
         else -> {
-            Viewfinder(onReady = onReady)
+            Viewfinder(onReady = onReady, onMeter = onMeter)
             if (doubleExposure) {
                 ViewfinderBadge(
                     stringResource(R.string.double_exposure_badge, r.cursor),
@@ -475,46 +454,12 @@ private fun BoxScope.ViewfinderContent(
             if (!r.wound) {
                 ViewfinderBadge(
                     if (r.shotCount == 0) stringResource(R.string.wind_first) else stringResource(R.string.wind),
-                    Modifier.align(Alignment.BottomCenter).padding(8.dp),
+                    Modifier.align(Alignment.TopCenter).padding(8.dp),
                     round = true,
                 )
             }
         }
     }
-}
-
-/** Il dorso aperto: cosa fare del rullino in macchina. */
-@Composable
-private fun BackDialog(
-    roll: RollEntity,
-    onDismiss: () -> Unit,
-    onShelve: () -> Unit,
-    onDelete: () -> Unit,
-    onRewindOut: () -> Unit,
-) {
-    var confirmDelete by remember { mutableStateOf(false) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Palette.Plate,
-        title = { Text(roll.emulsionName + " · " + stringResource(R.string.cam_count, roll.shotCount, roll.exposures)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SecondaryButton(onClick = onRewindOut) { Text(stringResource(R.string.rewind_all_out)) }
-                SecondaryButton(onClick = onShelve) { Text(stringResource(R.string.shelve_long)) }
-                Text(
-                    stringResource(R.string.back_help),
-                    color = Palette.Muted, fontSize = 12.sp,
-                )
-                TextButton(onClick = { if (confirmDelete) onDelete() else confirmDelete = true }) {
-                    Text(
-                        if (confirmDelete) stringResource(R.string.delete_roll_confirm) else stringResource(R.string.delete_roll),
-                        color = Color(0xFFFF8A80),
-                    )
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close_back)) } },
-    )
 }
 
 /** I rullini che hai in magazzino: scegline uno da caricare. */
@@ -530,9 +475,27 @@ private fun RollPickerDialog(vm: AppViewModel, onDismiss: () -> Unit, onGoShop: 
         title = { Text(stringResource(R.string.choose_roll)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
-                if (owned.isEmpty()) {
+                // Prima i rullini scaricati a metà: si riprende dalla posa dove si era rimasti.
+                val shelved = vm.rolls.collectAsState().value.filter { it.state == RollState.SHELVED }
+                if (shelved.isNotEmpty()) {
+                    Text(stringResource(R.string.picker_continue), color = Palette.Muted)
+                    shelved.forEach { s ->
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Palette.PlateHi).padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(s.emulsionName, color = Palette.Ink)
+                                Text(stringResource(R.string.cam_count, s.shotCount, s.exposures), color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
+                            }
+                            PrimaryButton(onClick = { vm.reload(s, onDismiss) }) { Text(stringResource(R.string.load)) }
+                        }
+                    }
+                    if (owned.isNotEmpty()) Text(stringResource(R.string.picker_new), color = Palette.Muted)
+                }
+                if (owned.isEmpty() && shelved.isEmpty()) {
                     Text(stringResource(R.string.picker_none), color = Palette.Ink)
-                } else {
+                } else if (owned.isNotEmpty()) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.exposures_label), color = Palette.Muted)
                         listOf(24, 36).forEach { n ->
@@ -594,7 +557,9 @@ private fun BackWindow(emulsion: EmulsionEntity?, roll: RollEntity?) {
 
 /** Mirino CameraX: anteprima "pulita" (come un mirino ottico) e ImageCapture pronta allo scatto. */
 @Composable
-private fun Viewfinder(onReady: (ImageCapture, Camera) -> Unit) {
+@androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
+private fun Viewfinder(onReady: (ImageCapture, Camera) -> Unit, onMeter: (Double) -> Unit) {
+    val meterCallback = androidx.compose.runtime.rememberUpdatedState(onMeter)
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember {
@@ -632,7 +597,29 @@ private fun Viewfinder(onReady: (ImageCapture, Camera) -> Unit) {
         future.addListener({
             val p = future.get()
             provider = p
-            val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
+            // L'anteprima fa da esposimetro: tempo, diaframma e ISO dei fotogrammi, letti qualche volta al secondo.
+            val builder = Preview.Builder()
+            var lastRead = 0L
+            androidx.camera.camera2.interop.Camera2Interop.Extender(builder).setSessionCaptureCallback(
+                object : android.hardware.camera2.CameraCaptureSession.CaptureCallback() {
+                    override fun onCaptureCompleted(
+                        session: android.hardware.camera2.CameraCaptureSession,
+                        request: android.hardware.camera2.CaptureRequest,
+                        result: android.hardware.camera2.TotalCaptureResult,
+                    ) {
+                        val now = android.os.SystemClock.elapsedRealtime()
+                        if (now - lastRead < 250) return
+                        val ns = result.get(android.hardware.camera2.CaptureResult.SENSOR_EXPOSURE_TIME) ?: return
+                        val iso = result.get(android.hardware.camera2.CaptureResult.SENSOR_SENSITIVITY) ?: return
+                        val n = result.get(android.hardware.camera2.CaptureResult.LENS_APERTURE) ?: 1.8f
+                        if (ns <= 0 || iso <= 0) return
+                        lastRead = now
+                        val ev = com.rullino.app.develop.VirtualCamera.ev100(ns / 1e9, n.toDouble(), iso)
+                        ContextCompat.getMainExecutor(context).execute { meterCallback.value(ev) }
+                    }
+                }
+            )
+            val preview = builder.build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
             p.unbindAll()
             val cam = p.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture)
             onReady(imageCapture, cam)

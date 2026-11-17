@@ -40,6 +40,14 @@ object VirtualCamera {
         if (shutter != null) manualError(ev100, filmIso, shutter) else errorFor(ev100, filmIso)
     }.getOrNull()
 
+    /** Tempo giusto (secondi) a f/4 per una scena di luminosità [ev100] con una pellicola da [filmIso]. */
+    fun neededShutter(ev100: Double, filmIso: Int): Double =
+        MANUAL_APERTURE * MANUAL_APERTURE / (2.0.pow(ev100) * filmIso.coerceAtLeast(1) / 100.0)
+
+    /** Luminosità della scena (EV a ISO 100) da tempo, diaframma e sensibilità del telefono. */
+    fun ev100(exposureSeconds: Double, fNumber: Double, iso: Int): Double =
+        log2(fNumber * fNumber / exposureSeconds) - log2(iso / 100.0)
+
     /** Tempo scelto a mano, diaframma fisso a f/4. */
     fun manualError(ev100: Double, filmIso: Int, shutter: Double): Float {
         val needed = MANUAL_APERTURE * MANUAL_APERTURE / (2.0.pow(ev100) * filmIso.coerceAtLeast(1) / 100.0)

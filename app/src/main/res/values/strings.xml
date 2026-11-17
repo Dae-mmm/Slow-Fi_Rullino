@@ -11,7 +11,7 @@
     <string name="engr_empty">EMPTY</string>
     <string name="cam_no_roll">No roll</string>
     <string name="cam_rewinding">Rewinding %1$s%%\nturn the crank</string>
-    <string name="cam_at_end">Finished · press R\nand turn the crank</string>
+    <string name="cam_at_end">Finished · unload it</string>
     <string name="cam_frame_exposed">Frame %1$s already exposed\n%2$s of %3$s exposures</string>
     <string name="cam_count">%1$s of %2$s exposures</string>
     <string name="cam_change_roll">Change roll</string>
@@ -22,7 +22,7 @@
     <string name="grant">Allow</string>
     <string name="cam_empty">The camera is empty.</string>
     <string name="choose_roll">Choose a roll</string>
-    <string name="cam_finished_note">Roll finished: %1$s exposures.\nPress R and turn the crank to rewind it.</string>
+    <string name="cam_finished_note">Roll finished: %1$s exposures.\nUnload it, then develop it from Rolls.</string>
     <string name="developing">Developing…</string>
     <string name="x_of_y">%1$s of %2$s</string>
     <string name="double_exposure_badge">DOUBLE EXPOSURE · FRAME %1$s</string>
@@ -77,7 +77,7 @@
     <string name="release">Release</string>
     <string name="back_on_table">Back on the table</string>
     <string name="state_loaded">In the camera</string>
-    <string name="state_shelved">Set aside</string>
+    <string name="state_shelved">Unloaded</string>
     <string name="state_finished">To develop</string>
     <string name="state_developing">Developing</string>
     <string name="mine">Yours</string>
@@ -174,7 +174,7 @@
     <string name="clear_sig">Clear signature</string>
     <string name="sign_save">Sign and save</string>
     <string name="load_failed">Couldn\'t load the roll</string>
-    <string name="shelved_msg">Roll set aside: you\'ll find it in Rolls</string>
+    <string name="shelved_msg">Roll unloaded: you\'ll find it in Rolls</string>
     <string name="reload_failed">Couldn\'t reload it</string>
     <string name="rewound_out">Roll rewound: you\'ll find it in Rolls, ready for the lab</string>
     <string name="develop_failed">Development failed</string>
@@ -410,4 +410,19 @@
     <string name="cm_saved">Contest saved</string>
     <string name="cm_published">Contest published</string>
     <string name="cm_deleted">Contest deleted</string>
+    <string name="cam_load">Load a roll</string>
+    <string name="cam_unload">Unload</string>
+    <string name="unloaded_empty">Unused roll: back in stock</string>
+    <string name="picker_continue">Continue a roll</string>
+    <string name="picker_new">New roll</string>
+    <string name="share">Share</string>
+    <string name="develop_it">Develop</string>
+    <string name="share_preparing">Preparing the roll…</string>
+    <string name="share_text">A roll of %1$s to finish: open it with Rullino.</string>
+    <string name="share_title">Pass the roll to…</string>
+    <string name="share_failed">Couldn\'t prepare the roll</string>
+    <string name="share_received">Roll received: %1$s, %2$s exposures. You\'ll find it in Rolls.</string>
+    <string name="share_invalid">This isn\'t a valid Rullino roll</string>
+    <string name="share_newer">This roll comes from a newer version: update the app</string>
+    <string name="share_no_emulsion">The roll\'s emulsion is missing</string>
 </resources>

@@ -10,7 +10,7 @@
     <string name="engr_empty">VIDE</string>
     <string name="cam_no_roll">Pas de pellicule</string>
     <string name="cam_rewinding">Rembobinage %1$s%%\ntourne la manivelle</string>
-    <string name="cam_at_end">Terminée · appuie sur R\net tourne la manivelle</string>
+    <string name="cam_at_end">Terminée · décharge-la</string>
     <string name="cam_frame_exposed">Vue %1$s déjà exposée\n%2$s sur %3$s poses</string>
     <string name="cam_count">%1$s sur %2$s poses</string>
     <string name="cam_change_roll">Changer de pellicule</string>
@@ -21,7 +21,7 @@
     <string name="grant">Autoriser</string>
     <string name="cam_empty">L\'appareil est vide.</string>
     <string name="choose_roll">Choisir une pellicule</string>
-    <string name="cam_finished_note">Pellicule terminée : %1$s poses.\nAppuie sur R et tourne la manivelle pour la rembobiner.</string>
+    <string name="cam_finished_note">Pellicule terminée : %1$s poses.\nDécharge-la, puis développe-la depuis Pellicules.</string>
     <string name="developing">Développement en cours…</string>
     <string name="x_of_y">%1$s sur %2$s</string>
     <string name="double_exposure_badge">DOUBLE EXPOSITION · VUE %1$s</string>
@@ -76,7 +76,7 @@
     <string name="release">Autorisation</string>
     <string name="back_on_table">Remettre sur la table</string>
     <string name="state_loaded">Dans l\'appareil</string>
-    <string name="state_shelved">Mise de côté</string>
+    <string name="state_shelved">Déchargée</string>
     <string name="state_finished">À développer</string>
     <string name="state_developing">En développement</string>
     <string name="mine">Les tiennes</string>
@@ -173,7 +173,7 @@
     <string name="clear_sig">Effacer la signature</string>
     <string name="sign_save">Signer et enregistrer</string>
     <string name="load_failed">Impossible de charger la pellicule</string>
-    <string name="shelved_msg">Pellicule mise de côté : tu la retrouves dans Pellicules</string>
+    <string name="shelved_msg">Pellicule déchargée : elle est dans Pellicules</string>
     <string name="reload_failed">Impossible de la recharger</string>
     <string name="rewound_out">Pellicule rembobinée : tu la trouves dans Pellicules, prête pour le labo</string>
     <string name="develop_failed">Le développement a échoué</string>
@@ -409,4 +409,19 @@
     <string name="cm_saved">Concours enregistré</string>
     <string name="cm_published">Concours publié</string>
     <string name="cm_deleted">Concours supprimé</string>
+    <string name="cam_load">Charger une pellicule</string>
+    <string name="cam_unload">Décharger</string>
+    <string name="unloaded_empty">Pellicule inutilisée : retour en stock</string>
+    <string name="picker_continue">Continuer une pellicule</string>
+    <string name="picker_new">Nouvelle pellicule</string>
+    <string name="share">Partager</string>
+    <string name="develop_it">Développer</string>
+    <string name="share_preparing">Je prépare la pellicule…</string>
+    <string name="share_text">Une pellicule %1$s à terminer : ouvre-la avec Rullino.</string>
+    <string name="share_title">Passer la pellicule à…</string>
+    <string name="share_failed">Impossible de préparer la pellicule</string>
+    <string name="share_received">Pellicule reçue : %1$s, %2$s poses. Elle est dans Pellicules.</string>
+    <string name="share_invalid">Ce n\'est pas une pellicule Rullino valide</string>
+    <string name="share_newer">Cette pellicule vient d\'une version plus récente : mets l\'app à jour</string>
+    <string name="share_no_emulsion">L\'émulsion de la pellicule manque</string>
 </resources>

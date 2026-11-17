@@ -9,7 +9,7 @@
 "engr_empty" = "LEER";
 "cam_no_roll" = "Kein Film";
 "cam_rewinding" = "Zurückspulen %1$@%%\ndreh die Kurbel";
-"cam_at_end" = "Voll · drück R\nund dreh die Kurbel";
+"cam_at_end" = "Voll · nimm ihn heraus";
 "cam_frame_exposed" = "Bild %1$@ schon belichtet\n%2$@ von %3$@ Aufnahmen";
 "cam_count" = "%1$@ von %2$@ Aufnahmen";
 "cam_change_roll" = "Film wechseln";
@@ -20,7 +20,7 @@
 "grant" = "Erlauben";
 "cam_empty" = "Die Kamera ist leer.";
 "choose_roll" = "Film auswählen";
-"cam_finished_note" = "Film voll: %1$@ Aufnahmen.\nDrück R und dreh die Kurbel zum Zurückspulen.";
+"cam_finished_note" = "Film voll: %1$@ Aufnahmen.\nNimm ihn heraus und entwickle ihn unter Filme.";
 "developing" = "Wird entwickelt…";
 "x_of_y" = "%1$@ von %2$@";
 "double_exposure_badge" = "DOPPELBELICHTUNG · BILD %1$@";
@@ -75,7 +75,7 @@
 "release" = "Freigabe";
 "back_on_table" = "Zurück auf den Leuchttisch";
 "state_loaded" = "In der Kamera";
-"state_shelved" = "Beiseitegelegt";
+"state_shelved" = "Herausgenommen";
 "state_finished" = "Zu entwickeln";
 "state_developing" = "In Entwicklung";
 "mine" = "Deine";
@@ -172,7 +172,7 @@
 "clear_sig" = "Unterschrift löschen";
 "sign_save" = "Unterschreiben und speichern";
 "load_failed" = "Der Film konnte nicht eingelegt werden";
-"shelved_msg" = "Film beiseitegelegt: du findest ihn unter Filme";
+"shelved_msg" = "Film herausgenommen: du findest ihn unter Filme";
 "reload_failed" = "Konnte nicht wieder eingelegt werden";
 "rewound_out" = "Film zurückgespult: du findest ihn unter Filme, bereit fürs Labor";
 "develop_failed" = "Entwicklung fehlgeschlagen";
@@ -408,3 +408,18 @@
 "cm_saved" = "Wettbewerb gespeichert";
 "cm_published" = "Wettbewerb veröffentlicht";
 "cm_deleted" = "Wettbewerb gelöscht";
+"cam_load" = "Film einlegen";
+"cam_unload" = "Herausnehmen";
+"unloaded_empty" = "Unbenutzter Film: zurück ins Lager";
+"picker_continue" = "Film weiterführen";
+"picker_new" = "Neuer Film";
+"share" = "Teilen";
+"develop_it" = "Entwickeln";
+"share_preparing" = "Film wird vorbereitet…";
+"share_text" = "Ein %1$@-Film zum Weiterfotografieren: öffne ihn mit Rullino.";
+"share_title" = "Film weitergeben an…";
+"share_failed" = "Film konnte nicht vorbereitet werden";
+"share_received" = "Film erhalten: %1$@, %2$@ Aufnahmen. Du findest ihn unter Filme.";
+"share_invalid" = "Das ist kein gültiger Rullino-Film";
+"share_newer" = "Dieser Film stammt aus einer neueren Version: Aktualisiere die App";
+"share_no_emulsion" = "Die Emulsion des Films fehlt";

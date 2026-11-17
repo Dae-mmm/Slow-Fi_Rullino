@@ -9,7 +9,7 @@
 "engr_empty" = "VACÍA";
 "cam_no_roll" = "Sin carrete";
 "cam_rewinding" = "Rebobinando %1$@%%\ngira la manivela";
-"cam_at_end" = "Terminado · pulsa R\ny gira la manivela";
+"cam_at_end" = "Terminado · descárgalo";
 "cam_frame_exposed" = "Foto %1$@ ya expuesta\n%2$@ de %3$@ fotos";
 "cam_count" = "%1$@ de %2$@ fotos";
 "cam_change_roll" = "Cambiar carrete";
@@ -20,7 +20,7 @@
 "grant" = "Permitir";
 "cam_empty" = "La cámara está vacía.";
 "choose_roll" = "Elige un carrete";
-"cam_finished_note" = "Carrete terminado: %1$@ fotos.\nPulsa R y gira la manivela para rebobinarlo.";
+"cam_finished_note" = "Carrete terminado: %1$@ fotos.\nDescárgalo y revélalo desde Carretes.";
 "developing" = "Revelando…";
 "x_of_y" = "%1$@ de %2$@";
 "double_exposure_badge" = "DOBLE EXPOSICIÓN · FOTO %1$@";
@@ -75,7 +75,7 @@
 "release" = "Autorización";
 "back_on_table" = "Devolver a la mesa";
 "state_loaded" = "En la cámara";
-"state_shelved" = "Guardado";
+"state_shelved" = "Descargado";
 "state_finished" = "Por revelar";
 "state_developing" = "Revelándose";
 "mine" = "Las tuyas";
@@ -172,7 +172,7 @@
 "clear_sig" = "Borrar firma";
 "sign_save" = "Firmar y guardar";
 "load_failed" = "No se pudo cargar el carrete";
-"shelved_msg" = "Carrete guardado: lo encontrarás en Carretes";
+"shelved_msg" = "Carrete descargado: está en Carretes";
 "reload_failed" = "No se pudo volver a cargar";
 "rewound_out" = "Carrete rebobinado: lo tienes en Carretes, listo para el laboratorio";
 "develop_failed" = "El revelado ha fallado";
@@ -408,3 +408,18 @@
 "cm_saved" = "Concurso guardado";
 "cm_published" = "Concurso publicado";
 "cm_deleted" = "Concurso borrado";
+"cam_load" = "Cargar carrete";
+"cam_unload" = "Descargar";
+"unloaded_empty" = "Carrete sin usar: vuelve al almacén";
+"picker_continue" = "Continuar un carrete";
+"picker_new" = "Carrete nuevo";
+"share" = "Compartir";
+"develop_it" = "Revelar";
+"share_preparing" = "Preparando el carrete…";
+"share_text" = "Un carrete de %1$@ por terminar: ábrelo con Rullino.";
+"share_title" = "Pasar el carrete a…";
+"share_failed" = "No se pudo preparar el carrete";
+"share_received" = "Carrete recibido: %1$@, %2$@ fotos. Está en Carretes.";
+"share_invalid" = "Esto no es un carrete de Rullino válido";
+"share_newer" = "Este carrete viene de una versión más nueva: actualiza la app";
+"share_no_emulsion" = "Falta la emulsión del carrete";

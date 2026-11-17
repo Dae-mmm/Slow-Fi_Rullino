@@ -10,7 +10,7 @@
     <string name="engr_empty">VUOTA</string>
     <string name="cam_no_roll">Nessun rullino</string>
     <string name="cam_rewinding">Riavvolgimento %1$s%%\ngira la manovella</string>
-    <string name="cam_at_end">Finito · premi R\ne gira la manovella</string>
+    <string name="cam_at_end">Finito · scaricalo</string>
     <string name="cam_frame_exposed">Posa %1$s già esposta\n%2$s di %3$s pose</string>
     <string name="cam_count">%1$s di %2$s pose</string>
     <string name="cam_change_roll">Cambia rullino</string>
@@ -21,7 +21,7 @@
     <string name="grant">Concedi</string>
     <string name="cam_empty">La macchina è vuota.</string>
     <string name="choose_roll">Scegli un rullino</string>
-    <string name="cam_finished_note">Rullino finito: %1$s pose.\nPremi R e gira la manovella per riavvolgerlo.</string>
+    <string name="cam_finished_note">Rullino finito: %1$s pose.\nScaricalo e mandalo in sviluppo da Rullini.</string>
     <string name="developing">Sviluppo in corso…</string>
     <string name="x_of_y">%1$s di %2$s</string>
     <string name="double_exposure_badge">DOPPIA ESPOSIZIONE · POSA %1$s</string>
@@ -76,7 +76,7 @@
     <string name="release">Liberatoria</string>
     <string name="back_on_table">Rimetti sul tavolo</string>
     <string name="state_loaded">In macchina</string>
-    <string name="state_shelved">Messo da parte</string>
+    <string name="state_shelved">Scaricato</string>
     <string name="state_finished">Da sviluppare</string>
     <string name="state_developing">In sviluppo</string>
     <string name="mine">Le tue</string>
@@ -173,7 +173,7 @@
     <string name="clear_sig">Cancella firma</string>
     <string name="sign_save">Firma e salva</string>
     <string name="load_failed">Non riesco a caricare il rullino</string>
-    <string name="shelved_msg">Rullino messo da parte: lo trovi in Rullini</string>
+    <string name="shelved_msg">Rullino scaricato: lo trovi in Rullini</string>
     <string name="reload_failed">Non riesco a ricaricarlo</string>
     <string name="rewound_out">Rullino riavvolto: lo trovi in Rullini, pronto per il laboratorio</string>
     <string name="develop_failed">Sviluppo non riuscito</string>
@@ -409,4 +409,19 @@
     <string name="cm_saved">Concorso salvato</string>
     <string name="cm_published">Concorso pubblicato</string>
     <string name="cm_deleted">Concorso eliminato</string>
+    <string name="cam_load">Carica rullino</string>
+    <string name="cam_unload">Scarica</string>
+    <string name="unloaded_empty">Rullino mai usato: torna in magazzino</string>
+    <string name="picker_continue">Continua un rullino</string>
+    <string name="picker_new">Rullino nuovo</string>
+    <string name="share">Condividi</string>
+    <string name="develop_it">Sviluppa</string>
+    <string name="share_preparing">Preparo il rullino…</string>
+    <string name="share_text">Un rullino di %1$s da finire: aprilo con Rullino.</string>
+    <string name="share_title">Passa il rullino a…</string>
+    <string name="share_failed">Non sono riuscito a preparare il rullino</string>
+    <string name="share_received">Rullino ricevuto: %1$s, %2$s pose. Lo trovi in Rullini.</string>
+    <string name="share_invalid">Questo non è un rullino di Rullino valido</string>
+    <string name="share_newer">Questo rullino viene da una versione più nuova: aggiorna l\'app</string>
+    <string name="share_no_emulsion">Manca l\'emulsione del rullino</string>
 </resources>

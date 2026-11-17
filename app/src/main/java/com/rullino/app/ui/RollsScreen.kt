@@ -125,6 +125,7 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit, onGoLab: () -> Unit)
                 onOpen = { openId = r.id },
                 onReload = { vm.reload(r, onOpenCamera) },
                 onDevelop = { vm.rewindOut(r) },
+                onShare = { vm.shareRoll(r) },
                 onDelete = { vm.deleteRoll(r) },
             )
         }
@@ -141,6 +142,7 @@ private fun RollRow(
     onOpen: () -> Unit,
     onReload: () -> Unit,
     onDevelop: () -> Unit,
+    onShare: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
@@ -170,9 +172,11 @@ private fun RollRow(
         }
         Text(number, color = Color(0xFF4A4541), fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 28.sp)
         if (isReady) Text(stringResource(R.string.negatives_arrow), color = Palette.Safelight, fontSize = 14.sp)
+        // Rullino scaricato: lo ricarichi per continuare, lo mandi in sviluppo così com'è o lo passi a qualcuno.
         if (r.state == RollState.SHELVED) {
-            SecondaryButton(enabled = cameraFree, onClick = onReload) { Text(stringResource(R.string.reload)) }
-            PrimaryButton(onClick = onDevelop) { Text(stringResource(R.string.rewind)) }
+            SecondaryButton(enabled = cameraFree, onClick = onReload) { Text(stringResource(R.string.load)) }
+            SecondaryButton(onClick = onShare) { Text(stringResource(R.string.share)) }
+            PrimaryButton(onClick = onDevelop) { Text(stringResource(R.string.develop_it)) }
         }
         if (r.state == RollState.SHELVED || r.state == RollState.FINISHED || isReady) {
             TextButton(onClick = { if (confirmDelete) onDelete() else confirmDelete = true }) {

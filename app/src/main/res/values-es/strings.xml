@@ -10,7 +10,7 @@
     <string name="engr_empty">VACÍA</string>
     <string name="cam_no_roll">Sin carrete</string>
     <string name="cam_rewinding">Rebobinando %1$s%%\ngira la manivela</string>
-    <string name="cam_at_end">Terminado · pulsa R\ny gira la manivela</string>
+    <string name="cam_at_end">Terminado · descárgalo</string>
     <string name="cam_frame_exposed">Foto %1$s ya expuesta\n%2$s de %3$s fotos</string>
     <string name="cam_count">%1$s de %2$s fotos</string>
     <string name="cam_change_roll">Cambiar carrete</string>
@@ -21,7 +21,7 @@
     <string name="grant">Permitir</string>
     <string name="cam_empty">La cámara está vacía.</string>
     <string name="choose_roll">Elige un carrete</string>
-    <string name="cam_finished_note">Carrete terminado: %1$s fotos.\nPulsa R y gira la manivela para rebobinarlo.</string>
+    <string name="cam_finished_note">Carrete terminado: %1$s fotos.\nDescárgalo y revélalo desde Carretes.</string>
     <string name="developing">Revelando…</string>
     <string name="x_of_y">%1$s de %2$s</string>
     <string name="double_exposure_badge">DOBLE EXPOSICIÓN · FOTO %1$s</string>
@@ -76,7 +76,7 @@
     <string name="release">Autorización</string>
     <string name="back_on_table">Devolver a la mesa</string>
     <string name="state_loaded">En la cámara</string>
-    <string name="state_shelved">Guardado</string>
+    <string name="state_shelved">Descargado</string>
     <string name="state_finished">Por revelar</string>
     <string name="state_developing">Revelándose</string>
     <string name="mine">Las tuyas</string>
@@ -173,7 +173,7 @@
     <string name="clear_sig">Borrar firma</string>
     <string name="sign_save">Firmar y guardar</string>
     <string name="load_failed">No se pudo cargar el carrete</string>
-    <string name="shelved_msg">Carrete guardado: lo encontrarás en Carretes</string>
+    <string name="shelved_msg">Carrete descargado: está en Carretes</string>
     <string name="reload_failed">No se pudo volver a cargar</string>
     <string name="rewound_out">Carrete rebobinado: lo tienes en Carretes, listo para el laboratorio</string>
     <string name="develop_failed">El revelado ha fallado</string>
@@ -409,4 +409,19 @@
     <string name="cm_saved">Concurso guardado</string>
     <string name="cm_published">Concurso publicado</string>
     <string name="cm_deleted">Concurso borrado</string>
+    <string name="cam_load">Cargar carrete</string>
+    <string name="cam_unload">Descargar</string>
+    <string name="unloaded_empty">Carrete sin usar: vuelve al almacén</string>
+    <string name="picker_continue">Continuar un carrete</string>
+    <string name="picker_new">Carrete nuevo</string>
+    <string name="share">Compartir</string>
+    <string name="develop_it">Revelar</string>
+    <string name="share_preparing">Preparando el carrete…</string>
+    <string name="share_text">Un carrete de %1$s por terminar: ábrelo con Rullino.</string>
+    <string name="share_title">Pasar el carrete a…</string>
+    <string name="share_failed">No se pudo preparar el carrete</string>
+    <string name="share_received">Carrete recibido: %1$s, %2$s fotos. Está en Carretes.</string>
+    <string name="share_invalid">Esto no es un carrete de Rullino válido</string>
+    <string name="share_newer">Este carrete viene de una versión más nueva: actualiza la app</string>
+    <string name="share_no_emulsion">Falta la emulsión del carrete</string>
 </resources>

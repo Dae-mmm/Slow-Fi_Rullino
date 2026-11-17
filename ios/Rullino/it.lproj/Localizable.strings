@@ -9,7 +9,7 @@
 "engr_empty" = "VUOTA";
 "cam_no_roll" = "Nessun rullino";
 "cam_rewinding" = "Riavvolgimento %1$@%%\ngira la manovella";
-"cam_at_end" = "Finito · premi R\ne gira la manovella";
+"cam_at_end" = "Finito · scaricalo";
 "cam_frame_exposed" = "Posa %1$@ già esposta\n%2$@ di %3$@ pose";
 "cam_count" = "%1$@ di %2$@ pose";
 "cam_change_roll" = "Cambia rullino";
@@ -20,7 +20,7 @@
 "grant" = "Concedi";
 "cam_empty" = "La macchina è vuota.";
 "choose_roll" = "Scegli un rullino";
-"cam_finished_note" = "Rullino finito: %1$@ pose.\nPremi R e gira la manovella per riavvolgerlo.";
+"cam_finished_note" = "Rullino finito: %1$@ pose.\nScaricalo e mandalo in sviluppo da Rullini.";
 "developing" = "Sviluppo in corso…";
 "x_of_y" = "%1$@ di %2$@";
 "double_exposure_badge" = "DOPPIA ESPOSIZIONE · POSA %1$@";
@@ -75,7 +75,7 @@
 "release" = "Liberatoria";
 "back_on_table" = "Rimetti sul tavolo";
 "state_loaded" = "In macchina";
-"state_shelved" = "Messo da parte";
+"state_shelved" = "Scaricato";
 "state_finished" = "Da sviluppare";
 "state_developing" = "In sviluppo";
 "mine" = "Le tue";
@@ -172,7 +172,7 @@
 "clear_sig" = "Cancella firma";
 "sign_save" = "Firma e salva";
 "load_failed" = "Non riesco a caricare il rullino";
-"shelved_msg" = "Rullino messo da parte: lo trovi in Rullini";
+"shelved_msg" = "Rullino scaricato: lo trovi in Rullini";
 "reload_failed" = "Non riesco a ricaricarlo";
 "rewound_out" = "Rullino riavvolto: lo trovi in Rullini, pronto per il laboratorio";
 "develop_failed" = "Sviluppo non riuscito";
@@ -408,3 +408,18 @@
 "cm_saved" = "Concorso salvato";
 "cm_published" = "Concorso pubblicato";
 "cm_deleted" = "Concorso eliminato";
+"cam_load" = "Carica rullino";
+"cam_unload" = "Scarica";
+"unloaded_empty" = "Rullino mai usato: torna in magazzino";
+"picker_continue" = "Continua un rullino";
+"picker_new" = "Rullino nuovo";
+"share" = "Condividi";
+"develop_it" = "Sviluppa";
+"share_preparing" = "Preparo il rullino…";
+"share_text" = "Un rullino di %1$@ da finire: aprilo con Rullino.";
+"share_title" = "Passa il rullino a…";
+"share_failed" = "Non sono riuscito a preparare il rullino";
+"share_received" = "Rullino ricevuto: %1$@, %2$@ pose. Lo trovi in Rullini.";
+"share_invalid" = "Questo non è un rullino di Rullino valido";
+"share_newer" = "Questo rullino viene da una versione più nuova: aggiorna l'app";
+"share_no_emulsion" = "Manca l'emulsione del rullino";

@@ -9,7 +9,7 @@
 "engr_empty" = "EMPTY";
 "cam_no_roll" = "No roll";
 "cam_rewinding" = "Rewinding %1$@%%\nturn the crank";
-"cam_at_end" = "Finished · press R\nand turn the crank";
+"cam_at_end" = "Finished · unload it";
 "cam_frame_exposed" = "Frame %1$@ already exposed\n%2$@ of %3$@ exposures";
 "cam_count" = "%1$@ of %2$@ exposures";
 "cam_change_roll" = "Change roll";
@@ -20,7 +20,7 @@
 "grant" = "Allow";
 "cam_empty" = "The camera is empty.";
 "choose_roll" = "Choose a roll";
-"cam_finished_note" = "Roll finished: %1$@ exposures.\nPress R and turn the crank to rewind it.";
+"cam_finished_note" = "Roll finished: %1$@ exposures.\nUnload it, then develop it from Rolls.";
 "developing" = "Developing…";
 "x_of_y" = "%1$@ of %2$@";
 "double_exposure_badge" = "DOUBLE EXPOSURE · FRAME %1$@";
@@ -75,7 +75,7 @@
 "release" = "Release";
 "back_on_table" = "Back on the table";
 "state_loaded" = "In the camera";
-"state_shelved" = "Set aside";
+"state_shelved" = "Unloaded";
 "state_finished" = "To develop";
 "state_developing" = "Developing";
 "mine" = "Yours";
@@ -172,7 +172,7 @@
 "clear_sig" = "Clear signature";
 "sign_save" = "Sign and save";
 "load_failed" = "Couldn't load the roll";
-"shelved_msg" = "Roll set aside: you'll find it in Rolls";
+"shelved_msg" = "Roll unloaded: you'll find it in Rolls";
 "reload_failed" = "Couldn't reload it";
 "rewound_out" = "Roll rewound: you'll find it in Rolls, ready for the lab";
 "develop_failed" = "Development failed";
@@ -408,3 +408,18 @@
 "cm_saved" = "Contest saved";
 "cm_published" = "Contest published";
 "cm_deleted" = "Contest deleted";
+"cam_load" = "Load a roll";
+"cam_unload" = "Unload";
+"unloaded_empty" = "Unused roll: back in stock";
+"picker_continue" = "Continue a roll";
+"picker_new" = "New roll";
+"share" = "Share";
+"develop_it" = "Develop";
+"share_preparing" = "Preparing the roll…";
+"share_text" = "A roll of %1$@ to finish: open it with Rullino.";
+"share_title" = "Pass the roll to…";
+"share_failed" = "Couldn't prepare the roll";
+"share_received" = "Roll received: %1$@, %2$@ exposures. You'll find it in Rolls.";
+"share_invalid" = "This isn't a valid Rullino roll";
+"share_newer" = "This roll comes from a newer version: update the app";
+"share_no_emulsion" = "The roll's emulsion is missing";
