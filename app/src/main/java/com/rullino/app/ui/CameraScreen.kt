@@ -145,6 +145,10 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
         if (lastShotAt > 0) { delay(8000); lastShot = null }
     }
 
+    // Esposimetro: la luce della scena letta dall'anteprima, poi confrontata con pellicola e tempo.
+    var ev100 by remember { mutableStateOf<Double?>(null) }
+    val ae = remember { AeState() }
+
     fun shoot() {
         val current = r ?: return
         val cap = capture
@@ -207,9 +211,6 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
     // Dopo uno scatto il pulsante R torna su da solo.
     LaunchedEffect(lastShotAt) { if (lastShotAt > 0) releaseOn = false }
 
-    // Esposimetro: la luce della scena letta dall'anteprima, poi confrontata con pellicola e tempo.
-    var ev100 by remember { mutableStateOf<Double?>(null) }
-    val ae = remember { AeState() }
     val meter = if (r != null && r.state == RollState.LOADED) ev100?.let { meterReading(it, r.iso, shutterIndex) } else null
 
     val dbCounter = when {
