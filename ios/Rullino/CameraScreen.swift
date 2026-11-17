@@ -9,17 +9,20 @@ struct CameraScreen: View {
     @State private var busy = false
     @State private var blackout = false
     @State private var releaseOn = false
-    @State private var unloadTurns = 0
     @State private var crank: CGFloat = 0
     @State private var optimistic: Int?
     @State private var optimisticKey = ""
-    @State private var showBack = false
     @State private var showPicker = false
-    @State private var confirmDelete = false
     @State private var focal: CGFloat = 24
     @State private var windProgress: CGFloat = 0
 
     private var r: Roll? { store.activeRoll }
+
+    /// Esposimetro: la luce letta dal telefono confrontata con la pellicola e il tempo scelto.
+    private var meter: MeterReading? {
+        guard let r, r.state == .loaded, let ev = camera.ev100 else { return nil }
+        return meterReading(ev100: ev, filmIso: r.iso, shutterIndex: store.data.shutterIndex)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -48,31 +51,12 @@ struct CameraScreen: View {
         .background(Palette.body)
         .onAppear { camera.start() }
         .onDisappear { camera.stop() }
-        .onChange(of: r?.id) { _, _ in releaseOn = false; unloadTurns = 0 }
+        .onChange(of: r?.id) { _, _ in releaseOn = false }
         .onChange(of: focal) { _, f in camera.setFocal(f) }
         .sheet(isPresented: $showPicker) { RollPicker(goShop: { showPicker = false; goShop() }) }
-        .confirmationDialog(backTitle, isPresented: $showBack, titleVisibility: .visible) {
-            if let r {
-                Button(L("rewind_all_out")) { optimistic = nil; store.rewindOut(r) }
-                Button(L("shelve_long")) { store.shelve(r) }
-                Button(L("delete_roll"), role: .destructive) { confirmDelete = true }
-                Button(L("close_back"), role: .cancel) {}
-            }
-        } message: { Text(L("back_help")) }
-        .alert(L("delete_roll_confirm"), isPresented: $confirmDelete) {
-            Button(L("delete"), role: .destructive) { if let r { store.deleteRoll(r) } }
-            Button(L("cancel"), role: .cancel) {}
-        }
-    }
-
-    private var backTitle: String {
-        guard let r else { return "" }
-        return r.emulsionName + " · " + L("cam_count", r.shotCount, r.exposures)
     }
 
     /* ---------------- Contatore ---------------- */
-
-    private var turnsNeeded: Int { max(2, ((r?.shotCount ?? 0) + 5) / 6) }
 
     private var dbCounter: Int {
         guard let r else { return 0 }
@@ -86,12 +70,6 @@ struct CameraScreen: View {
     /// (da, verso, avanzamento) mentre si gira la manovella.
     private var rolling: (Int, Int, CGFloat)? {
         guard let r, r.shotCount > 0, releaseOn else { return nil }
-        if r.isAtEnd {
-            let t = min(max((CGFloat(unloadTurns) + crank) / CGFloat(turnsNeeded), 0), 1)
-            let v = CGFloat(dbCounter) * (1 - t)
-            let from = Int(v.rounded(.up))
-            return from <= 0 ? nil : (from, from - 1, CGFloat(from) - v)
-        }
         guard crank > 0 else { return nil }
         let hasOpt = optimisticKey == rollKey && optimistic != nil
         if !hasOpt && r.cursor > 1 && counter != r.cursor - 1 { return (counter, r.cursor - 1, crank) }
@@ -111,9 +89,8 @@ struct CameraScreen: View {
             }
             .frame(width: 150, alignment: .leading)
             VStack(spacing: 3) {
-                Text("RULLINO").font(Fonts.barlow(13, .semibold)).tracking(4).foregroundStyle(Color(hex: 0xD9D3CC))
-                    .padding(.horizontal, 10).overlay(Rectangle().stroke(Color(hex: 0x4B4642), lineWidth: 1))
-                ShutterDial(index: $store.data.shutterIndex).frame(maxWidth: 440)
+                EngravedNote(text: "SHUTTER SPEED").padding(.top, 4)
+                ShutterDial(index: $store.data.shutterIndex, recommended: meter?.recommendedIndex).frame(maxWidth: 440)
             }
             .frame(maxWidth: .infinity)
             HStack(spacing: 8) {
@@ -137,7 +114,7 @@ struct CameraScreen: View {
     private var leftColumn: some View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
-                ReleaseButton(on: releaseOn, enabled: (r?.shotCount ?? 0) > 0) { releaseOn.toggle(); unloadTurns = 0 }
+                ReleaseButton(on: releaseOn, enabled: (r?.shotCount ?? 0) > 0) { releaseOn.toggle() }
                 EngravedNote(text: "REWIND")
                 Spacer()
             }
@@ -145,40 +122,27 @@ struct CameraScreen: View {
                 enabled: (r?.shotCount ?? 0) > 0 && releaseOn,
                 highlight: releaseOn,
                 resetKey: AnyHashable("\(r?.id ?? 0)-\(releaseOn)"),
-                diameter: 100,
+                diameter: 84,
                 onProgress: { crank = $0 },
                 onFullTurn: fullTurn
             )
             .accessibilityLabel(L("crank"))
-            ScrollView {
-                VStack(spacing: 10) {
-                    backWindow
-                    Text(statusText)
-                        .font(Fonts.barlow(12)).tracking(0.6).foregroundStyle(Palette.muted).multilineTextAlignment(.center)
-                    if let r, r.shotCount == 0 {
-                        Button(L("cam_change_roll")) { store.unloadEmptyRoll(r) }
-                            .font(.system(size: 12)).foregroundStyle(Palette.muted)
-                    } else if r != nil {
-                        Button(L("cam_open_back")) { showBack = true }
-                            .buttonStyle(.secondary)
-                    } else {
-                        Button(L("cam_developed_rolls"), action: goRolls)
-                            .font(.system(size: 12)).foregroundStyle(Palette.muted)
-                    }
-                }
+            backWindow
+            Text(statusText)
+                .font(Fonts.barlow(12)).tracking(0.6).foregroundStyle(Palette.muted).multilineTextAlignment(.center).lineLimit(2)
+            Spacer(minLength: 0)
+            // Un solo tasto: carica un rullino, o scaricalo (lo ritrovi in Rullini).
+            if let r {
+                Button(L("cam_unload")) { releaseOn = false; store.unload(r) }.buttonStyle(.secondary)
+            } else {
+                Button(L("cam_load")) { showPicker = true }.buttonStyle(.primary)
             }
         }
     }
 
     private func fullTurn() {
         guard let roll = r else { return }
-        if roll.isAtEnd {
-            unloadTurns += 1
-            if unloadTurns >= turnsNeeded {
-                releaseOn = false; unloadTurns = 0
-                store.rewindOut(roll)
-            }
-        } else if roll.cursor > 1 {
+        if roll.cursor > 1 {
             // Torna alla posa precedente, già pronta: lo scatto successivo ci va sopra.
             optimistic = roll.cursor - 1
             store.rewindFrame(roll)
@@ -190,7 +154,6 @@ struct CameraScreen: View {
 
     private var statusText: String {
         guard let r else { return L("cam_no_roll") }
-        if releaseOn && r.isAtEnd { return L("cam_rewinding", unloadTurns * 100 / turnsNeeded) }
         if releaseOn { return L("cam_r_hint") }
         if r.isAtEnd { return L("cam_at_end") }
         if r.cursor <= r.shotCount { return L("cam_frame_exposed", r.cursor, r.shotCount, r.exposures) }
@@ -227,8 +190,11 @@ struct CameraScreen: View {
             .shadow(color: .black.opacity(0.6), radius: 6, y: 6)
             .aspectRatio(1.5, contentMode: .fit)
             .frame(maxHeight: .infinity)
-            ZoomRing(focal: $focal, maxFocal: camera.maxFocal, enabled: camera.authorized == true)
-                .frame(maxWidth: 350)
+            VStack(spacing: 3) {
+                ZoomRing(focal: $focal, maxFocal: camera.maxFocal, enabled: camera.authorized == true)
+                    .frame(maxWidth: 350)
+                EngravedNote(text: "FOCAL LENGTH · MM")
+            }
         }
     }
 
@@ -251,13 +217,18 @@ struct CameraScreen: View {
                     Spacer()
                     ViewfinderBadge(text: shutterLabel(shutterSpeeds[min(max(store.data.shutterIndex, 0), shutterSpeeds.count - 1)]) + " · \(Int(focal.rounded())) MM")
                 }
+                if !r.isAtEnd && !r.wound { badge(L("wind_first")) }
                 Spacer()
                 if r.isAtEnd {
                     badge(L("cam_finished_note", r.shotCount))
-                } else if !r.wound {
-                    badge(L("wind_first"))
                 }
                 if store.developProgress != nil { badge(L("developing")) }
+                if let meter, !r.isAtEnd {
+                    ExposureMeter(reading: meter)
+                        .frame(maxWidth: 260)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(RoundedRectangle(cornerRadius: 3).fill(Color(hex: 0x0A0908, alpha: 0.7)))
+                }
             }
             .padding(10)
         } else {
@@ -282,7 +253,6 @@ struct CameraScreen: View {
         camera.capture(to: url) { ok in
             if ok { store.recordShot(current.id, file: rel, shutter: shutter) } else { store.say("shot_failed") }
             releaseOn = false
-            unloadTurns = 0
             busy = false
         }
     }
@@ -299,6 +269,24 @@ struct RollPicker: View {
         NavigationStack {
             List {
                 let owned = store.emulsions.filter { store.owned($0) > 0 }
+                let shelved = store.data.rolls.filter { $0.state == .shelved }
+                if !shelved.isEmpty {
+                    Section(L("picker_continue")) {
+                        ForEach(shelved) { s in
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(s.emulsionName).font(.headline)
+                                    Text(L("cam_count", s.shotCount, s.exposures)).font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Button(L("load")) {
+                                    if let a = store.activeRoll, a.shotCount == 0 { store.unloadEmptyRoll(a) }
+                                    store.reload(s); dismiss()
+                                }.buttonStyle(.primary)
+                            }
+                        }
+                    }
+                }
                 if owned.isEmpty {
                     Text(L("picker_none"))
                     Button(L("go_shop"), action: goShop)

@@ -310,65 +310,7 @@ struct LeverShutter: View {
     }
 }
 
-/* ---------------- Ghiera dello zoom, vista di profilo ---------------- */
-
 let focalMarks: [CGFloat] = [24, 28, 35, 50, 85, 135]
-
-struct ZoomRing: View {
-    @Binding var focal: CGFloat
-    let maxFocal: CGFloat
-    let enabled: Bool
-    @State private var startFocal: CGFloat?
-
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let pxPerLog: CGFloat = w * 0.9 / log(135 / 24)
-            Canvas { ctx, size in
-                // Ghiera zigrinata vista di profilo (design).
-                ctx.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 7), with: .color(Color(hex: 0x0A0909)))
-                let stripe: CGFloat = 2.9
-                var sx = -(log(focal / 24) * pxPerLog).truncatingRemainder(dividingBy: stripe * 3)
-                while sx < size.width {
-                    ctx.fill(Path(CGRect(x: sx, y: 1, width: stripe * 0.9, height: size.height - 2)), with: .color(Color(hex: 0x171615)))
-                    ctx.fill(Path(CGRect(x: sx + stripe * 0.9, y: 1, width: stripe * 0.9, height: size.height - 2)), with: .color(Color(hex: 0x35312F)))
-                    ctx.fill(Path(CGRect(x: sx + stripe * 1.8, y: 1, width: stripe * 1.2, height: size.height - 2)), with: .color(Color(hex: 0x211F1D)))
-                    sx += stripe * 3
-                }
-                ctx.fill(Path(CGRect(x: 4, y: 1, width: size.width - 8, height: 2)), with: .color(Color(hex: 0x68625E)))
-                ctx.fill(Path(CGRect(x: 4, y: size.height - 3, width: size.width - 8, height: 3)), with: .color(Color(hex: 0x090909)))
-                let center = size.width / 2
-                let off = log(focal / 24) * pxPerLog
-                for m in focalMarks where m <= max(maxFocal, 24) + 0.5 {
-                    let mx = center - off + log(m / 24) * pxPerLog
-                    ctx.fill(Path(roundedRect: CGRect(x: mx - 15, y: size.height * 0.2, width: 30, height: size.height * 0.6), cornerRadius: 2), with: .color(Color(hex: 0x1B1918, alpha: 0.87)))
-                    let near = abs(mx - center) < 6
-                    ctx.draw(Text("\(Int(m))").font(Fonts.mono(11)).foregroundColor(near ? Palette.safelight : Palette.ink),
-                             at: CGPoint(x: mx, y: size.height * 0.5))
-                    if near { ctx.fill(Path(CGRect(x: mx - 10, y: size.height * 0.78, width: 20, height: 1.5)), with: .color(Palette.safelight)) }
-                }
-                var idx = Path(); idx.move(to: CGPoint(x: center, y: 0)); idx.addLine(to: CGPoint(x: center, y: 10))
-                ctx.stroke(idx, with: .color(Palette.safelight), lineWidth: 2)
-            }
-            .opacity(enabled ? 1 : 0.5)
-            .gesture(
-                DragGesture(minimumDistance: 2)
-                    .onChanged { v in
-                        guard enabled else { return }
-                        let s = startFocal ?? focal
-                        if startFocal == nil { startFocal = focal }
-                        var f = s * exp(-v.translation.width / pxPerLog)
-                        f = min(max(f, 24), max(maxFocal, 24))
-                        if let near = focalMarks.first(where: { abs(log($0 / f)) < 0.04 }) { f = near }
-                        if Int(f) != Int(focal) && focalMarks.contains(f) { Haptics.tick() }
-                        focal = f
-                    }
-                    .onEnded { _ in startFocal = nil }
-            )
-        }
-        .frame(height: 36)
-    }
-}
 
 /* ---------------- Ghiera dei tempi, vista di profilo ---------------- */
 
@@ -383,63 +325,4 @@ func shutterMark(_ s: Double?) -> String {
 func shutterLabel(_ s: Double?) -> String {
     guard let s else { return "A" }
     return s >= 1 ? "1 s" : "1/\(Int((1 / s).rounded()))"
-}
-
-/// Si trascina a destra o a sinistra e scatta da un tempo all'altro.
-struct ShutterDial: View {
-    @Binding var index: Int
-    @State private var pos: CGFloat?
-    @State private var start: CGFloat = 0
-    private let step: CGFloat = 40
-
-    var body: some View {
-        let last = CGFloat(shutterSpeeds.count - 1)
-        let p = pos ?? CGFloat(index)
-        Canvas { ctx, size in
-            // Ghiera zigrinata vista di profilo (design).
-            ctx.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 7), with: .color(Color(hex: 0x0A0909)))
-            let stripe: CGFloat = 2.9
-            var sx = -(p * step).truncatingRemainder(dividingBy: stripe * 3)
-            while sx < size.width {
-                ctx.fill(Path(CGRect(x: sx, y: 1, width: stripe * 0.9, height: size.height - 2)), with: .color(Color(hex: 0x171615)))
-                ctx.fill(Path(CGRect(x: sx + stripe * 0.9, y: 1, width: stripe * 0.9, height: size.height - 2)), with: .color(Color(hex: 0x35312F)))
-                ctx.fill(Path(CGRect(x: sx + stripe * 1.8, y: 1, width: stripe * 1.2, height: size.height - 2)), with: .color(Color(hex: 0x211F1D)))
-                sx += stripe * 3
-            }
-            ctx.fill(Path(CGRect(x: 4, y: 1, width: size.width - 8, height: 2)), with: .color(Color(hex: 0x68625E)))
-            ctx.fill(Path(CGRect(x: 4, y: size.height - 3, width: size.width - 8, height: 3)), with: .color(Color(hex: 0x090909)))
-            let center = size.width / 2
-            for (i, s) in shutterSpeeds.enumerated() {
-                let mx = center + (CGFloat(i) - p) * step
-                guard mx > -20, mx < size.width + 20 else { continue }
-                let near = abs(mx - center) < step / 2
-                let fade = 1 - 0.6 * abs(mx - center) / center
-                let color: Color = near ? Palette.safelight : (s == nil ? Color(hex: 0xFFD36B) : Palette.ink)
-                ctx.fill(Path(roundedRect: CGRect(x: mx - 15, y: size.height * 0.2, width: 30, height: size.height * 0.6), cornerRadius: 2), with: .color(Color(hex: 0x1B1918, alpha: 0.87)))
-                ctx.draw(Text(shutterMark(s)).font(Fonts.mono(11)).foregroundColor(color.opacity(near ? 1 : fade)),
-                         at: CGPoint(x: mx, y: size.height * 0.5))
-                if near { ctx.fill(Path(CGRect(x: mx - 10, y: size.height * 0.78, width: 20, height: 1.5)), with: .color(Palette.safelight)) }
-            }
-            var tri = Path()
-            tri.move(to: CGPoint(x: center - 4, y: 0)); tri.addLine(to: CGPoint(x: center + 4, y: 0)); tri.addLine(to: CGPoint(x: center, y: 5)); tri.closeSubpath()
-            ctx.fill(tri, with: .color(Palette.safelight))
-        }
-        .frame(height: 40)
-        .gesture(
-            DragGesture(minimumDistance: 2)
-                .onChanged { v in
-                    if pos == nil { start = CGFloat(index); pos = start }
-                    let np = min(max(start - v.translation.width / step, 0), last)
-                    let before = index
-                    pos = np
-                    let now = Int(np.rounded())
-                    if now != before { Haptics.tick(); index = now }
-                }
-                .onEnded { _ in
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) { pos = nil }
-                }
-        )
-        .accessibilityLabel(L("shutter_speed"))
-        .accessibilityValue(shutterLabel(shutterSpeeds[min(max(index, 0), shutterSpeeds.count - 1)]))
-    }
 }

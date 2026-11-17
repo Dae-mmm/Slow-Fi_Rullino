@@ -77,7 +77,11 @@ struct RootView: View {
         }
         .onChange(of: account.signedIn) { _, on in if !on { store.data.devMode = false; store.data.skipLab = false } }
         .onOpenURL { url in
-            if url.pathExtension.lowercased() == "emulsion" { store.importEmulsion(url); tab = .shop }
+            switch url.pathExtension.lowercased() {
+            case "emulsion": store.importEmulsion(url); tab = .shop
+            case "rullino": store.importRoll(url); tab = .rolls
+            default: break
+            }
         }
     }
 }

@@ -16,6 +16,18 @@
 				<string>com.slowfi.emulsion</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Rullino roll</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.slowfi.rullino</string>
+			</array>
+		</dict>
 	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
@@ -38,6 +50,28 @@
 				<key>public.mime-type</key>
 				<array>
 					<string>application/x-emulsion</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.slowfi.rullino</string>
+			<key>UTTypeDescription</key>
+			<string>Rullino roll</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.content</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>rullino</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/x-rullino</string>
 				</array>
 			</dict>
 		</dict>

@@ -4,6 +4,8 @@ struct RollsScreen: View {
     @EnvironmentObject var store: Store
     @State private var open: Roll?
     @State private var toDelete: Roll?
+    @State private var shared: SharedFile?
+    @EnvironmentObject var account: Account
 
     var body: some View {
         if let o = open, let fresh = store.roll(o.id) {
@@ -48,6 +50,7 @@ struct RollsScreen: View {
             }
             .background(DottedPage())
         }
+        .sheet(item: $shared) { f in ActivityView(items: [f.url, L("share_text", f.name)]) }
         .alert(L("delete_roll_confirm"), isPresented: Binding(get: { toDelete != nil }, set: { if !$0 { toDelete = nil } })) {
             Button(L("delete"), role: .destructive) { if let r = toDelete { store.deleteRoll(r) } }
             Button(L("cancel"), role: .cancel) {}
@@ -66,7 +69,13 @@ struct RollsScreen: View {
             Text(String(format: "%02d", r.id)).font(Fonts.mono(28)).foregroundStyle(Color(hex: 0x4A4541))
             switch r.state {
             case .shelved:
-                Button(L("reload")) { store.reload(r) }.buttonStyle(.secondary)
+                // Scaricato: lo ricarichi per continuare, lo passi a qualcuno o lo mandi in sviluppo così com'è.
+                Button(L("load")) {
+                    if let a = store.activeRoll, a.shotCount == 0 { store.unloadEmptyRoll(a) }
+                    store.reload(r)
+                }.buttonStyle(.secondary)
+                Button(L("share")) { share(r) }.buttonStyle(.secondary)
+                Button(L("develop_it")) { store.rewindOut(r) }.buttonStyle(.primary)
                 Button(L("delete")) { toDelete = r }.foregroundStyle(Color(hex: 0xFF8A80))
             case .developed where store.isReady(r, now: now):
                 Button(L("negatives_arrow")) { open = r }.buttonStyle(.primary)
@@ -94,6 +103,12 @@ struct RollsScreen: View {
         .card()
     }
 
+    private func share(_ r: Roll) {
+        let from = account.profile.flatMap { $0.displayName ?? $0.username }
+        do { shared = SharedFile(url: try RollShare.export(r, store: store, from: from), name: r.emulsionName) }
+        catch { store.say("share_failed") }
+    }
+
     private func status(_ r: Roll, now: Date) -> String {
         switch r.state {
         case .loaded: return L("state_loaded")
@@ -105,6 +120,21 @@ struct RollsScreen: View {
             return L("at_lab_back_in", formatWait((r.readyAt ?? now).timeIntervalSince(now)))
         }
     }
+}
+
+struct SharedFile: Identifiable {
+    let url: URL
+    let name: String
+    var id: String { url.path }
+}
+
+/// Il foglio di condivisione di iOS (Messaggi, Mail, AirDrop, File…).
+struct ActivityView: UIViewControllerRepresentable {
+    let items: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
 
 /// Il caricatore disegnato: etichetta col nome dell'emulsione.

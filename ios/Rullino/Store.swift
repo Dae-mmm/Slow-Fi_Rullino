@@ -45,6 +45,35 @@ final class Store: ObservableObject {
 
     func emulsion(_ id: String) -> Emulsion? { emulsions.first { $0.id == id } }
 
+    /// I parametri dell'emulsione così come sono salvati (per passarla insieme a un rullino condiviso).
+    func emulsionJSON(_ id: String) -> [String: Any]? {
+        let file = root.appendingPathComponent("emulsions/\(id)/emulsion.json")
+        if let d = try? Data(contentsOf: file), let j = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any] { return j }
+        if let url = Bundle.main.url(forResource: "emulsions", withExtension: "json"),
+           let d = try? Data(contentsOf: url), let list = (try? JSONSerialization.jsonObject(with: d)) as? [[String: Any]] {
+            return list.first { $0["id"] as? String == id }
+        }
+        return nil
+    }
+
+    /* ---------------- Rullini condivisi ---------------- */
+
+    func importRoll(_ url: URL) {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        guard let bytes = try? Data(contentsOf: url) else { say("open_file_failed"); return }
+        do {
+            let r = try RollShare.importRoll(bytes, store: self)
+            say("share_received", r.emulsionName, r.shotCount)
+        } catch RollShareError.newer {
+            say("share_newer")
+        } catch RollShareError.noEmulsion {
+            say("share_no_emulsion")
+        } catch {
+            say("share_invalid")
+        }
+    }
+
     private func mergeInstalled() {
         for e in EmulsionInstaller.installed(in: root) {
             if let i = emulsions.firstIndex(where: { $0.id == e.id }) { emulsions[i] = e } else { emulsions.append(e) }
@@ -169,6 +198,12 @@ final class Store: ObservableObject {
         if r.contestId != nil { update(r.id) { $0.state = .shelved; $0.wound = false }; return }
         data.rolls.removeAll { $0.id == r.id }
         data.inventory[r.emulsionId] = (data.inventory[r.emulsionId] ?? 0) + 1
+    }
+
+    /// Scarica il rullino così com'è: se è vergine torna in magazzino, altrimenti va in Rullini.
+    func unload(_ r: Roll) {
+        if r.shotCount == 0 { unloadEmptyRoll(r); say(r.contestId == nil ? "unloaded_empty" : "shelved_msg") }
+        else { shelve(r) }
     }
 
     func shelve(_ r: Roll) {

@@ -17,6 +17,9 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
     /// Fattore di zoom che corrisponde all'obiettivo principale (24 mm circa).
     @Published private(set) var baseZoom: CGFloat = 1
     @Published private(set) var maxZoom: CGFloat = 1
+    /// Luce della scena (EV a ISO 100) letta dall'esposizione automatica del telefono: è l'esposimetro.
+    @Published private(set) var ev100: Double?
+    private var meterTimer: Timer?
 
     func start() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -71,6 +74,14 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
             self.baseZoom = base
             self.maxZoom = max(top, base)
             self.attachRotation()
+            self.meterTimer?.invalidate()
+            self.meterTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+                guard let self, let d = self.device else { return }
+                let t = CMTimeGetSeconds(d.exposureDuration)
+                let iso = Double(d.iso), n = Double(d.lensAperture)
+                guard t > 0, iso > 0, n > 0 else { return }
+                self.ev100 = VirtualCamera.ev100(seconds: t, fNumber: n, iso: iso)
+            }
         }
     }
 

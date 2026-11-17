@@ -84,6 +84,15 @@ enum VirtualCamera {
         return errorFor(ev100: ev100, filmIso: filmIso)
     }
 
+    /// Tempo giusto (secondi) a f/4 per una scena di luminosità ev100 con la pellicola caricata.
+    static func neededShutter(ev100: Double, filmIso: Int) -> Double {
+        16 / (pow(2, ev100) * Double(max(filmIso, 1)) / 100)
+    }
+
+    static func ev100(seconds t: Double, fNumber n: Double, iso: Double) -> Double {
+        log2(n * n / t) - log2(iso / 100)
+    }
+
     /// Tempo scelto sulla ghiera, diaframma fisso a f/4.
     static func manualError(ev100: Double, filmIso: Int, shutter: Double) -> Float {
         let needed = 16 / (pow(2, ev100) * Double(max(filmIso, 1)) / 100)
