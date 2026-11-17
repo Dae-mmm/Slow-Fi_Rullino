@@ -284,3 +284,16 @@
 "sk_pull" = "Pull de −1 : contraste plus doux et grain plus fin, bien si tu as surexposé.";
 "sk_normal" = "Développement normal, comme indiqué sur la boîte.";
 "shutter_speed" = "Molette des vitesses";
+"eng_armed" = "ARMÉ";
+"eng_wind" = "ARMER";
+"eng_lever" = "TIRE LE LEVIER\nPUIS RELÂCHE";
+"eng_frame" = "VUE";
+"kick_archive" = "Ton archive / %1$@";
+"kick_library" = "Filmothèque";
+"kick_system" = "Rullino / système";
+"kick_lab" = "Labo photo / Via Lenta, 12";
+"rolls_title" = "Pellicules";
+"lab_dont_wait" = "Ne fais pas attendre les souvenirs.";
+"contact_sheet" = "Planche contact %1$@";
+"developed_on" = "Développé / %1$@";
+"since" = "Rullino · depuis 1984";

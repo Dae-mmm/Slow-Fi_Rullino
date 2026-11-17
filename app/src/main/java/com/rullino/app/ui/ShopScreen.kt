@@ -123,7 +123,7 @@ fun ShopScreen(vm: AppViewModel) {
             if (toDeliver.isNotEmpty() || atLab.isNotEmpty()) item {
                 ShopPanel(stringResource(R.string.lab_title)) {
                     if (toDeliver.isNotEmpty()) {
-                        Button(onClick = { vm.deliverAll(toDeliver) }, modifier = Modifier.fillMaxWidth()) {
+                        PrimaryButton(onClick = { vm.deliverAll(toDeliver) }, modifier = Modifier.fillMaxWidth()) {
                             Text(if (toDeliver.size == 1) stringResource(R.string.develop_one) else stringResource(R.string.develop_all, toDeliver.size))
                         }
                     }
@@ -238,8 +238,8 @@ private fun ShelfRow(e: EmulsionEntity, owned: Int, canAfford: Boolean, freeToda
             Text(e.name, color = Palette.Ink)
             Text(stringResource(R.string.iso_owned, e.iso, owned), color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
         }
-        if (freeToday) Button(onClick = onFree) { Text(stringResource(R.string.free_today)) }
-        OutlinedButton(enabled = canAfford, onClick = onBuy) { Text(stringResource(R.string.buy)) }
+        if (freeToday) PrimaryButton(onClick = onFree) { Text(stringResource(R.string.free_today)) }
+        SecondaryButton(enabled = canAfford, onClick = onBuy) { Text(stringResource(R.string.buy)) }
     }
 }
 

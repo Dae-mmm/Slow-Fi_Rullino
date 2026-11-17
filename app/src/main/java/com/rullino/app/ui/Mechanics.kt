@@ -85,6 +85,28 @@ fun Modifier.brushedMetal(): Modifier = drawBehind {
     drawLine(Color(0xFF5E5A55), Offset(0f, size.height - 1f), Offset(size.width, size.height - 1f), strokeWidth = 2f)
 }
 
+/** Metallo scuro della calotta (design): righe fini orizzontali e riflessi verticali. */
+fun Modifier.darkMetal(): Modifier = drawBehind {
+    drawRect(Brush.horizontalGradient(
+        0f to Color(0xFF171615), 0.2f to Color(0xFF34312F), 0.52f to Color(0xFF1D1B1A), 0.78f to Color(0xFF34312F), 1f to Color(0xFF181716),
+    ))
+    var y = 0f
+    while (y < size.height) { drawLine(Color(0x08FFFFFF), Offset(0f, y), Offset(size.width, y), 1f); y += 3f }
+    drawLine(Color(0xFF4B4540), Offset(0f, size.height - 4f), Offset(size.width, size.height - 4f), 1f)
+    drawRect(Color(0xFF090909), Offset(0f, size.height - 3f), Size(size.width, 3f))
+}
+
+/** Corpo in similpelle punteggiata (design). */
+fun Modifier.dottedLeather(): Modifier = drawBehind {
+    drawRect(Color(0xFF171615))
+    val a = 4.dp.toPx(); val b = 5.dp.toPx()
+    var y = 0f
+    while (y < size.height) { var x = 0f; while (x < size.width) { drawCircle(Color(0xFF3C3734), 0.7f, Offset(x, y)); x += a }; y += a }
+    y = 2f
+    while (y < size.height) { var x = 2f; while (x < size.width) { drawCircle(Color(0xFF090909), 0.6f, Offset(x, y)); x += b }; y += b }
+    drawRect(Brush.verticalGradient(listOf(Color(0xAA000000), Color.Transparent), endY = 10.dp.toPx()))
+}
+
 /** Similpelle del corpo, con la sua grana. */
 fun Modifier.leatherette(): Modifier = drawBehind {
     drawRect(Color(0xFF1B1A19))
@@ -310,10 +332,10 @@ fun FrameCounter(
 ) {
     Box(
         modifier
-            .size(46.dp)
+            .size(55.dp)
             .clip(CircleShape)
-            .background(Color(0xFF0C0B0B))
-            .border(3.dp, Color(0xFF8E8983), CircleShape),
+            .background(Brush.radialGradient(listOf(Color(0xFF332E2B), Color(0xFF080707))))
+            .border(4.dp, Color(0xFF111111), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         if (rollTo != null) {
@@ -332,11 +354,10 @@ fun FrameCounter(
 @Composable
 private fun CounterDigit(n: Int, total: Int, modifier: Modifier = Modifier) {
     Text(
-        text = if (n <= 0) "S" else n.toString(),
+        text = if (n <= 0) "S" else n.toString().padStart(2, '0'),
         color = if (n >= total) Palette.Safelight else Palette.Ink,
         fontFamily = Mono,
-        fontWeight = FontWeight.Bold,
-        fontSize = 18.sp,
+        fontSize = 25.sp, fontWeight = FontWeight.Medium,
         textAlign = TextAlign.Center,
         modifier = modifier,
     )
@@ -370,8 +391,19 @@ fun FilmStrip(progress: Float, modifier: Modifier = Modifier) {
 /** Una piccola targhetta incisa sul metallo. */
 @Composable
 fun Engraving(text: String, modifier: Modifier = Modifier, size: Int = 11) {
-    Text(text, modifier = modifier, color = Color(0xFF4A4642), fontFamily = Mono, fontSize = size.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+    Text(
+        text, modifier = modifier, color = Color(0xFFD9D3CC), fontFamily = Barlow, fontSize = (size + 2).sp,
+        fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp,
+        style = androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color.Black, Offset(0f, -1f), 0f)),
+    )
 }
+
+/** IBM Plex Mono anche dentro i Canvas (testi disegnati con Paint). */
+internal val monoTypeface: android.graphics.Typeface
+    @Composable get() {
+        val ctx = androidx.compose.ui.platform.LocalContext.current
+        return remember { androidx.core.content.res.ResourcesCompat.getFont(ctx, com.rullino.app.R.font.ibm_plex_mono_medium) ?: android.graphics.Typeface.MONOSPACE }
+    }
 
 /** Stroke riutilizzabile. */
 internal fun stroke(px: Float) = Stroke(px)
@@ -483,10 +515,10 @@ fun ReleaseButton(on: Boolean, enabled: Boolean, onToggle: () -> Unit, modifier:
     val view = LocalView.current
     Box(
         modifier
-            .size(30.dp)
+            .size(32.dp)
             .clip(CircleShape)
-            .background(if (on) Palette.Safelight else Color(0xFF2A2725))
-            .border(2.dp, Color(0xFF8E8983), CircleShape)
+            .background(Brush.radialGradient(listOf(Color(0xFF4A4541), Color(0xFF161514))))
+            .border(2.dp, if (on) Color(0xFF953B23) else Color(0xFF050505), CircleShape)
             .pointerInput(enabled) {
                 awaitEachGesture {
                     awaitFirstDown()
@@ -495,7 +527,7 @@ fun ReleaseButton(on: Boolean, enabled: Boolean, onToggle: () -> Unit, modifier:
             },
         contentAlignment = Alignment.Center,
     ) {
-        Text("R", color = if (on) Color(0xFF1A1918) else Palette.Ink, fontFamily = Mono, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        Text("R", color = if (on) Palette.Safelight else Palette.Ink, fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 13.sp)
     }
 }
 
@@ -520,6 +552,7 @@ fun ZoomRing(
     enabled: Boolean = true,
 ) {
     val view = LocalView.current
+    val tf = monoTypeface
     val scope = rememberCoroutineScope()
     val anim = remember { Animatable(focal) }
     val minF = FOCAL_MARKS.first().toFloat()
@@ -535,7 +568,7 @@ fun ZoomRing(
 
     Canvas(
         modifier
-            .height(46.dp)
+            .height(40.dp)
             .pointerInput(enabled, maxF) {
                 if (!enabled) return@pointerInput
                 detectHorizontalDragGestures(
@@ -575,32 +608,24 @@ fun ZoomRing(
         val center = w / 2f
         val cur = anim.value
 
-        // Barilotto: un cilindro visto di profilo (più chiaro al centro, scuro ai bordi).
-        drawRoundRect(
-            Brush.verticalGradient(listOf(Color(0xFF151413), Color(0xFF3B3836), Color(0xFF1A1918))),
-            Offset(0f, 0f), Size(w, h), CornerRadius(6.dp.toPx()),
-        )
-        // Zigrinatura nella metà bassa: righe che scorrono con la rotazione.
-        val ridge = 5.dp.toPx()
-        val shift = (ln(cur) / ln(2f) * pxPerDoubling) % ridge
-        var x = -shift
-        while (x < w) {
-            val edge = kotlin.math.abs(x - center) / center   // ai lati le righe si stringono e si scuriscono
-            drawLine(
-                Color(0xFF0B0A0A).copy(alpha = 0.9f - 0.4f * edge),
-                Offset(x, h * 0.58f), Offset(x, h - 3.dp.toPx()),
-                strokeWidth = (2.2f - edge).dp.toPx(),
-            )
-            x += ridge
+        // Ghiera zigrinata vista di profilo (design): righe chiare e scure, luce in alto, ombra in basso.
+        val cr = CornerRadius(7.dp.toPx())
+        drawRoundRect(Color(0xFF0A0909), Offset.Zero, Size(w, h), cr)
+        val stripe = 7.dp.toPx() / 2.4f
+        var sx = -((ln(cur) / ln(2f) * pxPerDoubling) % (stripe * 3))
+        while (sx < w) {
+            drawRect(Color(0xFF171615), Offset(sx, 1f), Size(stripe * 0.9f, h - 2f))
+            drawRect(Color(0xFF35312F), Offset(sx + stripe * 0.9f, 1f), Size(stripe * 0.9f, h - 2f))
+            drawRect(Color(0xFF211F1D), Offset(sx + stripe * 1.8f, 1f), Size(stripe * 1.2f, h - 2f))
+            sx += stripe * 3
         }
-        // Fascia della scala, in alto.
-        drawRect(Color(0xFF232120), Offset(0f, 3.dp.toPx()), Size(w, h * 0.5f))
-
+        drawLine(Color(0xFF68625E), Offset(4f, 2f), Offset(w - 4f, 2f), 2f)
+        drawLine(Color(0xFF090909), Offset(4f, h - 2f), Offset(w - 4f, h - 2f), 3f)
         // Focali incise: posizione in scala logaritmica rispetto a quella corrente.
         val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
             textSize = 11.sp.toPx()
             textAlign = android.graphics.Paint.Align.CENTER
-            typeface = android.graphics.Typeface.MONOSPACE
+            typeface = tf
         }
         FOCAL_MARKS.forEach { m ->
             val mx = center + (ln(m.toFloat()) - ln(cur)) / ln(2f) * pxPerDoubling
@@ -610,8 +635,9 @@ fun ZoomRing(
             paint.color = if (!reachable) android.graphics.Color.rgb(90, 86, 82)
             else if (kotlin.math.abs(mx - center) < 6f) android.graphics.Color.rgb(255, 106, 61)
             else android.graphics.Color.argb((255 * (1f - 0.6f * d)).toInt().coerceIn(60, 255), 235, 230, 224)
-            drawContext.canvas.nativeCanvas.drawText(m.toString(), mx, h * 0.38f, paint)
-            drawLine(Color(0xFF9C958D), Offset(mx, h * 0.44f), Offset(mx, h * 0.52f), strokeWidth = 1.dp.toPx())
+            drawRoundRect(Color(0xDD1B1918), Offset(mx - 15.dp.toPx(), h * 0.2f), Size(30.dp.toPx(), h * 0.6f), CornerRadius(2.dp.toPx()))
+            drawContext.canvas.nativeCanvas.drawText(m.toString(), mx, h * 0.6f, paint)
+            if (kotlin.math.abs(mx - center) < 6f) drawLine(Palette.Safelight, Offset(mx - 10.dp.toPx(), h * 0.78f), Offset(mx + 10.dp.toPx(), h * 0.78f), 1.5f.dp.toPx())
         }
         // Tacca fissa di riferimento.
         val tri = Path().apply {
@@ -733,20 +759,30 @@ fun TopLeverShutter(
         drawCircle(Brush.radialGradient(listOf(Color(0xFF4A4542), Color(0xFF1C1A19)), center = tip, radius = 11.dp.toPx()), radius = 10.dp.toPx(), center = tip)
         if (leverEnabled) drawCircle(Palette.Safelight, radius = 3.dp.toPx(), center = tip)
 
-        // Collare del pulsante di scatto.
-        drawCircle(Color(0xFF1E1C1B), radius = 27.dp.toPx(), center = pivot)
-        drawCircle(Brush.radialGradient(listOf(Color(0xFFE9E5DF), Color(0xFF8A857F)), center = pivot, radius = 26.dp.toPx()), radius = 25.dp.toPx(), center = pivot)
-        // Pulsante: affonda e si scurisce quando lo premi.
-        val br = (15f - press.value * 1.5f).dp.toPx()
-        drawCircle(Color(0xFF5A5550), radius = br + 2.dp.toPx(), center = pivot)
+        // Pulsante di scatto (design): anello zigrinato, cupola cromata, anello arancione quando è armato.
+        val outer = 30.dp.toPx()
+        if (armed) drawCircle(Palette.Safelight.copy(alpha = 0.35f), radius = outer + 5.dp.toPx(), center = pivot)
+        drawCircle(Color(0xFF7B756F), radius = outer + 2.dp.toPx(), center = pivot)
+        drawCircle(Color(0xFF151413), radius = outer, center = pivot)
+        val ringR = outer - 4.dp.toPx()
+        for (i in 0 until 60) {
+            val t = i * Math.PI * 2 / 60
+            val cs = kotlin.math.cos(t).toFloat(); val sn = kotlin.math.sin(t).toFloat()
+            drawLine(
+                if (i % 2 == 0) Color(0xFFBAB4AF) else Color(0xFF5F5A56),
+                Offset(pivot.x + cs * (ringR - 6.dp.toPx()), pivot.y + sn * (ringR - 6.dp.toPx())),
+                Offset(pivot.x + cs * ringR, pivot.y + sn * ringR), 2.2f.dp.toPx(),
+            )
+        }
+        if (armed) drawCircle(Palette.Safelight, radius = ringR + 1.dp.toPx(), center = pivot, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx()))
+        val br = (ringR - 7.dp.toPx()) * (1f - press.value * 0.06f)
         drawCircle(
             Brush.radialGradient(
-                listOf(if (press.value > 0.5f) Color(0xFFB9B4AE) else Color(0xFFF4F1EC), Color(0xFF8F8A84)),
-                center = Offset(pivot.x - 4.dp.toPx(), pivot.y - 4.dp.toPx()), radius = br * 1.4f,
+                listOf(if (press.value > 0.5f) Color(0xFFC9C4BF) else Color(0xFFF0ECE8), Color(0xFF77726E), Color(0xFF252321)),
+                center = Offset(pivot.x - br * 0.2f, pivot.y - br * 0.4f), radius = br * 1.6f,
             ),
             radius = br, center = pivot,
         )
-        if (armed) drawCircle(Palette.Safelight, radius = br + 4.dp.toPx(), center = pivot, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()))
     }
 }
 
@@ -780,6 +816,7 @@ fun shutterLabel(s: Double?): String = when {
 @Composable
 fun ShutterDial(index: Int, onIndex: (Int) -> Unit, modifier: Modifier = Modifier) {
     val view = LocalView.current
+    val tf = monoTypeface
     val scope = rememberCoroutineScope()
     val step = with(androidx.compose.ui.platform.LocalDensity.current) { 40.dp.toPx() }
     val pos = remember { Animatable(index.toFloat()) }
@@ -788,7 +825,7 @@ fun ShutterDial(index: Int, onIndex: (Int) -> Unit, modifier: Modifier = Modifie
 
     Canvas(
         modifier
-            .height(36.dp)
+            .height(40.dp)
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
                     onDragEnd = {
@@ -809,21 +846,23 @@ fun ShutterDial(index: Int, onIndex: (Int) -> Unit, modifier: Modifier = Modifie
         val w = size.width
         val h = size.height
         val center = w / 2f
-        drawRoundRect(
-            Brush.verticalGradient(listOf(Color(0xFF151413), Color(0xFF3B3836), Color(0xFF1A1918))),
-            Offset(0f, 0f), Size(w, h), CornerRadius(5.dp.toPx()),
-        )
-        // Zigrinatura in basso che scorre con la ghiera.
-        val ridge = 5.dp.toPx()
-        var x = -((pos.value * step) % ridge)
-        while (x < w) {
-            drawLine(Color(0xFF0B0A0A).copy(alpha = 0.8f), Offset(x, h * 0.72f), Offset(x, h - 2.dp.toPx()), strokeWidth = 1.8f.dp.toPx())
-            x += ridge
+        // Ghiera zigrinata vista di profilo (design): righe chiare e scure, luce in alto, ombra in basso.
+        val cr = CornerRadius(7.dp.toPx())
+        drawRoundRect(Color(0xFF0A0909), Offset.Zero, Size(w, h), cr)
+        val stripe = 7.dp.toPx() / 2.4f
+        var sx = -((pos.value * step) % (stripe * 3))
+        while (sx < w) {
+            drawRect(Color(0xFF171615), Offset(sx, 1f), Size(stripe * 0.9f, h - 2f))
+            drawRect(Color(0xFF35312F), Offset(sx + stripe * 0.9f, 1f), Size(stripe * 0.9f, h - 2f))
+            drawRect(Color(0xFF211F1D), Offset(sx + stripe * 1.8f, 1f), Size(stripe * 1.2f, h - 2f))
+            sx += stripe * 3
         }
+        drawLine(Color(0xFF68625E), Offset(4f, 2f), Offset(w - 4f, 2f), 2f)
+        drawLine(Color(0xFF090909), Offset(4f, h - 2f), Offset(w - 4f, h - 2f), 3f)
         val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
             textSize = 11.sp.toPx()
             textAlign = android.graphics.Paint.Align.CENTER
-            typeface = android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
+            typeface = tf
         }
         SHUTTER_SPEEDS.forEachIndexed { i, s ->
             val mx = center + (i - pos.value) * step
@@ -834,13 +873,15 @@ fun ShutterDial(index: Int, onIndex: (Int) -> Unit, modifier: Modifier = Modifie
                 s == null -> android.graphics.Color.argb((255 * (1f - 0.6f * d)).toInt().coerceIn(60, 255), 255, 211, 107)
                 else -> android.graphics.Color.argb((255 * (1f - 0.6f * d)).toInt().coerceIn(60, 255), 235, 230, 224)
             }
-            drawContext.canvas.nativeCanvas.drawText(shutterMark(s), mx, h * 0.55f, paint)
+            drawRoundRect(Color(0xDD1B1918), Offset(mx - 15.dp.toPx(), h * 0.2f), Size(30.dp.toPx(), h * 0.6f), CornerRadius(2.dp.toPx()))
+            if (kotlin.math.abs(mx - center) < step / 2) drawLine(Palette.Safelight, Offset(mx - 10.dp.toPx(), h * 0.78f), Offset(mx + 10.dp.toPx(), h * 0.78f), 1.5f.dp.toPx())
+            drawContext.canvas.nativeCanvas.drawText(shutterMark(s), mx, h * 0.6f, paint)
         }
         val tri = Path().apply {
             moveTo(center - 4.dp.toPx(), 0f); lineTo(center + 4.dp.toPx(), 0f); lineTo(center, 5.dp.toPx()); close()
         }
         drawPath(tri, Palette.Safelight)
-        drawRect(Brush.horizontalGradient(listOf(Color(0xCC000000), Color.Transparent), startX = 0f, endX = w * 0.2f), Offset.Zero, Size(w * 0.2f, h))
-        drawRect(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xCC000000)), startX = w * 0.8f, endX = w), Offset(w * 0.8f, 0f), Size(w * 0.2f, h))
+        drawRect(Brush.horizontalGradient(listOf(Color(0x88000000), Color.Transparent), startX = 0f, endX = w * 0.12f), Offset.Zero, Size(w * 0.12f, h))
+        drawRect(Brush.horizontalGradient(listOf(Color.Transparent, Color(0x88000000)), startX = w * 0.88f, endX = w), Offset(w * 0.88f, 0f), Size(w * 0.12f, h))
     }
 }

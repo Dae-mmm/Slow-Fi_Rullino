@@ -285,4 +285,17 @@
     <string name="sk_pull">Pull um −1: weicherer Kontrast und feineres Korn, gut bei Überbelichtung.</string>
     <string name="sk_normal">Normale Entwicklung, wie auf der Packung.</string>
     <string name="shutter_speed">Zeitenrad</string>
+    <string name="eng_armed">GESPANNT</string>
+    <string name="eng_wind">SPANNEN</string>
+    <string name="eng_lever">HEBEL ZIEHEN\nDANN LOSLASSEN</string>
+    <string name="eng_frame">BILD</string>
+    <string name="kick_archive">Dein Archiv / %1$s</string>
+    <string name="kick_library">Filmbibliothek</string>
+    <string name="kick_system">Rullino / System</string>
+    <string name="kick_lab">Fotolabor / Via Lenta, 12</string>
+    <string name="rolls_title">Filme</string>
+    <string name="lab_dont_wait">Lass die Erinnerungen nicht warten.</string>
+    <string name="contact_sheet">Kontaktbogen %1$s</string>
+    <string name="developed_on">Entwickelt / %1$s</string>
+    <string name="since">Rullino · seit 1984</string>
 </resources>

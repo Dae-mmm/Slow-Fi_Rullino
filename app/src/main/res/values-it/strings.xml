@@ -285,4 +285,17 @@
     <string name="sk_pull">Pull di −1: contrasto più morbido e grana più fine, bene se hai sovraesposto.</string>
     <string name="sk_normal">Sviluppo normale, come dice la scatola.</string>
     <string name="shutter_speed">Ghiera dei tempi</string>
+    <string name="eng_armed">ARMATA</string>
+    <string name="eng_wind">CARICA</string>
+    <string name="eng_lever">TIRA LA LEVA\nPOI RILASCIA</string>
+    <string name="eng_frame">POSA</string>
+    <string name="kick_archive">Il tuo archivio / %1$s</string>
+    <string name="kick_library">Pellicoteca</string>
+    <string name="kick_system">Rullino / sistema</string>
+    <string name="kick_lab">Foto lab / Via Lenta, 12</string>
+    <string name="rolls_title">Rullini</string>
+    <string name="lab_dont_wait">Non far aspettare i ricordi.</string>
+    <string name="contact_sheet">Provino %1$s</string>
+    <string name="developed_on">Sviluppato / %1$s</string>
+    <string name="since">Rullino · dal 1984</string>
 </resources>

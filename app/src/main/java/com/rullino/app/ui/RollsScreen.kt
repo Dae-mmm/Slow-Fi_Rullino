@@ -100,7 +100,7 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit, onGoLab: () -> Unit)
                     if (toLab.size == 1) stringResource(R.string.to_develop_one) else stringResource(R.string.to_develop_many, toLab.size),
                     color = Palette.Ink, modifier = Modifier.weight(1f),
                 )
-                Button(onClick = onGoLab) { Text(stringResource(R.string.go_lab)) }
+                PrimaryButton(onClick = onGoLab) { Text(stringResource(R.string.go_lab)) }
             }
         }
         items(rolls, key = { it.id }) { r ->
@@ -158,8 +158,8 @@ private fun RollRow(
             fontSize = 12.sp,
         )
         if (r.state == RollState.SHELVED) {
-            OutlinedButton(enabled = cameraFree, onClick = onReload) { Text(stringResource(R.string.reload)) }
-            Button(onClick = onDevelop) { Text(stringResource(R.string.rewind)) }
+            SecondaryButton(enabled = cameraFree, onClick = onReload) { Text(stringResource(R.string.reload)) }
+            PrimaryButton(onClick = onDevelop) { Text(stringResource(R.string.rewind)) }
         }
         if (r.state == RollState.SHELVED || r.state == RollState.FINISHED || isReady) {
             TextButton(onClick = { if (confirmDelete) onDelete() else confirmDelete = true }) {
@@ -223,17 +223,17 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
                 Text(stringResource(R.string.negatives_printed, frames.size, printed), color = Palette.Muted, fontSize = 11.sp, fontFamily = Mono)
             }
             if (!selecting) {
-                OutlinedButton(onClick = { selecting = true; selected = emptySet() }) { Text(stringResource(R.string.select)) }
+                SecondaryButton(onClick = { selecting = true; selected = emptySet() }) { Text(stringResource(R.string.select)) }
                 TextButton(onClick = { if (confirmDelete) vm.deleteRoll(roll, onBack) else confirmDelete = true }) {
                     Text(if (confirmDelete) stringResource(R.string.delete_all_confirm) else stringResource(R.string.delete_roll2), color = Color(0xFFFF8A80))
                 }
             } else {
                 Text(stringResource(R.string.n_chosen, selected.size), color = Palette.Ink, fontFamily = Mono, fontSize = 12.sp)
-                Button(enabled = selected.isNotEmpty(), onClick = {
+                PrimaryButton(enabled = selected.isNotEmpty(), onClick = {
                     vm.print(roll, frames.filter { it.frame in selected })
                     selecting = false
                 }) { Text(stringResource(R.string.print)) }
-                OutlinedButton(enabled = selected.isNotEmpty(), onClick = { confirmCut = true }) { Text(stringResource(R.string.keep_only)) }
+                SecondaryButton(enabled = selected.isNotEmpty(), onClick = { confirmCut = true }) { Text(stringResource(R.string.keep_only)) }
                 TextButton(onClick = { selecting = false; selected = emptySet() }) { Text(stringResource(R.string.cancel)) }
             }
         }
@@ -285,7 +285,7 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
                 Text(stringResource(R.string.cut_text, selected.size, frames.size))
             },
             confirmButton = {
-                Button(onClick = {
+                PrimaryButton(onClick = {
                     vm.cutKeeping(roll, selected)
                     confirmCut = false; selecting = false; selected = emptySet()
                 }) { Text(stringResource(R.string.cut)) }
@@ -397,10 +397,10 @@ private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.frame_n, frame.frame) + if (frame.exposureCount > 1) stringResource(R.string.n_exposures_suffix, frame.exposureCount) else "", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
                 Spacer(Modifier.width(8.dp))
-                if (frame.printUri == null) Button(onClick = onPrint) { Text(stringResource(R.string.print)) }
+                if (frame.printUri == null) PrimaryButton(onClick = onPrint) { Text(stringResource(R.string.print)) }
                 else Text(stringResource(R.string.already_printed), color = Palette.Ink)
-                OutlinedButton(onClick = onRelease) { Text(stringResource(R.string.release)) }
-                OutlinedButton(onClick = onClose) { Text(stringResource(R.string.back_on_table)) }
+                SecondaryButton(onClick = onRelease) { Text(stringResource(R.string.release)) }
+                SecondaryButton(onClick = onClose) { Text(stringResource(R.string.back_on_table)) }
             }
         }
     }

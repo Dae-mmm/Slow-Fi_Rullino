@@ -116,7 +116,7 @@ fun ReleasesDialog(vm: AppViewModel, roll: RollEntity, initialFrame: Int, onClos
                                 color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp,
                             )
                         }
-                        OutlinedButton(onClick = {
+                        SecondaryButton(onClick = {
                             vm.exportReleasePdf(roll, r) { uri ->
                                 val intent = Intent(Intent.ACTION_VIEW).apply {
                                     setDataAndType(uri, "application/pdf")
@@ -129,7 +129,7 @@ fun ReleasesDialog(vm: AppViewModel, roll: RollEntity, initialFrame: Int, onClos
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { adding = true }) { Text(stringResource(R.string.new_release)) }
+                    PrimaryButton(onClick = { adding = true }) { Text(stringResource(R.string.new_release)) }
                     TextButton(onClick = onClose) { Text(stringResource(R.string.close)) }
                 }
                 Text(
@@ -216,7 +216,7 @@ private fun ReleaseForm(vm: AppViewModel, onCancel: () -> Unit, onSave: (Release
             TextButton(onClick = { strokes.clear() }) { Text(stringResource(R.string.clear_sig)) }
             Spacer1()
             TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
-            Button(enabled = valid, onClick = {
+            PrimaryButton(enabled = valid, onClick = {
                 vm.settings.setPhotographerName(photographer)
                 val bmp = renderSignature(strokes, padSize)
                 onSave(

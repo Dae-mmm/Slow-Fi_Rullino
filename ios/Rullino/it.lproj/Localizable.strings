@@ -284,3 +284,16 @@
 "sk_pull" = "Pull di −1: contrasto più morbido e grana più fine, bene se hai sovraesposto.";
 "sk_normal" = "Sviluppo normale, come dice la scatola.";
 "shutter_speed" = "Ghiera dei tempi";
+"eng_armed" = "ARMATA";
+"eng_wind" = "CARICA";
+"eng_lever" = "TIRA LA LEVA\nPOI RILASCIA";
+"eng_frame" = "POSA";
+"kick_archive" = "Il tuo archivio / %1$@";
+"kick_library" = "Pellicoteca";
+"kick_system" = "Rullino / sistema";
+"kick_lab" = "Foto lab / Via Lenta, 12";
+"rolls_title" = "Rullini";
+"lab_dont_wait" = "Non far aspettare i ricordi.";
+"contact_sheet" = "Provino %1$@";
+"developed_on" = "Sviluppato / %1$@";
+"since" = "Rullino · dal 1984";

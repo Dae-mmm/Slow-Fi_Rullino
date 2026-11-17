@@ -284,3 +284,16 @@
 "sk_pull" = "Pull um −1: weicherer Kontrast und feineres Korn, gut bei Überbelichtung.";
 "sk_normal" = "Normale Entwicklung, wie auf der Packung.";
 "shutter_speed" = "Zeitenrad";
+"eng_armed" = "GESPANNT";
+"eng_wind" = "SPANNEN";
+"eng_lever" = "HEBEL ZIEHEN\nDANN LOSLASSEN";
+"eng_frame" = "BILD";
+"kick_archive" = "Dein Archiv / %1$@";
+"kick_library" = "Filmbibliothek";
+"kick_system" = "Rullino / System";
+"kick_lab" = "Fotolabor / Via Lenta, 12";
+"rolls_title" = "Filme";
+"lab_dont_wait" = "Lass die Erinnerungen nicht warten.";
+"contact_sheet" = "Kontaktbogen %1$@";
+"developed_on" = "Entwickelt / %1$@";
+"since" = "Rullino · seit 1984";

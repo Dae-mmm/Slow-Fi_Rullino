@@ -285,4 +285,17 @@
     <string name="sk_pull">Pull de −1: contraste más suave y grano más fino, bien si sobreexpusiste.</string>
     <string name="sk_normal">Revelado normal, como dice la caja.</string>
     <string name="shutter_speed">Dial de velocidades</string>
+    <string name="eng_armed">ARMADA</string>
+    <string name="eng_wind">CARGA</string>
+    <string name="eng_lever">TIRA DE LA PALANCA\nY SUELTA</string>
+    <string name="eng_frame">FOTO</string>
+    <string name="kick_archive">Tu archivo / %1$s</string>
+    <string name="kick_library">Filmoteca</string>
+    <string name="kick_system">Rullino / sistema</string>
+    <string name="kick_lab">Laboratorio / Via Lenta, 12</string>
+    <string name="rolls_title">Carretes</string>
+    <string name="lab_dont_wait">No hagas esperar a los recuerdos.</string>
+    <string name="contact_sheet">Hoja de contactos %1$s</string>
+    <string name="developed_on">Revelado / %1$s</string>
+    <string name="since">Rullino · desde 1984</string>
 </resources>

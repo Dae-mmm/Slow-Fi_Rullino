@@ -284,3 +284,16 @@
 "sk_pull" = "Pull de −1: contraste más suave y grano más fino, bien si sobreexpusiste.";
 "sk_normal" = "Revelado normal, como dice la caja.";
 "shutter_speed" = "Dial de velocidades";
+"eng_armed" = "ARMADA";
+"eng_wind" = "CARGA";
+"eng_lever" = "TIRA DE LA PALANCA\nY SUELTA";
+"eng_frame" = "FOTO";
+"kick_archive" = "Tu archivo / %1$@";
+"kick_library" = "Filmoteca";
+"kick_system" = "Rullino / sistema";
+"kick_lab" = "Laboratorio / Via Lenta, 12";
+"rolls_title" = "Carretes";
+"lab_dont_wait" = "No hagas esperar a los recuerdos.";
+"contact_sheet" = "Hoja de contactos %1$@";
+"developed_on" = "Revelado / %1$@";
+"since" = "Rullino · desde 1984";

@@ -90,7 +90,7 @@ private fun MyEmulsions(vm: AppViewModel, onLoaded: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.n_emulsions, list.size), color = Palette.Muted, modifier = Modifier.weight(1f))
-            if (devMode) OutlinedButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.import_emulsion)) }
+            if (devMode) SecondaryButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.import_emulsion)) }
         }
         if (list.isEmpty()) {
             Text(
@@ -219,9 +219,9 @@ private fun EmulsionDetail(e: EmulsionEntity, vm: AppViewModel, onLoaded: () -> 
             if (owned == 0) {
                 // Si può rimediare subito, senza passare dal negozio.
                 if (freeToday) {
-                    Button(onClick = { vm.claimDaily(e) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.get_free_today)) }
+                    PrimaryButton(onClick = { vm.claimDaily(e) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.get_free_today)) }
                 }
-                OutlinedButton(
+                SecondaryButton(
                     enabled = coins >= Shop.ROLL_PRICE,
                     onClick = { vm.buy(e) },
                     modifier = Modifier.fillMaxWidth(),
@@ -237,7 +237,7 @@ private fun EmulsionDetail(e: EmulsionEntity, vm: AppViewModel, onLoaded: () -> 
             if (busyRoll) {
                 Text(stringResource(R.string.roll_in_camera_busy), color = Palette.Muted, fontSize = 13.sp)
             }
-            Button(
+            PrimaryButton(
                 enabled = !busyRoll && owned > 0,
                 onClick = { vm.loadRoll(e, exposures, onLoaded) },
                 modifier = Modifier.fillMaxWidth(),
@@ -264,7 +264,7 @@ private fun Store(vm: AppViewModel) {
         }
         is StoreState.Error -> Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(s.message, color = Palette.Ink)
-            OutlinedButton(onClick = { vm.refreshStore() }) { Text(stringResource(R.string.retry)) }
+            SecondaryButton(onClick = { vm.refreshStore() }) { Text(stringResource(R.string.retry)) }
         }
         is StoreState.Ready -> {
             if (s.items.isEmpty()) {
@@ -312,14 +312,14 @@ private fun StoreRow(item: CatalogItem, isInstalled: Boolean, needsUpdate: Boole
         }
         when {
             isDownloading -> Text(stringResource(R.string.downloading), color = Palette.Muted, fontSize = 12.sp)
-            needsUpdate -> Button(onClick = onGet) { Text(stringResource(R.string.update)) }
+            needsUpdate -> PrimaryButton(onClick = onGet) { Text(stringResource(R.string.update)) }
             isInstalled -> Text(stringResource(R.string.installed), color = Palette.Muted, fontSize = 12.sp)
             isDownloading -> Text(stringResource(R.string.downloading), color = Palette.Muted, fontSize = 12.sp)
             item.priceCents > 0 -> Column(horizontalAlignment = Alignment.End) {
                 Text(price(item.priceCents), color = Palette.Ink, fontFamily = Mono)
                 Text(stringResource(R.string.soon), color = Palette.Muted, fontSize = 11.sp)
             }
-            else -> Button(onClick = onGet) { Text(stringResource(R.string.free)) }
+            else -> PrimaryButton(onClick = onGet) { Text(stringResource(R.string.free)) }
         }
     }
 }

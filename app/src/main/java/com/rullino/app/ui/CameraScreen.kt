@@ -1,5 +1,9 @@
 package com.rullino.app.ui
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import kotlinx.coroutines.delay
@@ -225,51 +229,58 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
     }
 
     Column(Modifier.fillMaxSize().background(Palette.Body)) {
-        // ---- Calotta superiore: riavvolgimento, targhetta, contafotogrammi, scatto, leva ----
+        // ---- Calotta (design): ISO e pellicola, targhetta e ghiera dei tempi, contapose ----
         Row(
-            Modifier.fillMaxWidth().height(72.dp).brushedMetal().padding(horizontal = 18.dp),
-            verticalAlignment = Alignment.Bottom,
+            Modifier.fillMaxWidth().height(78.dp).darkMetal().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.padding(start = 14.dp, bottom = 12.dp)) {
-                Engraving("ISO ${r?.iso ?: "—"}", size = 10)
-                Engraving(r?.emulsionName?.uppercase() ?: stringResource(R.string.engr_empty), size = 10)
+            Column(Modifier.width(150.dp)) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("ISO", color = Palette.Muted, fontSize = 11.sp, letterSpacing = 1.4.sp, modifier = Modifier.padding(end = 4.dp, bottom = 4.dp))
+                    Text(r?.iso?.toString() ?: "—", color = Palette.Ink, fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 25.sp)
+                }
+                Text(
+                    (r?.emulsionName ?: stringResource(R.string.engr_empty)).uppercase(),
+                    color = Palette.Muted, fontSize = 10.sp, letterSpacing = 1.2.sp, maxLines = 1,
+                )
             }
-            Spacer(Modifier.weight(1f))
-            // Ghiera dei tempi al centro della calotta, con la targhetta sopra.
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(bottom = 6.dp)) {
-                Engraving("RULLINO", size = 11)
+            Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Engraving(
+                    "RULLINO", size = 11,
+                    modifier = Modifier.padding(top = 4.dp).border(1.dp, Color(0xFF4B4642)).padding(horizontal = 10.dp),
+                )
                 ShutterDial(
                     index = shutterIndex,
                     onIndex = { vm.settings.setShutterIndex(it) },
-                    modifier = Modifier.width(300.dp).padding(top = 2.dp).semantics { contentDescription = shutterCd },
+                    modifier = Modifier.widthIn(max = 440.dp).fillMaxWidth(0.95f).padding(top = 3.dp).semantics { contentDescription = shutterCd },
                 )
             }
-            Spacer(Modifier.weight(1f))
-            FrameCounter(
-                number = rollPair?.first ?: counter,
-                total = r?.exposures ?: 36,
-                modifier = Modifier.padding(bottom = 10.dp),
-                rollTo = rollPair?.second?.first,
-                rollProgress = rollPair?.second?.second ?: 0f,
-            )
-            Spacer(Modifier.width(18.dp))
+            Row(Modifier.width(150.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.eng_frame), color = Palette.Ink, fontSize = 10.sp, letterSpacing = 1.sp, modifier = Modifier.padding(end = 8.dp))
+                FrameCounter(
+                    number = rollPair?.first ?: counter,
+                    total = r?.exposures ?: 36,
+                    rollTo = rollPair?.second?.first,
+                    rollProgress = rollPair?.second?.second ?: 0f,
+                )
+            }
         }
 
         // ---- Corpo: similpelle, finestrella, mirino ----
-        Row(Modifier.fillMaxWidth().weight(1f).leatherette().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().weight(1f).dottedLeather().padding(horizontal = 15.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(
                 Modifier.width(150.dp).fillMaxHeight(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
             // Manovella di riavvolgimento vista dall'alto, con il pulsante R.
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ReleaseButton(
                     on = releaseOn,
                     enabled = r != null && r.shotCount > 0,
                     onToggle = { releaseOn = !releaseOn; unloadTurns = 0 },
                 )
-                Engraving("REWIND", size = 10)
+                EngravedNote("REWIND")
             }
             RewindCrank(
                 enabled = r != null && r.shotCount > 0 && releaseOn,
@@ -287,7 +298,7 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                         vm.rewindFrame(roll)
                     } else view.reject()
                 },
-                diameter = 112.dp,
+                diameter = 100.dp,
                 modifier = Modifier.semantics { contentDescription = crankLabel },
             )
             Column(
@@ -305,14 +316,14 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                         r.cursor <= r.shotCount -> stringResource(R.string.cam_frame_exposed, r.cursor, r.shotCount, r.exposures)
                         else -> stringResource(R.string.cam_count, r.shotCount, r.exposures)
                     },
-                    color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp, textAlign = TextAlign.Center,
+                    color = Palette.Muted, fontSize = 12.sp, letterSpacing = 0.6.sp, textAlign = TextAlign.Center,
                 )
                 if (r != null && r.state == RollState.LOADED && r.shotCount == 0) {
                     TextButton(onClick = { vm.unloadEmptyRoll(r) }) { Text(stringResource(R.string.cam_change_roll), color = Palette.Muted, fontSize = 12.sp) }
                 } else if (r != null && r.state == RollState.LOADED) {
-                    OutlinedButton(onClick = { showBack = true }) { Text(stringResource(R.string.cam_open_back), fontSize = 12.sp) }
+                    SecondaryButton(onClick = { showBack = true }) { Text(stringResource(R.string.cam_open_back), fontSize = 12.sp) }
                     if (r.shotCount > 0) {
-                        OutlinedButton(onClick = { releaseFrame = (lastShot ?: (r.cursor - 1)).coerceIn(1, r.shotCount) }) {
+                        SecondaryButton(onClick = { releaseFrame = (lastShot ?: (r.cursor - 1)).coerceIn(1, r.shotCount) }) {
                             Text(stringResource(R.string.cam_releases), fontSize = 12.sp)
                         }
                     }
@@ -327,9 +338,11 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                     Modifier
                         .weight(1f)
                         .aspectRatio(1.5f, matchHeightConstraintsFirst = true)
+                        .clip(RoundedCornerShape(15.dp))
+                        .background(Color(0xFF080808))
+                        .padding(10.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(Color.Black)
-                        .border(3.dp, Color(0xFF0B0A0A), RoundedCornerShape(6.dp)),
+                        .background(Color(0xFF090909)),
                     contentAlignment = Alignment.Center,
                 ) {
                     ViewfinderContent(
@@ -343,14 +356,9 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                         doubleExposure = doubleOnNext > 0,
                     )
                     if (showFocal && camera != null) {
-                        Text(
-                            shutterLabel(SHUTTER_SPEEDS.getOrNull(shutterIndex)) + " · ${focal.roundToInt()} mm",
-                            color = Palette.Ink, fontFamily = Mono, fontSize = 14.sp,
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(10.dp)
-                                .background(Color(0xAA000000), RoundedCornerShape(4.dp))
-                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        ViewfinderBadge(
+                            shutterLabel(SHUTTER_SPEEDS.getOrNull(shutterIndex)) + " · ${focal.roundToInt()} MM",
+                            Modifier.align(Alignment.TopEnd).padding(8.dp),
                         )
                     }
                     val chipFrame = lastShot
@@ -367,15 +375,16 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                         )
                     }
+                    ViewfinderGlass()
                     Box(Modifier.fillMaxSize().alpha(blackout.value).background(Color.Black))
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 ZoomRing(
                     focal = focal,
                     maxFocal = maxFocal,
                     onFocal = { focal = it },
                     enabled = camera != null,
-                    modifier = Modifier.fillMaxWidth(0.8f),
+                    modifier = Modifier.widthIn(max = 350.dp).fillMaxWidth(0.9f),
                 )
             }
             // Leva di carica e pulsante di scatto visti dall'alto, sotto il pollice destro.
@@ -384,6 +393,10 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                EngravedNote(
+                    if (armed && !busy) stringResource(R.string.eng_armed) else stringResource(R.string.eng_wind),
+                    color = if (armed && !busy) Palette.Safelight else Color(0xFF756E68),
+                )
                 TopLeverShutter(
                     armed = armed && !busy,
                     leverEnabled = canWind,
@@ -391,9 +404,36 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                     onAdvanced = { r?.let { vm.wind(it) } },
                     onProgress = { windProgress = it },
                 )
+                EngravedNote(stringResource(R.string.eng_lever), modifier = Modifier.padding(top = 2.dp))
             }
         }
     }
+}
+
+/** Vetro del mirino: vignettatura, righe sottili e angoli di messa a fuoco (design). */
+@Composable
+private fun ViewfinderGlass() {
+    Canvas(Modifier.fillMaxSize()) {
+        drawRect(Brush.radialGradient(0.55f to Color.Transparent, 1f to Color(0x88000000), radius = size.maxDimension * 0.62f))
+        var y = 0f
+        while (y < size.height) { drawRect(Color(0x0B000000), Offset(0f, y + 3f), androidx.compose.ui.geometry.Size(size.width, 1f)); y += 4f }
+        val c = Color(0xAAF2EEE9); val l = 20.dp.toPx(); val sw = 1.dp.toPx()
+        val tl = Offset(size.width * 0.28f, size.height * 0.28f)
+        drawLine(c, tl, tl + Offset(l, 0f), sw); drawLine(c, tl, tl + Offset(0f, l), sw)
+        val br = Offset(size.width * 0.72f, size.height * 0.72f)
+        drawLine(c, br, br - Offset(l, 0f), sw); drawLine(c, br, br - Offset(0f, l), sw)
+    }
+}
+
+/** Etichetta nel mirino: mono piccolo, fondo scuro, bordo sottile. */
+@Composable
+internal fun ViewfinderBadge(text: String, modifier: Modifier = Modifier, color: Color = Color(0xFFF2EEE9), round: Boolean = false) {
+    val shape = RoundedCornerShape(if (round) 20.dp else 2.dp)
+    Text(
+        text, color = color, fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 10.sp,
+        modifier = modifier.clip(shape).background(Color(0xAA0C0B0A)).border(1.dp, Color(0x558D847A), shape)
+            .padding(horizontal = 7.dp, vertical = 4.dp),
+    )
 }
 
 @Composable
@@ -409,10 +449,10 @@ private fun BoxScope.ViewfinderContent(
 ) {
     when {
         !hasPermission -> CenterNote(stringResource(R.string.cam_need_permission)) {
-            OutlinedButton(onClick = onAskPermission) { Text(stringResource(R.string.grant)) }
+            SecondaryButton(onClick = onAskPermission) { Text(stringResource(R.string.grant)) }
         }
         r == null -> CenterNote(stringResource(R.string.cam_empty)) {
-            Button(onClick = onPickEmulsion) { Text(stringResource(R.string.choose_roll)) }
+            PrimaryButton(onClick = onPickEmulsion) { Text(stringResource(R.string.choose_roll)) }
         }
         r.isAtEnd -> CenterNote(stringResource(R.string.cam_finished_note, r.exposures)) {}
         r.state == RollState.DEVELOPING -> CenterNote(stringResource(R.string.developing)) {
@@ -426,28 +466,17 @@ private fun BoxScope.ViewfinderContent(
         else -> {
             Viewfinder(onReady = onReady)
             if (doubleExposure) {
-                Text(
+                ViewfinderBadge(
                     stringResource(R.string.double_exposure_badge, r.cursor),
-                    color = Palette.Safelight,
-                    fontFamily = Mono,
-                    fontSize = 11.sp,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(10.dp)
-                        .background(Color(0xAA000000), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                    Modifier.align(Alignment.TopStart).padding(8.dp),
+                    color = Color(0xFFFFC0AA),
                 )
             }
             if (!r.wound) {
-                Text(
+                ViewfinderBadge(
                     if (r.shotCount == 0) stringResource(R.string.wind_first) else stringResource(R.string.wind),
-                    color = Palette.Ink,
-                    fontSize = 13.sp,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(10.dp)
-                        .background(Color(0xAA000000), RoundedCornerShape(6.dp))
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                    Modifier.align(Alignment.BottomCenter).padding(8.dp),
+                    round = true,
                 )
             }
         }
@@ -470,8 +499,8 @@ private fun BackDialog(
         title = { Text(roll.emulsionName + " · " + stringResource(R.string.cam_count, roll.shotCount, roll.exposures)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = onRewindOut) { Text(stringResource(R.string.rewind_all_out)) }
-                OutlinedButton(onClick = onShelve) { Text(stringResource(R.string.shelve_long)) }
+                SecondaryButton(onClick = onRewindOut) { Text(stringResource(R.string.rewind_all_out)) }
+                SecondaryButton(onClick = onShelve) { Text(stringResource(R.string.shelve_long)) }
                 Text(
                     stringResource(R.string.back_help),
                     color = Palette.Muted, fontSize = 12.sp,
@@ -519,7 +548,7 @@ private fun RollPickerDialog(vm: AppViewModel, onDismiss: () -> Unit, onGoShop: 
                                 Text(e.name, color = Palette.Ink)
                                 Text(stringResource(R.string.iso_owned, e.iso, inventory[e.id] ?: 0), color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
                             }
-                            Button(onClick = { vm.loadRoll(e, exposures, onDismiss) }) { Text(stringResource(R.string.load)) }
+                            PrimaryButton(onClick = { vm.loadRoll(e, exposures, onDismiss) }) { Text(stringResource(R.string.load)) }
                         }
                     }
                 }
@@ -543,25 +572,22 @@ private fun CenterNote(text: String, action: @Composable () -> Unit) {
 private fun BackWindow(emulsion: EmulsionEntity?, roll: RollEntity?) {
     Box(
         Modifier
-            .size(width = 132.dp, height = 70.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF0C0B0B))
-            .border(2.dp, Palette.Line, RoundedCornerShape(8.dp)),
+            .size(width = 120.dp, height = 56.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(Color(0xFF211F1D))
+            .border(3.dp, Color(0xFF080808), RoundedCornerShape(4.dp)),
         contentAlignment = Alignment.Center,
     ) {
         val canister = emulsion?.canisterFile?.let { File(emulsion.dir, it) }
         when {
-            roll == null -> Text(stringResource(R.string.window_empty), color = Palette.Muted, fontSize = 12.sp, fontFamily = Mono)
+            roll == null -> Text(stringResource(R.string.window_empty).uppercase(), color = Color(0xFF625D57), fontSize = 10.sp, fontFamily = Mono)
             canister != null && canister.exists() -> AsyncImage(
                 model = canister,
                 contentDescription = stringResource(R.string.roll_cd, roll.emulsionName),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
-            else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(roll.emulsionName.uppercase(), color = Palette.Ink, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                Text("ISO ${roll.iso} · ${roll.exposures}", color = Palette.Safelight, fontSize = 10.sp, fontFamily = Mono)
-            }
+            else -> Cartridge(roll.emulsionName, roll.iso, roll.isBw, roll.exposures, scale = 0.62f)
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.rullino.app.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import com.rullino.app.data.Role
 import com.rullino.app.data.Features
 import androidx.compose.ui.graphics.Color
@@ -51,16 +53,24 @@ fun OptionsScreen(vm: AppViewModel) {
     val labTime by settings.labTime.collectAsState()
     val devMode by settings.developerMode.collectAsState()
     val skipWait by settings.skipLabWait.collectAsState()
-    val view = LocalView.current
-    var taps by remember { mutableIntStateOf(0) }
+    val profile by vm.account.profile.collectAsState()
+    // La modalità sviluppatore la vedono solo gli account OP.
+    val isOp = profile?.role == Role.OP
 
     Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        Modifier.fillMaxSize().dottedPage().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        PageHeading(stringResource(R.string.kick_system), stringResource(R.string.tab_options)) {
+            Text(stringResource(R.string.version, BuildConfig.VERSION_NAME).uppercase(), color = Palette.Muted, fontFamily = Mono, fontSize = 10.sp)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         AccountSection(vm)
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-        Section(stringResource(R.string.lab_title)) {
+        Section(stringResource(R.string.lab_title), "02") {
             Text(stringResource(R.string.opt_lab_text), color = Palette.Muted, fontSize = 13.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 LabTime.entries.forEach { t ->
@@ -70,7 +80,7 @@ fun OptionsScreen(vm: AppViewModel) {
             Text(stringResource(R.string.opt_lab_note), color = Palette.Muted, fontSize = 12.sp)
         }
 
-        Section(stringResource(R.string.release)) {
+        Section(stringResource(R.string.release), "03") {
             var editing by remember { mutableStateOf(false) }
             var text by remember { mutableStateOf("") }
             Text(
@@ -81,65 +91,40 @@ fun OptionsScreen(vm: AppViewModel) {
                 Text(stringResource(R.string.placeholders_list, "{{NOME}} {{COGNOME}} {{CONTATTO}} {{FOTOGRAFO}} {{DATA}} {{LUOGO}} {{RULLINO}} {{POSA}} {{USI_ESTERNI}} {{TUTORE}}"), color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
                 OutlinedTextField(text, { text = it }, modifier = Modifier.fillMaxWidth().height(260.dp), textStyle = androidx.compose.ui.text.TextStyle(fontFamily = Mono, fontSize = 12.sp, color = Palette.Ink))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { vm.releaseTemplate.save(text); editing = false; vm.say(R.string.release_saved_text) }) { Text(stringResource(R.string.save)) }
+                    PrimaryButton(onClick = { vm.releaseTemplate.save(text); editing = false; vm.say(R.string.release_saved_text) }) { Text(stringResource(R.string.save)) }
                     TextButton(onClick = { editing = false }) { Text(stringResource(R.string.cancel)) }
                 }
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { text = vm.releaseTemplate.text(); editing = true }) { Text(stringResource(R.string.edit_text)) }
+                    SecondaryButton(onClick = { text = vm.releaseTemplate.text(); editing = true }) { Text(stringResource(R.string.edit_text)) }
                     if (vm.releaseTemplate.isCustom) TextButton(onClick = { vm.releaseTemplate.reset(); vm.say(R.string.placeholder_restored) }) { Text(stringResource(R.string.restore_placeholder)) }
                 }
             }
         }
 
-        if (devMode) {
-            Section(stringResource(R.string.dev_mode)) {
+        if (isOp) {
+            Section(stringResource(R.string.dev_mode), "04") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(R.string.skip_lab), color = Palette.Ink)
                         Text(stringResource(R.string.skip_lab_note), color = Palette.Muted, fontSize = 12.sp)
                     }
                     Switch(
+                        enabled = devMode,
                         checked = skipWait,
                         onCheckedChange = { settings.setSkipLabWait(it) },
                         colors = SwitchDefaults.colors(checkedTrackColor = Palette.Safelight),
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { vm.shop.earn(100); vm.say(R.string.plus100) }) { Text(stringResource(R.string.plus100)) }
-                    OutlinedButton(onClick = { vm.shop.resetDaily(); vm.say(R.string.daily_again_msg) }) { Text(stringResource(R.string.daily_again)) }
-                }
-                TextButton(onClick = { settings.setDeveloperMode(false); taps = 0; vm.say(R.string.dev_off_msg) }) {
-                    Text(stringResource(R.string.dev_off), color = Palette.Muted)
+                    SecondaryButton(onClick = { vm.shop.earn(100); vm.say(R.string.plus100) }) { Text(stringResource(R.string.plus100)) }
+                    SecondaryButton(onClick = { vm.shop.resetDaily(); vm.say(R.string.daily_again_msg) }) { Text(stringResource(R.string.daily_again)) }
                 }
             }
+        }
+        }
         }
 
-        // Come su Android: 7 tocchi sulla versione attivano la modalità sviluppatore.
-        // Il conto alla rovescia sta accanto alla scritta, così niente la copre mentre tocchi.
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                stringResource(R.string.version, BuildConfig.VERSION_NAME),
-                color = Palette.Muted,
-                fontFamily = Mono,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .clickable {
-                        if (devMode) return@clickable
-                        taps++
-                        view.tick()
-                        if (taps >= 7) { settings.setDeveloperMode(true); view.confirm() }
-                    }
-                    .padding(horizontal = 6.dp, vertical = 10.dp),
-            )
-            val hint = when {
-                devMode -> stringResource(R.string.you_are_dev)
-                taps >= 3 -> stringResource(R.string.taps_left, 7 - taps)
-                else -> null
-            }
-            if (hint != null) Text(hint, color = Palette.Safelight, fontFamily = Mono, fontSize = 12.sp)
-        }
     }
 }
 
@@ -154,7 +139,7 @@ private fun AccountSection(vm: AppViewModel) {
     var code by remember { mutableStateOf("") }
     var confirmDelete by remember { mutableStateOf(false) }
 
-    Section(stringResource(R.string.account)) {
+    Section(stringResource(R.string.account), "01") {
         if (!signedIn) {
             Text(stringResource(R.string.acc_intro), color = Palette.Muted, fontSize = 13.sp)
             if (pending == null) {
@@ -164,7 +149,7 @@ private fun AccountSection(vm: AppViewModel) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
                 )
-                Button(onClick = { vm.sendCode(email) }, enabled = !busy && "@" in email) {
+                PrimaryButton(onClick = { vm.sendCode(email) }, enabled = !busy && "@" in email) {
                     Text(stringResource(R.string.acc_send_code))
                 }
             } else {
@@ -176,7 +161,7 @@ private fun AccountSection(vm: AppViewModel) {
                     modifier = Modifier.widthIn(max = 240.dp),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { vm.verifyCode(code) }, enabled = !busy && code.length >= 6) { Text(stringResource(R.string.acc_sign_in)) }
+                    PrimaryButton(onClick = { vm.verifyCode(code) }, enabled = !busy && code.length >= 6) { Text(stringResource(R.string.acc_sign_in)) }
                     TextButton(onClick = { code = ""; vm.cancelCode() }) { Text(stringResource(R.string.acc_change_email)) }
                 }
             }
@@ -204,11 +189,11 @@ private fun AccountSection(vm: AppViewModel) {
                     label = { Text(stringResource(R.string.acc_display_name)) },
                     modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
                 )
-                Button(onClick = { vm.saveProfile(username, shown) }, enabled = !busy) { Text(stringResource(R.string.save)) }
+                PrimaryButton(onClick = { vm.saveProfile(username, shown) }, enabled = !busy) { Text(stringResource(R.string.save)) }
                 if (p.role != Role.USER) Text(stringResource(R.string.acc_judge_area), color = Palette.Muted, fontSize = 12.sp)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { vm.signOut() }, enabled = !busy) { Text(stringResource(R.string.acc_sign_out)) }
+                SecondaryButton(onClick = { vm.signOut() }, enabled = !busy) { Text(stringResource(R.string.acc_sign_out)) }
                 TextButton(onClick = { confirmDelete = true }, enabled = !busy) {
                     Text(stringResource(R.string.acc_delete), color = Color(0xFFFF8A80))
                 }
@@ -231,17 +216,16 @@ private fun AccountSection(vm: AppViewModel) {
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
+private fun Section(title: String, number: String, content: @Composable () -> Unit) {
     Column(
-        Modifier
-            .widthIn(max = 640.dp)
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(Palette.Plate)
-            .padding(16.dp),
+        Modifier.fillMaxWidth().card().padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(title.uppercase(), color = Palette.Ink, fontWeight = FontWeight.Bold, fontFamily = Mono, fontSize = 12.sp, letterSpacing = 2.sp)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(number, color = Color(0xFF5A544F), fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 22.sp)
+            Text(title, color = Palette.Ink, fontWeight = FontWeight.SemiBold, fontSize = 22.sp)
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Palette.Line))
         content()
     }
 }

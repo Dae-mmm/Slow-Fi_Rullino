@@ -286,4 +286,17 @@
     <string name="sk_pull">Pull −1: softer contrast and finer grain, good if you overexposed.</string>
     <string name="sk_normal">Normal development, as the box says.</string>
     <string name="shutter_speed">Shutter speed dial</string>
+    <string name="eng_armed">ARMED</string>
+    <string name="eng_wind">WIND</string>
+    <string name="eng_lever">PULL THE LEVER\nTHEN RELEASE</string>
+    <string name="eng_frame">FRAME</string>
+    <string name="kick_archive">Your archive / %1$s</string>
+    <string name="kick_library">Film library</string>
+    <string name="kick_system">Rullino / system</string>
+    <string name="kick_lab">Photo lab / Via Lenta, 12</string>
+    <string name="rolls_title">Film rolls</string>
+    <string name="lab_dont_wait">Don\'t let the memories wait.</string>
+    <string name="contact_sheet">Contact sheet %1$s</string>
+    <string name="developed_on">Developed / %1$s</string>
+    <string name="since">Rullino · since 1984</string>
 </resources>

@@ -1,5 +1,20 @@
 package com.rullino.app.ui
 
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Column
 import com.rullino.app.R
 import androidx.compose.ui.res.stringResource
 import androidx.annotation.StringRes
@@ -37,8 +52,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 enum class AppTab(@StringRes val label: Int, val glyph: String) {
     CAMERA(R.string.tab_camera, "◉"),
-    ROLLS(R.string.tab_rolls, "▦"),
-    SHOP(R.string.tab_shop, "☖"),
+    ROLLS(R.string.tab_rolls, "▣"),
+    SHOP(R.string.tab_shop, "⌂"),
     EMULSIONS(R.string.tab_emulsions, "▥"),
     OPTIONS(R.string.tab_options, "⚙"),
 }
@@ -60,6 +75,15 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
             onImportHandled()
         }
     }
+    // Modalità sviluppatore solo per gli account OP: si accende e si spegne col ruolo.
+    val profile by vm.account.profile.collectAsState()
+    val signedIn by vm.account.signedIn.collectAsState()
+    LaunchedEffect(profile, signedIn) {
+        val p = profile
+        if (!signedIn) vm.settings.setDeveloperMode(false)
+        else if (p != null) vm.settings.setDeveloperMode(p.role == com.rullino.app.data.Role.OP)
+    }
+
     val deleteRequest by vm.galleryDeleteRequest.collectAsState()
     val deleteLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
         vm.galleryDeleteRequest.value = null
@@ -85,27 +109,9 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
                 .padding(padding)
                 // Tiene il menù lontano dal foro della fotocamera e dagli angoli arrotondati dello schermo.
                 .windowInsetsPadding(WindowInsets.displayCutout)
-                .padding(horizontal = 8.dp),
+                .padding(end = 8.dp),
         ) {
-            NavigationRail(containerColor = Palette.Plate) {
-                Spacer(Modifier.weight(1f))
-                AppTab.entries.forEach { t ->
-                    NavigationRailItem(
-                        selected = tab == t,
-                        onClick = { tab = t },
-                        icon = { Text(t.glyph, fontSize = 20.sp) },
-                        label = { Text(stringResource(t.label), fontSize = 11.sp) },
-                        colors = NavigationRailItemDefaults.colors(
-                            selectedIconColor = Palette.Safelight,
-                            selectedTextColor = Palette.Ink,
-                            unselectedIconColor = Palette.Muted,
-                            unselectedTextColor = Palette.Muted,
-                            indicatorColor = Palette.PlateHi,
-                        ),
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-            }
+            NavRail(tab, onTab = { tab = it })
             Box(Modifier.fillMaxSize()) {
                 when (tab) {
                     AppTab.CAMERA -> CameraScreen(vm, onGoShop = { tab = AppTab.SHOP }, onOpenRolls = { tab = AppTab.ROLLS })
@@ -116,5 +122,43 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
                 }
             }
         }
+    }
+}
+
+/** Fascia di navigazione a sinistra, come nel design: marchio S—F e voci con segno e nome. */
+@Composable
+private fun NavRail(tab: AppTab, onTab: (AppTab) -> Unit) {
+    Column(
+        Modifier
+            .width(68.dp)
+            .fillMaxHeight()
+            .background(Palette.Deep)
+            .drawBehind { drawLine(Color(0xFF282422), Offset(size.width, 0f), Offset(size.width, size.height), 1f) }
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            "S—F", color = Palette.Muted, fontFamily = Mono, fontWeight = FontWeight.SemiBold, fontSize = 10.sp, letterSpacing = 2.sp,
+            modifier = Modifier.border(1.dp, Color(0xFF514A46)).padding(horizontal = 6.dp, vertical = 4.dp),
+        )
+        Spacer(Modifier.weight(1f))
+        AppTab.entries.forEach { t ->
+            val on = tab == t
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .height(58.dp)
+                    .background(if (on) Brush.horizontalGradient(listOf(Color(0xFF291711), Color.Transparent)) else Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent)))
+                    .drawBehind { if (on) drawRect(Palette.Safelight, size = androidx.compose.ui.geometry.Size(2.dp.toPx(), size.height)) }
+                    .clickable { onTab(t) },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                val c = if (on) Palette.Safelight else Palette.Faint
+                Text(t.glyph, color = c, fontFamily = Mono, fontSize = 20.sp, lineHeight = 22.sp)
+                Text(stringResource(t.label).uppercase(), color = c, fontSize = 9.sp, letterSpacing = 0.8.sp, maxLines = 1)
+            }
+        }
+        Spacer(Modifier.weight(1f))
     }
 }
