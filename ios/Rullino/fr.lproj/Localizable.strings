@@ -54,7 +54,7 @@
 "back_rolls" = "‹ Pellicules";
 "negatives_printed" = "%1$@ négatifs · %2$@ tirés";
 "select" = "Sélectionner";
-"delete_all_confirm" = "Confirmer : tout supprimer";
+"delete_all_confirm" = "Confirmer : supprimer la pellicule (les tirages restent dans la galerie)";
 "delete_roll2" = "Supprimer la pellicule";
 "n_chosen" = "%1$@ choisies";
 "print" = "Tirer";
@@ -63,7 +63,7 @@
 "hint_select" = "Touche les vues à tirer ou à garder";
 "hint_loupe" = "Touche une vue pour la regarder à la loupe";
 "cut_title" = "Découpe des négatifs";
-"cut_text" = "Tu gardes %1$@ vues sur %2$@. Les autres sont supprimées définitivement, y compris leurs tirages dans la galerie.";
+"cut_text" = "Tu gardes %1$@ vues sur %2$@. Les autres sont supprimées définitivement ; les tirages déjà dans la galerie restent.";
 "cut" = "✂ Couper";
 "negative_n" = "Négatif %1$@";
 "printed_badge" = "TIRÉE";

@@ -55,7 +55,7 @@
     <string name="back_rolls">‹ Pellicules</string>
     <string name="negatives_printed">%1$s négatifs · %2$s tirés</string>
     <string name="select">Sélectionner</string>
-    <string name="delete_all_confirm">Confirmer : tout supprimer</string>
+    <string name="delete_all_confirm">Confirmer : supprimer la pellicule (les tirages restent dans la galerie)</string>
     <string name="delete_roll2">Supprimer la pellicule</string>
     <string name="n_chosen">%1$s choisies</string>
     <string name="print">Tirer</string>
@@ -64,7 +64,7 @@
     <string name="hint_select">Touche les vues à tirer ou à garder</string>
     <string name="hint_loupe">Touche une vue pour la regarder à la loupe</string>
     <string name="cut_title">Découpe des négatifs</string>
-    <string name="cut_text">Tu gardes %1$s vues sur %2$s. Les autres sont supprimées définitivement, y compris leurs tirages dans la galerie.</string>
+    <string name="cut_text">Tu gardes %1$s vues sur %2$s. Les autres sont supprimées définitivement ; les tirages déjà dans la galerie restent.</string>
     <string name="cut">✂ Couper</string>
     <string name="negative_n">Négatif %1$s</string>
     <string name="printed_badge">TIRÉE</string>

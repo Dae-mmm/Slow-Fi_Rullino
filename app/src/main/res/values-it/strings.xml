@@ -55,7 +55,7 @@
     <string name="back_rolls">‹ Rullini</string>
     <string name="negatives_printed">%1$s negativi · %2$s stampati</string>
     <string name="select">Seleziona</string>
-    <string name="delete_all_confirm">Conferma: elimina tutto</string>
+    <string name="delete_all_confirm">Conferma: elimina il rullino (le stampe restano in galleria)</string>
     <string name="delete_roll2">Elimina rullino</string>
     <string name="n_chosen">%1$s scelti</string>
     <string name="print">Stampa</string>
@@ -64,7 +64,7 @@
     <string name="hint_select">Tocca i fotogrammi da stampare o da tenere</string>
     <string name="hint_loupe">Tocca un fotogramma per guardarlo con il lentino</string>
     <string name="cut_title">Taglio dei negativi</string>
-    <string name="cut_text">Tieni %1$s fotogrammi su %2$s. Gli altri vengono eliminati per sempre, anche le loro stampe in galleria.</string>
+    <string name="cut_text">Tieni %1$s fotogrammi su %2$s. Gli altri vengono eliminati per sempre; le stampe già in galleria restano.</string>
     <string name="cut">✂ Taglia</string>
     <string name="negative_n">Negativo %1$s</string>
     <string name="printed_badge">STAMPATA</string>

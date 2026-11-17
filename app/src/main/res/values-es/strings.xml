@@ -55,7 +55,7 @@
     <string name="back_rolls">‹ Carretes</string>
     <string name="negatives_printed">%1$s negativos · %2$s impresos</string>
     <string name="select">Seleccionar</string>
-    <string name="delete_all_confirm">Confirmar: borrar todo</string>
+    <string name="delete_all_confirm">Confirmar: borrar el carrete (las copias se quedan en la galería)</string>
     <string name="delete_roll2">Borrar carrete</string>
     <string name="n_chosen">%1$s elegidas</string>
     <string name="print">Imprimir</string>
@@ -64,7 +64,7 @@
     <string name="hint_select">Toca las fotos que quieres imprimir o conservar</string>
     <string name="hint_loupe">Toca una foto para verla con el cuentahílos</string>
     <string name="cut_title">Corte de los negativos</string>
-    <string name="cut_text">Conservas %1$s fotos de %2$s. Las demás se borran para siempre, también sus copias en la galería.</string>
+    <string name="cut_text">Conservas %1$s fotos de %2$s. Las demás se borran para siempre; las copias ya en la galería se quedan.</string>
     <string name="cut">✂ Cortar</string>
     <string name="negative_n">Negativo %1$s</string>
     <string name="printed_badge">IMPRESA</string>

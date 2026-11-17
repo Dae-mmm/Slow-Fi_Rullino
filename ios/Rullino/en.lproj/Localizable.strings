@@ -54,7 +54,7 @@
 "back_rolls" = "‹ Rolls";
 "negatives_printed" = "%1$@ negatives · %2$@ printed";
 "select" = "Select";
-"delete_all_confirm" = "Confirm: delete everything";
+"delete_all_confirm" = "Confirm: delete the roll (prints stay in the gallery)";
 "delete_roll2" = "Delete roll";
 "n_chosen" = "%1$@ chosen";
 "print" = "Print";
@@ -63,7 +63,7 @@
 "hint_select" = "Tap the frames to print or keep";
 "hint_loupe" = "Tap a frame to look at it with the loupe";
 "cut_title" = "Cutting the negatives";
-"cut_text" = "Keep %1$@ frames out of %2$@. The others are deleted forever, including their prints in the gallery.";
+"cut_text" = "Keep %1$@ frames out of %2$@. The others are deleted forever; prints already in the gallery stay.";
 "cut" = "✂ Cut";
 "negative_n" = "Negative %1$@";
 "printed_badge" = "PRINTED";

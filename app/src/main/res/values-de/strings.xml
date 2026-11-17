@@ -55,7 +55,7 @@
     <string name="back_rolls">‹ Filme</string>
     <string name="negatives_printed">%1$s Negative · %2$s abgezogen</string>
     <string name="select">Auswählen</string>
-    <string name="delete_all_confirm">Bestätigen: alles löschen</string>
+    <string name="delete_all_confirm">Bestätigen: Film löschen (Abzüge bleiben in der Galerie)</string>
     <string name="delete_roll2">Film löschen</string>
     <string name="n_chosen">%1$s gewählt</string>
     <string name="print">Abziehen</string>
@@ -64,7 +64,7 @@
     <string name="hint_select">Tippe die Bilder an, die du abziehen oder behalten willst</string>
     <string name="hint_loupe">Tippe ein Bild an, um es mit der Lupe anzusehen</string>
     <string name="cut_title">Negative schneiden</string>
-    <string name="cut_text">Du behältst %1$s von %2$s Bildern. Die anderen werden endgültig gelöscht, auch ihre Abzüge in der Galerie.</string>
+    <string name="cut_text">Du behältst %1$s von %2$s Bildern. Die anderen werden endgültig gelöscht; Abzüge in der Galerie bleiben.</string>
     <string name="cut">✂ Schneiden</string>
     <string name="negative_n">Negativ %1$s</string>
     <string name="printed_badge">ABGEZOGEN</string>

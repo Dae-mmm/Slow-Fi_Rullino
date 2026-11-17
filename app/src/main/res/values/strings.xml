@@ -56,7 +56,7 @@
     <string name="back_rolls">‹ Rolls</string>
     <string name="negatives_printed">%1$s negatives · %2$s printed</string>
     <string name="select">Select</string>
-    <string name="delete_all_confirm">Confirm: delete everything</string>
+    <string name="delete_all_confirm">Confirm: delete the roll (prints stay in the gallery)</string>
     <string name="delete_roll2">Delete roll</string>
     <string name="n_chosen">%1$s chosen</string>
     <string name="print">Print</string>
@@ -65,7 +65,7 @@
     <string name="hint_select">Tap the frames to print or keep</string>
     <string name="hint_loupe">Tap a frame to look at it with the loupe</string>
     <string name="cut_title">Cutting the negatives</string>
-    <string name="cut_text">Keep %1$s frames out of %2$s. The others are deleted forever, including their prints in the gallery.</string>
+    <string name="cut_text">Keep %1$s frames out of %2$s. The others are deleted forever; prints already in the gallery stay.</string>
     <string name="cut">✂ Cut</string>
     <string name="negative_n">Negative %1$s</string>
     <string name="printed_badge">PRINTED</string>

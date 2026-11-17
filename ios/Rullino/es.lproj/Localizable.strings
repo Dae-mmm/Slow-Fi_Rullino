@@ -54,7 +54,7 @@
 "back_rolls" = "‹ Carretes";
 "negatives_printed" = "%1$@ negativos · %2$@ impresos";
 "select" = "Seleccionar";
-"delete_all_confirm" = "Confirmar: borrar todo";
+"delete_all_confirm" = "Confirmar: borrar el carrete (las copias se quedan en la galería)";
 "delete_roll2" = "Borrar carrete";
 "n_chosen" = "%1$@ elegidas";
 "print" = "Imprimir";
@@ -63,7 +63,7 @@
 "hint_select" = "Toca las fotos que quieres imprimir o conservar";
 "hint_loupe" = "Toca una foto para verla con el cuentahílos";
 "cut_title" = "Corte de los negativos";
-"cut_text" = "Conservas %1$@ fotos de %2$@. Las demás se borran para siempre, también sus copias en la galería.";
+"cut_text" = "Conservas %1$@ fotos de %2$@. Las demás se borran para siempre; las copias ya en la galería se quedan.";
 "cut" = "✂ Cortar";
 "negative_n" = "Negativo %1$@";
 "printed_badge" = "IMPRESA";

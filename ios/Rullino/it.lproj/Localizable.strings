@@ -54,7 +54,7 @@
 "back_rolls" = "‹ Rullini";
 "negatives_printed" = "%1$@ negativi · %2$@ stampati";
 "select" = "Seleziona";
-"delete_all_confirm" = "Conferma: elimina tutto";
+"delete_all_confirm" = "Conferma: elimina il rullino (le stampe restano in galleria)";
 "delete_roll2" = "Elimina rullino";
 "n_chosen" = "%1$@ scelti";
 "print" = "Stampa";
@@ -63,7 +63,7 @@
 "hint_select" = "Tocca i fotogrammi da stampare o da tenere";
 "hint_loupe" = "Tocca un fotogramma per guardarlo con il lentino";
 "cut_title" = "Taglio dei negativi";
-"cut_text" = "Tieni %1$@ fotogrammi su %2$@. Gli altri vengono eliminati per sempre, anche le loro stampe in galleria.";
+"cut_text" = "Tieni %1$@ fotogrammi su %2$@. Gli altri vengono eliminati per sempre; le stampe già in galleria restano.";
 "cut" = "✂ Taglia";
 "negative_n" = "Negativo %1$@";
 "printed_badge" = "STAMPATA";

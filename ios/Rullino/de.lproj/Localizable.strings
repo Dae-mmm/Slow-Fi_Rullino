@@ -54,7 +54,7 @@
 "back_rolls" = "‹ Filme";
 "negatives_printed" = "%1$@ Negative · %2$@ abgezogen";
 "select" = "Auswählen";
-"delete_all_confirm" = "Bestätigen: alles löschen";
+"delete_all_confirm" = "Bestätigen: Film löschen (Abzüge bleiben in der Galerie)";
 "delete_roll2" = "Film löschen";
 "n_chosen" = "%1$@ gewählt";
 "print" = "Abziehen";
@@ -63,7 +63,7 @@
 "hint_select" = "Tippe die Bilder an, die du abziehen oder behalten willst";
 "hint_loupe" = "Tippe ein Bild an, um es mit der Lupe anzusehen";
 "cut_title" = "Negative schneiden";
-"cut_text" = "Du behältst %1$@ von %2$@ Bildern. Die anderen werden endgültig gelöscht, auch ihre Abzüge in der Galerie.";
+"cut_text" = "Du behältst %1$@ von %2$@ Bildern. Die anderen werden endgültig gelöscht; Abzüge in der Galerie bleiben.";
 "cut" = "✂ Schneiden";
 "negative_n" = "Negativ %1$@";
 "printed_badge" = "ABGEZOGEN";

@@ -188,7 +188,7 @@ class Repository(private val context: Context, val db: AppDb) {
      */
     suspend fun deleteRoll(rollId: Long): List<Uri> = withContext(Dispatchers.IO) {
         val r = db.rolls().get(rollId) ?: return@withContext emptyList()
-        val prints = db.frames().forRoll(rollId).mapNotNull { it.printUri?.let(Uri::parse) }
+        // Le stampe in galleria restano: sono già "uscite" dall'app, come le foto vere.
         db.withTransaction {
             db.frames().deleteRoll(rollId)
             db.exposures().deleteRoll(rollId)
@@ -196,19 +196,18 @@ class Repository(private val context: Context, val db: AppDb) {
             db.rolls().delete(r)
         }
         rollDir(rollId).deleteRecursively()
-        deleteFromGallery(prints)
+        emptyList<Uri>()
     }
 
     /**
      * Taglio dei negativi: tiene solo i fotogrammi in [keep], il resto del rullino
-     * (negativi, pose e stampe) viene eliminato.
+     * (negativi e pose) viene eliminato. Le stampe in galleria restano.
      */
     suspend fun cutKeeping(rollId: Long, keep: Set<Int>): List<Uri> = withContext(Dispatchers.IO) {
         val frames = db.frames().forRoll(rollId)
         val drop = frames.filter { it.frame !in keep }
         if (drop.size == frames.size) return@withContext deleteRoll(rollId)
         val exposures = db.exposures().forRoll(rollId)
-        val prints = drop.mapNotNull { it.printUri?.let(Uri::parse) }
         for (f in drop) {
             File(f.developedPath).delete()
             exposures.filter { it.frame == f.frame }.forEach { File(it.rawPath).delete() }
@@ -217,20 +216,7 @@ class Repository(private val context: Context, val db: AppDb) {
             db.releases().forRoll(rollId).filter { it.frame == f.frame }.forEach { File(it.signaturePath).delete() }
             db.releases().deleteFrame(rollId, f.frame)
         }
-        deleteFromGallery(prints)
-    }
-
-    /** Prova a cancellare dalla galleria; restituisce quelle che richiedono la conferma dell'utente. */
-    private fun deleteFromGallery(uris: List<Uri>): List<Uri> {
-        val needConfirm = ArrayList<Uri>()
-        for (u in uris) {
-            try {
-                context.contentResolver.delete(u, null, null)
-            } catch (e: SecurityException) {
-                needConfirm += u
-            }
-        }
-        return needConfirm
+        emptyList<Uri>()
     }
 
     /* ---------------- Liberatorie ---------------- */
