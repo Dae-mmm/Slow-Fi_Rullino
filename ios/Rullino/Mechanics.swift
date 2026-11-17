@@ -353,3 +353,72 @@ struct ZoomRing: View {
         .frame(height: 30)
     }
 }
+
+/* ---------------- Ghiera dei tempi, vista di profilo ---------------- */
+
+/// nil = automatico (A), poi da 1/1000 a 1 secondo.
+let shutterSpeeds: [Double?] = [nil, 1.0 / 1000, 1.0 / 500, 1.0 / 250, 1.0 / 125, 1.0 / 60, 1.0 / 30, 1.0 / 15, 1.0 / 8, 1.0 / 4, 1.0 / 2, 1]
+
+func shutterMark(_ s: Double?) -> String {
+    guard let s else { return "A" }
+    return s >= 1 ? "1" : "\(Int((1 / s).rounded()))"
+}
+
+func shutterLabel(_ s: Double?) -> String {
+    guard let s else { return "A" }
+    return s >= 1 ? "1 s" : "1/\(Int((1 / s).rounded()))"
+}
+
+/// Si trascina a destra o a sinistra e scatta da un tempo all'altro.
+struct ShutterDial: View {
+    @Binding var index: Int
+    @State private var pos: CGFloat?
+    @State private var start: CGFloat = 0
+    private let step: CGFloat = 40
+
+    var body: some View {
+        let last = CGFloat(shutterSpeeds.count - 1)
+        let p = pos ?? CGFloat(index)
+        Canvas { ctx, size in
+            ctx.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 5),
+                     with: .linearGradient(Gradient(colors: [Color(hex: 0x151413), Color(hex: 0x3B3836), Color(hex: 0x1A1918)]),
+                                           startPoint: .zero, endPoint: CGPoint(x: 0, y: size.height)))
+            var x = -(p * step).truncatingRemainder(dividingBy: 5)
+            while x < size.width {
+                var l = Path(); l.move(to: CGPoint(x: x, y: size.height * 0.72)); l.addLine(to: CGPoint(x: x, y: size.height - 2))
+                ctx.stroke(l, with: .color(Color(hex: 0x0B0A0A, alpha: 0.8)), lineWidth: 1.8)
+                x += 5
+            }
+            let center = size.width / 2
+            for (i, s) in shutterSpeeds.enumerated() {
+                let mx = center + (CGFloat(i) - p) * step
+                guard mx > -20, mx < size.width + 20 else { continue }
+                let near = abs(mx - center) < step / 2
+                let fade = 1 - 0.6 * abs(mx - center) / center
+                let color: Color = near ? Palette.safelight : (s == nil ? Color(hex: 0xFFD36B) : Palette.ink)
+                ctx.draw(Text(shutterMark(s)).font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundColor(color.opacity(near ? 1 : fade)),
+                         at: CGPoint(x: mx, y: size.height * 0.42))
+            }
+            var tri = Path()
+            tri.move(to: CGPoint(x: center - 4, y: 0)); tri.addLine(to: CGPoint(x: center + 4, y: 0)); tri.addLine(to: CGPoint(x: center, y: 5)); tri.closeSubpath()
+            ctx.fill(tri, with: .color(Palette.safelight))
+        }
+        .frame(height: 34)
+        .gesture(
+            DragGesture(minimumDistance: 2)
+                .onChanged { v in
+                    if pos == nil { start = CGFloat(index); pos = start }
+                    let np = min(max(start - v.translation.width / step, 0), last)
+                    let before = index
+                    pos = np
+                    let now = Int(np.rounded())
+                    if now != before { Haptics.tick(); index = now }
+                }
+                .onEnded { _ in
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) { pos = nil }
+                }
+        )
+        .accessibilityLabel(L("shutter_speed"))
+        .accessibilityValue(shutterLabel(shutterSpeeds[min(max(index, 0), shutterSpeeds.count - 1)]))
+    }
+}

@@ -283,3 +283,4 @@
 "sk_push" = "Push de +%1$@ ? D'accord : plus de contraste et de grain, et les photos sombres reviennent.";
 "sk_pull" = "Pull de −1 : contraste plus doux et grain plus fin, bien si tu as surexposé.";
 "sk_normal" = "Développement normal, comme indiqué sur la boîte.";
+"shutter_speed" = "Molette des vitesses";

@@ -283,3 +283,4 @@
 "sk_push" = "Push um +%1$@? Gern: mehr Kontrast und Korn, und die dunklen Bilder kommen zurück.";
 "sk_pull" = "Pull um −1: weicherer Kontrast und feineres Korn, gut bei Überbelichtung.";
 "sk_normal" = "Normale Entwicklung, wie auf der Packung.";
+"shutter_speed" = "Zeitenrad";

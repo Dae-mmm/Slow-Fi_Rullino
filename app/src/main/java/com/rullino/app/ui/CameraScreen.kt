@@ -110,6 +110,8 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
     var windProgress by remember { mutableFloatStateOf(0f) }
     var camera by remember { mutableStateOf<Camera?>(null) }
     var focal by remember { mutableFloatStateOf(24f) }
+    val shutterIndex by vm.settings.shutterIndex.collectAsState()
+    val shutterCd = stringResource(R.string.shutter_speed)
     var showFocal by remember { mutableStateOf(false) }
     // 24 mm equivalenti = zoom 1× sul principale; il massimo dipende dal telefono (al più 135 mm).
     val maxRatio by produceState(1f, camera) {
@@ -153,7 +155,7 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
         val options = ImageCapture.OutputFileOptions.Builder(file).build()
         cap.takePicture(options, ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                vm.recordShot(current.id, file)
+                vm.recordShot(current.id, file, SHUTTER_SPEEDS.getOrNull(shutterIndex))
                 lastShot = current.cursor
                 lastShotAt = System.currentTimeMillis()
                 busy = false
@@ -233,7 +235,15 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                 Engraving(r?.emulsionName?.uppercase() ?: stringResource(R.string.engr_empty), size = 10)
             }
             Spacer(Modifier.weight(1f))
-            Engraving("RULLINO", modifier = Modifier.padding(bottom = 22.dp), size = 15)
+            // Ghiera dei tempi al centro della calotta, con la targhetta sopra.
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(bottom = 6.dp)) {
+                Engraving("RULLINO", size = 11)
+                ShutterDial(
+                    index = shutterIndex,
+                    onIndex = { vm.settings.setShutterIndex(it) },
+                    modifier = Modifier.width(300.dp).padding(top = 2.dp).semantics { contentDescription = shutterCd },
+                )
+            }
             Spacer(Modifier.weight(1f))
             FrameCounter(
                 number = rollPair?.first ?: counter,
@@ -334,7 +344,7 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                     )
                     if (showFocal && camera != null) {
                         Text(
-                            "${focal.roundToInt()} mm",
+                            shutterLabel(SHUTTER_SPEEDS.getOrNull(shutterIndex)) + " · ${focal.roundToInt()} mm",
                             color = Palette.Ink, fontFamily = Mono, fontSize = 14.sp,
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)

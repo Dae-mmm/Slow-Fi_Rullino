@@ -42,6 +42,11 @@ class Settings(context: Context) {
 
     fun setSkipLabWait(on: Boolean) { _skipLabWait.value = on; prefs.edit().putBoolean("skipLabWait", on).apply() }
 
+    private val _shutterIndex = MutableStateFlow(prefs.getInt("shutterIndex", 0))
+    /** Posizione della ghiera dei tempi (0 = automatico). */
+    val shutterIndex: StateFlow<Int> = _shutterIndex
+    fun setShutterIndex(i: Int) { _shutterIndex.value = i; prefs.edit().putInt("shutterIndex", i).apply() }
+
     /** Attesa effettiva per un nuovo rullino. */
     fun currentWaitMillis(): Long = if (_developerMode.value && _skipLabWait.value) 0L else _labTime.value.millis
 

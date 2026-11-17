@@ -154,6 +154,7 @@ struct Exposure: Codable, Equatable {
     var rollId: Int
     var frame: Int
     var file: String        // relativo alla cartella dei dati
+    var shutter: Double?    // tempo scelto sulla ghiera, in secondi; nil = automatico
 }
 
 struct DevFrame: Codable, Equatable {
@@ -187,6 +188,8 @@ struct AppData: Codable, Equatable {
     var skipLab = false
     /// Versione del catalogo installata per ogni emulsione scaricata.
     var catalogVersions: [String: Int] = [:]
+    /// Posizione della ghiera dei tempi (0 = automatico).
+    var shutterIndex = 0
 
     init() {}
 
@@ -197,6 +200,7 @@ struct AppData: Codable, Equatable {
         inventory = c.v(.inventory, [:]); coins = c.v(.coins, 0); lastDaily = c.v(.lastDaily, "")
         nextId = c.v(.nextId, 1); labTime = c.v(.labTime, .day); devMode = c.v(.devMode, false)
         skipLab = c.v(.skipLab, false); catalogVersions = c.v(.catalogVersions, [:])
+        shutterIndex = c.v(.shutterIndex, 0)
     }
 }
 

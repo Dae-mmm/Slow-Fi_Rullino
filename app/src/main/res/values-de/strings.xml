@@ -284,4 +284,5 @@
     <string name="sk_push">Push um +%1$s? Gern: mehr Kontrast und Korn, und die dunklen Bilder kommen zurück.</string>
     <string name="sk_pull">Pull um −1: weicherer Kontrast und feineres Korn, gut bei Überbelichtung.</string>
     <string name="sk_normal">Normale Entwicklung, wie auf der Packung.</string>
+    <string name="shutter_speed">Zeitenrad</string>
 </resources>

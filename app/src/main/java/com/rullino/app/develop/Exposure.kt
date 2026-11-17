@@ -13,7 +13,7 @@ data class DevelopLook(
 )
 
 /**
- * La compatta virtuale: esposizione automatica, ma con limiti veri
+ * La macchina virtuale. In automatico (A) è una compatta con limiti veri
  * (diaframma f/2.8–f/16, tempi 1/30–1/500). Il telefono fa da esposimetro: dai dati EXIF
  * dello scatto ricava la luce della scena e calcola di quanti stop sbaglia la compatta
  * con la sensibilità della pellicola caricata.
@@ -27,15 +27,24 @@ object VirtualCamera {
     private fun log2(x: Double) = ln(x) / ln(2.0)
 
     /** Errore in stop (positivo = sovraesposto), o null se lo scatto non ha i dati. */
-    fun errorStops(file: File, filmIso: Int): Float? = runCatching {
+    /** Diaframma fisso quando si usa la ghiera dei tempi. */
+    private const val MANUAL_APERTURE = 4.0
+
+    fun errorStops(file: File, filmIso: Int, shutter: Double? = null): Float? = runCatching {
         val exif = ExifInterface(file.path)
         val t = exif.getAttributeDouble(ExifInterface.TAG_EXPOSURE_TIME, -1.0)
         val n = exif.getAttributeDouble(ExifInterface.TAG_F_NUMBER, -1.0)
         val iso = exif.getAttributeInt(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY, -1)
         if (t <= 0 || n <= 0 || iso <= 0) return null
         val ev100 = log2(n * n / t) - log2(iso / 100.0)
-        errorFor(ev100, filmIso)
+        if (shutter != null) manualError(ev100, filmIso, shutter) else errorFor(ev100, filmIso)
     }.getOrNull()
+
+    /** Tempo scelto a mano, diaframma fisso a f/4. */
+    fun manualError(ev100: Double, filmIso: Int, shutter: Double): Float {
+        val needed = MANUAL_APERTURE * MANUAL_APERTURE / (2.0.pow(ev100) * filmIso.coerceAtLeast(1) / 100.0)
+        return log2(shutter / needed).toFloat().coerceIn(-5f, 5f)
+    }
 
     /** Errore della compatta per una scena di luminosità [ev100] con una pellicola da [filmIso]. */
     fun errorFor(ev100: Double, filmIso: Int): Float {

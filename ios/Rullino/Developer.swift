@@ -9,7 +9,7 @@ enum Developer {
     static let maxSide = 3000
 
     static func develop(files: [URL], params: FilmParams, iso: Int, out: URL, seed: Float,
-                        push: Int = 0, slide: Bool = false) -> Bool {
+                        push: Int = 0, slide: Bool = false, shutters: [Double?] = []) -> Bool {
         let layers = files.compactMap { load($0) }
         guard let first = layers.first else { return false }
         let ratio: CGFloat = first.width >= first.height ? 1.5 : 1 / 1.5
@@ -31,7 +31,9 @@ enum Developer {
             ctx.draw(img, in: CGRect(x: (CGFloat(W) - dw) / 2, y: (CGFloat(H) - dh) / 2, width: dw, height: dh))
         }
         guard let px = ctx.data else { return false }
-        let errors = files.compactMap { VirtualCamera.errorStops($0, filmIso: iso) }
+        let errors = files.enumerated().compactMap { i, u in
+            VirtualCamera.errorStops(u, filmIso: iso, shutter: i < shutters.count ? shutters[i] : nil)
+        }
         let err = errors.isEmpty ? 0 : errors.reduce(0, +) / Float(errors.count)
         let u = FilmRenderer.uniforms(params, iso: iso, w: W, h: H, seed: seed, exposureError: err, push: push, slide: slide)
         guard FilmRenderer.shared.render(pixels: px, width: W, height: H, uniforms: u),
@@ -69,7 +71,7 @@ enum Developer {
 /// Il telefono fa da esposimetro: dai dati EXIF ricava la luce della scena e calcola di quanti
 /// stop sbaglia la compatta con la sensibilità della pellicola caricata.
 enum VirtualCamera {
-    static func errorStops(_ url: URL, filmIso: Int) -> Float? {
+    static func errorStops(_ url: URL, filmIso: Int, shutter: Double? = nil) -> Float? {
         guard let src = CGImageSourceCreateWithURL(url as CFURL, nil),
               let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any],
               let exif = props[kCGImagePropertyExifDictionary] as? [CFString: Any],
@@ -78,7 +80,14 @@ enum VirtualCamera {
               let isos = exif[kCGImagePropertyExifISOSpeedRatings] as? [Double], let iso = isos.first, iso > 0
         else { return nil }
         let ev100 = log2(n * n / t) - log2(iso / 100)
+        if let shutter { return manualError(ev100: ev100, filmIso: filmIso, shutter: shutter) }
         return errorFor(ev100: ev100, filmIso: filmIso)
+    }
+
+    /// Tempo scelto sulla ghiera, diaframma fisso a f/4.
+    static func manualError(ev100: Double, filmIso: Int, shutter: Double) -> Float {
+        let needed = 16 / (pow(2, ev100) * Double(max(filmIso, 1)) / 100)
+        return Float(min(max(log2(shutter / needed), -5), 5))
     }
 
     static func errorFor(ev100: Double, filmIso: Int) -> Float {

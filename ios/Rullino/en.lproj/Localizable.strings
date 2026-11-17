@@ -283,3 +283,4 @@
 "sk_push" = "Push +%1$@? Sure: more contrast and grain, and the dark shots come back.";
 "sk_pull" = "Pull −1: softer contrast and finer grain, good if you overexposed.";
 "sk_normal" = "Normal development, as the box says.";
+"shutter_speed" = "Shutter speed dial";

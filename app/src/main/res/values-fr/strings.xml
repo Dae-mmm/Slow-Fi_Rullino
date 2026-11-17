@@ -284,4 +284,5 @@
     <string name="sk_push">Push de +%1$s ? D\'accord : plus de contraste et de grain, et les photos sombres reviennent.</string>
     <string name="sk_pull">Pull de −1 : contraste plus doux et grain plus fin, bien si tu as surexposé.</string>
     <string name="sk_normal">Développement normal, comme indiqué sur la boîte.</string>
+    <string name="shutter_speed">Molette des vitesses</string>
 </resources>

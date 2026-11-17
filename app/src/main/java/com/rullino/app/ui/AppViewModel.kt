@@ -200,7 +200,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun recordShot(rollId: Long, file: File) = app.appScope.launch { repo.recordShot(rollId, file) }
+    fun recordShot(rollId: Long, file: File, shutter: Double? = null) = app.appScope.launch { repo.recordShot(rollId, file, shutter) }
 
 
 

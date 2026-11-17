@@ -102,7 +102,12 @@ struct CameraScreen: View {
             }
             .padding(.bottom, 12)
             Spacer()
-            Engraving(text: "RULLINO", size: 15).padding(.bottom, 22)
+            // Ghiera dei tempi al centro della calotta, con la targhetta sopra.
+            VStack(spacing: 2) {
+                Engraving(text: "RULLINO", size: 11)
+                ShutterDial(index: $store.data.shutterIndex).frame(width: 300)
+            }
+            .padding(.bottom, 6)
             Spacer()
             FrameCounter(
                 number: rolling?.0 ?? counter,
@@ -232,7 +237,7 @@ struct CameraScreen: View {
                         badge(L("double_exposure_badge", r.cursor))
                     }
                     Spacer()
-                    Text("\(Int(focal.rounded())) mm").font(.system(size: 13, design: .monospaced)).foregroundStyle(Palette.ink)
+                    Text(shutterLabel(shutterSpeeds[min(max(store.data.shutterIndex, 0), shutterSpeeds.count - 1)]) + " · \(Int(focal.rounded())) mm").font(.system(size: 13, design: .monospaced)).foregroundStyle(Palette.ink)
                         .padding(.horizontal, 8).padding(.vertical, 3).background(Color.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 4))
                 }
                 Spacer()
@@ -266,8 +271,9 @@ struct CameraScreen: View {
         blackout = true
         withAnimation(.easeOut(duration: 0.22).delay(0.05)) { blackout = false }
         let (url, rel) = store.rawFile(for: current)
+        let shutter = shutterSpeeds[min(max(store.data.shutterIndex, 0), shutterSpeeds.count - 1)]
         camera.capture(to: url) { ok in
-            if ok { store.recordShot(current.id, file: rel) } else { store.say("shot_failed") }
+            if ok { store.recordShot(current.id, file: rel, shutter: shutter) } else { store.say("shot_failed") }
             releaseOn = false
             unloadTurns = 0
             busy = false

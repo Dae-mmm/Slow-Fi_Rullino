@@ -64,7 +64,7 @@ class Developer(private val context: Context, private val repo: Repository, priv
                     val files = layers.map { File(it.rawPath) }
                     val merged = mergeExposures(files, renderer.maxSide) ?: continue
                     // Errore medio della compatta virtuale sulle esposizioni di questo fotogramma.
-                    val errors = files.mapNotNull { VirtualCamera.errorStops(it, start.iso) }
+                    val errors = layers.mapNotNull { VirtualCamera.errorStops(File(it.rawPath), start.iso, it.shutter) }
                     val look = DevelopLook(
                         exposureError = if (errors.isEmpty()) 0f else errors.average().toFloat(),
                         push = start.push,

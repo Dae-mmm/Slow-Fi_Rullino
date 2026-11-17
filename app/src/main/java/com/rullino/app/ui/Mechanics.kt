@@ -1,5 +1,6 @@
 package com.rullino.app.ui
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.layout.offset
@@ -746,5 +747,100 @@ fun TopLeverShutter(
             radius = br, center = pivot,
         )
         if (armed) drawCircle(Palette.Safelight, radius = br + 4.dp.toPx(), center = pivot, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()))
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Ghiera dei tempi, vista di profilo sulla calotta                    */
+/* ------------------------------------------------------------------ */
+
+/** Tempi di scatto della ghiera: null = automatico (A), poi da 1/1000 a 1 secondo. */
+val SHUTTER_SPEEDS: List<Double?> = listOf(
+    null, 1.0 / 1000, 1.0 / 500, 1.0 / 250, 1.0 / 125, 1.0 / 60, 1.0 / 30, 1.0 / 15, 1.0 / 8, 1.0 / 4, 1.0 / 2, 1.0,
+)
+
+/** Come è inciso sulla ghiera: "A", "1000" … "2", "1". */
+fun shutterMark(s: Double?): String = when {
+    s == null -> "A"
+    s >= 1.0 -> "1"
+    else -> kotlin.math.round(1 / s).toInt().toString()
+}
+
+/** Come lo si legge: "A", "1/125", "1 s". */
+fun shutterLabel(s: Double?): String = when {
+    s == null -> "A"
+    s >= 1.0 -> "1 s"
+    else -> "1/" + kotlin.math.round(1 / s).toInt()
+}
+
+/**
+ * Ghiera dei tempi: si trascina a destra o a sinistra e scatta da un tempo all'altro.
+ * Il diaframma della macchina virtuale è fisso: con la ghiera decidi tu quanta luce entra.
+ */
+@Composable
+fun ShutterDial(index: Int, onIndex: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val view = LocalView.current
+    val scope = rememberCoroutineScope()
+    val step = with(androidx.compose.ui.platform.LocalDensity.current) { 40.dp.toPx() }
+    val pos = remember { Animatable(index.toFloat()) }
+    LaunchedEffect(index) { if (kotlin.math.abs(pos.value - index) > 0.01f) pos.animateTo(index.toFloat()) }
+    val last = SHUTTER_SPEEDS.size - 1
+
+    Canvas(
+        modifier
+            .height(36.dp)
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragEnd = {
+                        val target = kotlin.math.round(pos.value).toInt().coerceIn(0, last)
+                        scope.launch { pos.animateTo(target.toFloat(), spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMedium)) }
+                        onIndex(target)
+                    },
+                ) { change, dx ->
+                    change.consume()
+                    val before = kotlin.math.round(pos.value).toInt()
+                    val v = (pos.value - dx / step).coerceIn(0f, last.toFloat())
+                    scope.launch { pos.snapTo(v) }
+                    val now = kotlin.math.round(v).toInt()
+                    if (now != before) { view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY); onIndex(now) }
+                }
+            }
+    ) {
+        val w = size.width
+        val h = size.height
+        val center = w / 2f
+        drawRoundRect(
+            Brush.verticalGradient(listOf(Color(0xFF151413), Color(0xFF3B3836), Color(0xFF1A1918))),
+            Offset(0f, 0f), Size(w, h), CornerRadius(5.dp.toPx()),
+        )
+        // Zigrinatura in basso che scorre con la ghiera.
+        val ridge = 5.dp.toPx()
+        var x = -((pos.value * step) % ridge)
+        while (x < w) {
+            drawLine(Color(0xFF0B0A0A).copy(alpha = 0.8f), Offset(x, h * 0.72f), Offset(x, h - 2.dp.toPx()), strokeWidth = 1.8f.dp.toPx())
+            x += ridge
+        }
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 11.sp.toPx()
+            textAlign = android.graphics.Paint.Align.CENTER
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
+        }
+        SHUTTER_SPEEDS.forEachIndexed { i, s ->
+            val mx = center + (i - pos.value) * step
+            if (mx < -20f || mx > w + 20f) return@forEachIndexed
+            val d = kotlin.math.abs(mx - center) / center
+            paint.color = when {
+                kotlin.math.abs(mx - center) < step / 2 -> android.graphics.Color.rgb(255, 106, 61)
+                s == null -> android.graphics.Color.argb((255 * (1f - 0.6f * d)).toInt().coerceIn(60, 255), 255, 211, 107)
+                else -> android.graphics.Color.argb((255 * (1f - 0.6f * d)).toInt().coerceIn(60, 255), 235, 230, 224)
+            }
+            drawContext.canvas.nativeCanvas.drawText(shutterMark(s), mx, h * 0.55f, paint)
+        }
+        val tri = Path().apply {
+            moveTo(center - 4.dp.toPx(), 0f); lineTo(center + 4.dp.toPx(), 0f); lineTo(center, 5.dp.toPx()); close()
+        }
+        drawPath(tri, Palette.Safelight)
+        drawRect(Brush.horizontalGradient(listOf(Color(0xCC000000), Color.Transparent), startX = 0f, endX = w * 0.2f), Offset.Zero, Size(w * 0.2f, h))
+        drawRect(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xCC000000)), startX = w * 0.8f, endX = w), Offset(w * 0.8f, 0f), Size(w * 0.2f, h))
     }
 }

@@ -283,3 +283,4 @@
 "sk_push" = "¿Push de +%1$@? Vale: más contraste y más grano, y las fotos oscuras se recuperan.";
 "sk_pull" = "Pull de −1: contraste más suave y grano más fino, bien si sobreexpusiste.";
 "sk_normal" = "Revelado normal, como dice la caja.";
+"shutter_speed" = "Dial de velocidades";

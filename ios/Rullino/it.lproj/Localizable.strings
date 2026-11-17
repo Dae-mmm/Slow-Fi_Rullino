@@ -283,3 +283,4 @@
 "sk_push" = "Push di +%1$@? Va bene: più contrasto e più grana, e le foto buie si riprendono.";
 "sk_pull" = "Pull di −1: contrasto più morbido e grana più fine, bene se hai sovraesposto.";
 "sk_normal" = "Sviluppo normale, come dice la scatola.";
+"shutter_speed" = "Ghiera dei tempi";

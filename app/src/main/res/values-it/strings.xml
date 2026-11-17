@@ -284,4 +284,5 @@
     <string name="sk_push">Push di +%1$s? Va bene: più contrasto e più grana, e le foto buie si riprendono.</string>
     <string name="sk_pull">Pull di −1: contrasto più morbido e grana più fine, bene se hai sovraesposto.</string>
     <string name="sk_normal">Sviluppo normale, come dice la scatola.</string>
+    <string name="shutter_speed">Ghiera dei tempi</string>
 </resources>
