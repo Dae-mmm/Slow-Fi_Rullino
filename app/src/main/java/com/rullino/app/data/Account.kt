@@ -72,7 +72,10 @@ class Account(context: Context, private val baseUrl: String, private val key: St
 
     /** Manda il codice a 6 cifre; crea l'utente se non esiste. */
     suspend fun sendCode(email: String) {
-        val (code, _) = call("POST", "/auth/v1/otp", JSONObject().put("email", email.trim()).put("create_user", true))
+        // La lingua del telefono finisce nei dati dell'utente: l'email del codice esce in quella lingua.
+        val body = JSONObject().put("email", email.trim()).put("create_user", true)
+            .put("data", JSONObject().put("locale", java.util.Locale.getDefault().language))
+        val (code, _) = call("POST", "/auth/v1/otp", body)
         if (code !in 200..299) throw AccountException(AccountException.Kind.SEND)
     }
 

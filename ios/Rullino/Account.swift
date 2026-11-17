@@ -63,7 +63,9 @@ final class Account: ObservableObject {
     }
 
     func sendCode(_ email: String) async throws {
-        let (c, _) = try await call("POST", "/auth/v1/otp", ["email": email.trimmingCharacters(in: .whitespaces), "create_user": true])
+        // La lingua del telefono finisce nei dati dell'utente: l'email del codice esce in quella lingua.
+        let lang = Locale.current.language.languageCode?.identifier ?? "en"
+        let (c, _) = try await call("POST", "/auth/v1/otp", ["email": email.trimmingCharacters(in: .whitespaces), "create_user": true, "data": ["locale": lang]])
         guard (200..<300).contains(c) else { throw AccountError.send }
         pendingEmail = email.trimmingCharacters(in: .whitespaces)
     }

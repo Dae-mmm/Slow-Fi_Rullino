@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#141312;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#141312;padding:32px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#1C1A19;border:1px solid #3A3533;border-radius:4px;">
+        <tr><td style="padding:18px 28px;border-bottom:1px solid #3A3533;">
+          <span style="font-family:'IBM Plex Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:2px;color:#9C958D;border:1px solid #514A46;padding:3px 6px;">S—F</span>
+          <span style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:15px;letter-spacing:4px;color:#D9D3CC;padding-left:10px;">RULLINO</span>
+        </td></tr>
+        <tr><td style="padding:28px;">
+          {{ if and .Data.locale (eq .Data.locale "it") }}
+          <p style="margin:0 0 6px;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:1.4px;color:#FF6A3D;text-transform:uppercase;">Foto Lab / Via Lenta, 12</p>
+          <h1 style="margin:0 0 18px;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:30px;line-height:34px;font-weight:600;color:#EBE6E0;">Il tuo codice per entrare in Rullino</h1>
+          <div style="margin:0 0 18px;padding:16px 0;background:#2D1710;border:1px solid #A6472C;border-radius:4px;text-align:center;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;font-size:34px;letter-spacing:10px;color:#FF6A3D;">{{ .Token }}</div>
+          <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:15px;line-height:22px;color:#EBE6E0;">Scrivilo nell'app, nella schermata Account. Scade tra un'ora.</p>
+          <p style="margin:0 0 22px;font-family:Arial,sans-serif;font-size:13px;line-height:20px;color:#9C958D;">Se non l'hai chiesto tu, ignora questa email: senza il codice nessuno può entrare nel tuo account.</p>
+          <p style="margin:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:16px;line-height:20px;color:#9C958D;">Buona luce,<br>il negoziante del Foto Lab</p>
+          {{ else if and .Data.locale (eq .Data.locale "fr") }}
+          <p style="margin:0 0 6px;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:1.4px;color:#FF6A3D;text-transform:uppercase;">Foto Lab / Via Lenta, 12</p>
+          <h1 style="margin:0 0 18px;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:30px;line-height:34px;font-weight:600;color:#EBE6E0;">Ton code pour entrer dans Rullino</h1>
+          <div style="margin:0 0 18px;padding:16px 0;background:#2D1710;border:1px solid #A6472C;border-radius:4px;text-align:center;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;font-size:34px;letter-spacing:10px;color:#FF6A3D;">{{ .Token }}</div>
+          <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:15px;line-height:22px;color:#EBE6E0;">Saisis-le dans l'app, sur l'écran Compte. Il expire dans une heure.</p>
+          <p style="margin:0 0 22px;font-family:Arial,sans-serif;font-size:13px;line-height:20px;color:#9C958D;">Si tu ne l'as pas demandé, ignore cet e-mail : sans le code, personne ne peut entrer dans ton compte.</p>
+          <p style="margin:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:16px;line-height:20px;color:#9C958D;">Belle lumière,<br>le marchand du Labo photo</p>
+          {{ else if and .Data.locale (eq .Data.locale "es") }}
+          <p style="margin:0 0 6px;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:1.4px;color:#FF6A3D;text-transform:uppercase;">Foto Lab / Via Lenta, 12</p>
+          <h1 style="margin:0 0 18px;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:30px;line-height:34px;font-weight:600;color:#EBE6E0;">Tu código para entrar en Rullino</h1>
+          <div style="margin:0 0 18px;padding:16px 0;background:#2D1710;border:1px solid #A6472C;border-radius:4px;text-align:center;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;font-size:34px;letter-spacing:10px;color:#FF6A3D;">{{ .Token }}</div>
+          <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:15px;line-height:22px;color:#EBE6E0;">Escríbelo en la app, en la pantalla Cuenta. Caduca en una hora.</p>
+          <p style="margin:0 0 22px;font-family:Arial,sans-serif;font-size:13px;line-height:20px;color:#9C958D;">Si no lo has pedido tú, ignora este correo: sin el código nadie puede entrar en tu cuenta.</p>
+          <p style="margin:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:16px;line-height:20px;color:#9C958D;">Buena luz,<br>el dependiente del Laboratorio</p>
+          {{ else if and .Data.locale (eq .Data.locale "de") }}
+          <p style="margin:0 0 6px;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:1.4px;color:#FF6A3D;text-transform:uppercase;">Foto Lab / Via Lenta, 12</p>
+          <h1 style="margin:0 0 18px;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:30px;line-height:34px;font-weight:600;color:#EBE6E0;">Dein Code für Rullino</h1>
+          <div style="margin:0 0 18px;padding:16px 0;background:#2D1710;border:1px solid #A6472C;border-radius:4px;text-align:center;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;font-size:34px;letter-spacing:10px;color:#FF6A3D;">{{ .Token }}</div>
+          <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:15px;line-height:22px;color:#EBE6E0;">Gib ihn in der App auf dem Konto-Bildschirm ein. Er läuft in einer Stunde ab.</p>
+          <p style="margin:0 0 22px;font-family:Arial,sans-serif;font-size:13px;line-height:20px;color:#9C958D;">Wenn du ihn nicht angefordert hast, ignoriere diese E-Mail: Ohne den Code kommt niemand in dein Konto.</p>
+          <p style="margin:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:16px;line-height:20px;color:#9C958D;">Gutes Licht,<br>der Händler vom Fotolabor</p>
+          {{ else }}
+          <p style="margin:0 0 6px;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:1.4px;color:#FF6A3D;text-transform:uppercase;">Foto Lab / Via Lenta, 12</p>
+          <h1 style="margin:0 0 18px;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:30px;line-height:34px;font-weight:600;color:#EBE6E0;">Your code to sign in to Rullino</h1>
+          <div style="margin:0 0 18px;padding:16px 0;background:#2D1710;border:1px solid #A6472C;border-radius:4px;text-align:center;font-family:'IBM Plex Mono',Menlo,Consolas,monospace;font-size:34px;letter-spacing:10px;color:#FF6A3D;">{{ .Token }}</div>
+          <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:15px;line-height:22px;color:#EBE6E0;">Type it in the app, on the Account screen. It expires in one hour.</p>
+          <p style="margin:0 0 22px;font-family:Arial,sans-serif;font-size:13px;line-height:20px;color:#9C958D;">If you didn't ask for it, just ignore this email: without the code nobody can get into your account.</p>
+          <p style="margin:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:16px;line-height:20px;color:#9C958D;">Good light,<br>the shopkeeper at the Photo Lab</p>
+          {{ end }}
+        </td></tr>
+        <tr><td style="padding:14px 28px;border-top:1px solid #3A3533;font-family:Arial,sans-serif;font-size:11px;color:#6E6862;">
+          Slow-Fi · <a href="https://slow-fi.app" style="color:#9C958D;">slow-fi.app</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
