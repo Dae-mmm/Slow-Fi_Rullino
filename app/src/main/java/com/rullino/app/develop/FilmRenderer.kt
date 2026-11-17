@@ -174,6 +174,7 @@ class FilmRenderer {
         val isoFactor = sqrt(preset.iso.coerceAtLeast(1) / 400f)
         GLES30.glUniform3f(loc("uGrain"), p.grain.amount / 100f * isoFactor, p.grain.size, p.grain.roughness / 100f)
         GLES30.glUniform1f(loc("uVignette"), p.vignette / 100f)
+        GLES30.glUniform1f(loc("uHalation"), p.halation / 100f)
         GLES30.glUniform1f(loc("uSeed"), seed)
         GLES30.glUniform1f(loc("uExpErr"), look.exposureError)
         GLES30.glUniform1i(loc("uPush"), look.push)

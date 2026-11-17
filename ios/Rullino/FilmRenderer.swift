@@ -134,6 +134,24 @@ kernel void film(texture2d<float, access::read> src [[texture(0)]],
   c += ts * u[37] * ws * 0.45 + th * u[39] * wh * 0.45;
   c = clamp(c, 0., 1.);
 
+  // 6b. Halation: la luce forte rimbalza sul retro della pellicola e torna come alone rosso.
+  if (u[53] > 0.) {
+    float rad = min(res.x, res.y) * 0.006;
+    int2 maxp = int2(src.get_width() - 1, src.get_height() - 1);
+    float glow = 0.;
+    for (int i = 0; i < 12; i++) {
+      float a = float(i) * 0.5236;
+      float2 o = float2(cos(a), sin(a)) * rad;
+      int2 p1 = clamp(int2(frag + o), int2(0), maxp);
+      int2 p2 = clamp(int2(frag + o * 2.2), int2(0), maxp);
+      glow += max(dot(src.read(uint2(p1)).rgb, LW) - 0.78, 0.)
+            + 0.6 * max(dot(src.read(uint2(p2)).rgb, LW) - 0.78, 0.);
+    }
+    glow /= 12. * 1.6 * 0.22;
+    c += float3(1.0, 0.28, 0.12) * glow * u[53] * 0.6 * (1. - dot(c, LW) * 0.5);
+    c = clamp(c, 0., 1.);
+  }
+
   // 7. Vignettatura
   float ar = res.x / res.y;
   float2 dv = (uv - 0.5) * float2(ar, 1.);
@@ -180,7 +198,8 @@ final class FilmRenderer {
     /// Stesse conversioni di setUniforms() in Camera Oscura.
     static func uniforms(_ p: FilmParams, iso: Int, w: Int, h: Int, seed: Float,
                          exposureError: Float = 0, push: Int = 0, slide: Bool = false) -> [Float] {
-        var u = [Float](repeating: 0, count: 53)
+        var u = [Float](repeating: 0, count: 54)
+        u[53] = p.halation / 100
         u[50] = exposureError; u[51] = Float(push); u[52] = slide ? 1 : 0
         u[0] = Float(w); u[1] = Float(h)
         u[2] = p.exposure; u[3] = p.temperature / 100; u[4] = p.tint / 100

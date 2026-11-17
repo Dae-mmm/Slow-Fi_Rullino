@@ -27,6 +27,7 @@ uniform float uSeed;
 uniform float uExpErr;      // errore di esposizione della compatta virtuale, in stop (+ = sovra)
 uniform int uPush;          // sviluppo: -1 pull, 0 normale, +1/+2 push
 uniform int uSlide;         // 1 = diapositiva (invertibile), 0 = negativa
+uniform float uHalation;    // alone rosso attorno alle luci forti (0…1)
 
 const float HC[8] = float[8](0.,30.,60.,120.,180.,240.,270.,300.);
 const vec3 LW = vec3(0.2126,0.7152,0.0722);
@@ -150,6 +151,21 @@ void main(){
   c = clamp(c,0.,1.);
 
   if(uMode==0){
+    // 6b. Halation: la luce forte rimbalza sul retro della pellicola e torna come alone rosso.
+    if (uHalation > 0.) {
+      vec2 rad = vec2(min(uRes.x, uRes.y) * 0.006) / uRes;
+      float glow = 0.;
+      for (int i = 0; i < 12; i++) {
+        float a = float(i) * 0.5236;
+        vec2 o = vec2(cos(a), sin(a)) * rad;
+        glow += max(dot(texture(uImg, vUv + o).rgb, LW) - 0.78, 0.)
+              + 0.6 * max(dot(texture(uImg, vUv + o * 2.2).rgb, LW) - 0.78, 0.);
+      }
+      glow /= 12. * 1.6 * 0.22;
+      c += vec3(1.0, 0.28, 0.12) * glow * uHalation * 0.6 * (1. - dot(c, LW) * 0.5);
+      c = clamp(c, 0., 1.);
+    }
+
     // 7. Vignettatura
     float ar = uRes.x/uRes.y;
     vec2 d = (vUv-0.5)*vec2(ar,1.);

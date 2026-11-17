@@ -57,6 +57,8 @@ data class FilmParams(
     val vignette: Float = 0f,
     /** "negative" (predefinito) o "slide": decide come la pellicola reagisce agli errori di esposizione. */
     val process: String = "",
+    /** Alone rosso attorno alle luci forti, 0…100 (tipo CineStill). */
+    val halation: Float = 0f,
 )
 
 @Serializable

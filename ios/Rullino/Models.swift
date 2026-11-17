@@ -63,9 +63,11 @@ struct FilmParams: Decodable {
     var vignette: Float = 0
     /// "negative" (predefinito) o "slide": decide come la pellicola reagisce agli errori di esposizione.
     var process = ""
+    /// Alone rosso attorno alle luci forti, 0…100 (tipo CineStill).
+    var halation: Float = 0
 
     enum CodingKeys: String, CodingKey {
-        case exposure, temperature, tint, gamma, contrast, highlights, shadows, fade, saturation, vibrance, hsl, split, mono, grain, vignette, process
+        case exposure, temperature, tint, gamma, contrast, highlights, shadows, fade, saturation, vibrance, hsl, split, mono, grain, vignette, process, halation
     }
     init() {}
     init(from d: Decoder) throws {
@@ -75,7 +77,7 @@ struct FilmParams: Decodable {
         shadows = c.v(.shadows, 0); fade = c.v(.fade, 0); saturation = c.v(.saturation, 0)
         vibrance = c.v(.vibrance, 0); hsl = c.v(.hsl, [:]); split = c.v(.split, SplitTone())
         mono = c.v(.mono, MonoMix()); grain = c.v(.grain, GrainParams()); vignette = c.v(.vignette, 0)
-        process = c.v(.process, "")
+        process = c.v(.process, ""); halation = c.v(.halation, 0)
     }
 }
 

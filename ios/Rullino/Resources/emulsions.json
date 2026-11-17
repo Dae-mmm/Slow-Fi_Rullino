@@ -483,7 +483,8 @@
     "size": 1.4,
     "roughness": 55
    },
-   "vignette": 0
+   "vignette": 0,
+   "halation": 55
   }
  }
 ]
