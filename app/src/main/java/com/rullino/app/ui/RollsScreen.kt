@@ -1,5 +1,7 @@
 package com.rullino.app.ui
 
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.lazy.itemsIndexed
 import com.rullino.app.R
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -85,27 +87,37 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit, onGoLab: () -> Unit)
         return
     }
 
-    if (rolls.isEmpty()) {
-        Text(stringResource(R.string.rolls_empty), color = Palette.Muted, modifier = Modifier.padding(20.dp))
-        return
-    }
     val toLab = rolls.filter { it.state == RollState.FINISHED && it.shotCount > 0 }
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        if (toLab.isNotEmpty()) item {
-            Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Palette.PlateHi).padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    if (toLab.size == 1) stringResource(R.string.to_develop_one) else stringResource(R.string.to_develop_many, toLab.size),
-                    color = Palette.Ink, modifier = Modifier.weight(1f),
-                )
-                PrimaryButton(onClick = onGoLab) { Text(stringResource(R.string.go_lab)) }
+    LazyColumn(
+        Modifier.fillMaxSize().dottedPage(),
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item {
+            PageHeading(stringResource(R.string.kick_archive, rolls.size.toString().padStart(2, '0')), stringResource(R.string.rolls_title)) {
+                if (toLab.isNotEmpty()) Row(
+                    Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xFF241714))
+                        .border(1.dp, Color(0xFF6E3322), RoundedCornerShape(4.dp)).padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Column {
+                        Text(
+                            if (toLab.size == 1) stringResource(R.string.to_develop_one) else stringResource(R.string.to_develop_many, toLab.size),
+                            color = Palette.Ink, fontWeight = FontWeight.SemiBold, fontSize = 18.sp,
+                        )
+                        Text(stringResource(R.string.lab_dont_wait), color = Palette.Muted, fontSize = 12.sp)
+                    }
+                    PrimaryButton(onClick = onGoLab) { Text(stringResource(R.string.go_lab).uppercase()) }
+                }
             }
         }
-        items(rolls, key = { it.id }) { r ->
+        if (rolls.isEmpty()) item {
+            Text(stringResource(R.string.rolls_empty), color = Palette.Muted, modifier = Modifier.padding(top = 20.dp))
+        }
+        itemsIndexed(rolls, key = { _, r -> r.id }) { index, r ->
             RollRow(
                 r = r,
+                number = (index + 1).toString().padStart(2, '0'),
                 isReady = ready(r),
                 waitLeft = ((r.readyAt ?: 0L) - now).coerceAtLeast(0L),
                 cameraFree = active == null || (active?.state == RollState.LOADED && active?.shotCount == 0),
@@ -121,6 +133,7 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit, onGoLab: () -> Unit)
 @Composable
 private fun RollRow(
     r: RollEntity,
+    number: String,
     isReady: Boolean,
     waitLeft: Long,
     cameraFree: Boolean,
@@ -133,30 +146,29 @@ private fun RollRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(Palette.Plate)
+            .card()
             .clickable(enabled = isReady, onClick = onOpen)
-            .padding(14.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(r.emulsionName, color = Palette.Ink, fontWeight = FontWeight.SemiBold)
-            Text(
-                "ISO ${r.iso} · ${r.shotCount}/${r.exposures} · ${date(r.developedAt ?: r.finishedAt ?: r.loadedAt)}",
-                color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp,
-            )
-        }
-        Text(
-            when {
+        Cartridge(r.emulsionName, r.iso, r.isBw, r.exposures, scale = 0.9f)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            val status = when {
                 isReady -> stringResource(R.string.negatives_arrow)
                 r.state == RollState.DEVELOPING -> stringResource(R.string.at_lab_tank)
                 r.state == RollState.DEVELOPED -> stringResource(R.string.at_lab_back_in, formatWait(LocalContext.current.resources, waitLeft))
                 else -> stateLabel(r)
-            },
-            color = if (isReady) Palette.Ink else Palette.Safelight,
-            fontSize = 12.sp,
-        )
+            }
+            Chip(if (isReady) stateLabel(r).trimEnd('›', ' ') else status, active = isReady)
+            Text(r.emulsionName, color = Palette.Ink, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, maxLines = 1)
+            Text(
+                "ISO ${r.iso} · ${r.shotCount}/${r.exposures} · ${date(r.developedAt ?: r.finishedAt ?: r.loadedAt)}",
+                color = Palette.Muted, fontSize = 13.sp, letterSpacing = 0.4.sp,
+            )
+        }
+        Text(number, color = Color(0xFF4A4541), fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 28.sp)
+        if (isReady) Text(stringResource(R.string.negatives_arrow), color = Palette.Safelight, fontSize = 14.sp)
         if (r.state == RollState.SHELVED) {
             SecondaryButton(enabled = cameraFree, onClick = onReload) { Text(stringResource(R.string.reload)) }
             PrimaryButton(onClick = onDevelop) { Text(stringResource(R.string.rewind)) }
@@ -208,19 +220,31 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            // Il tavolo: luce bianca diffusa
-            .background(Color(0xFFE9E6DF)),
+            // Il tavolo: luce calda diffusa, puntinata come nel design
+            .drawBehind {
+                drawRect(Color(0xFFE6DCC6))
+                val step = 6.dp.toPx(); var y = 0f
+                while (y < size.height) { var x = 0f; while (x < size.width) { drawCircle(Color(0xFFD2C6AC), 0.8f, Offset(x, y)); x += step }; y += step }
+            },
     ) {
         Row(
-            Modifier.fillMaxWidth().background(Palette.Plate).padding(horizontal = 8.dp, vertical = 4.dp),
+            Modifier.fillMaxWidth().background(Color(0xFF221F1D)).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            TextButton(onClick = onBack) { Text(stringResource(R.string.back_rolls)) }
+            TextButton(onClick = onBack) {
+                Text(stringResource(R.string.back_rolls).uppercase(), color = Palette.Safelight, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
+            }
             Column(Modifier.weight(1f)) {
-                Text(roll.emulsionName, color = Palette.Ink, fontWeight = FontWeight.SemiBold)
+                Text(
+                    stringResource(R.string.developed_on, roll.developedAt?.let { date(it) } ?: "—").uppercase(),
+                    color = Palette.Muted, fontFamily = Mono, fontSize = 9.sp, letterSpacing = 0.6.sp,
+                )
                 val printed = frames.count { it.printUri != null }
-                Text(stringResource(R.string.negatives_printed, frames.size, printed), color = Palette.Muted, fontSize = 11.sp, fontFamily = Mono)
+                Text(
+                    roll.emulsionName + " · " + stringResource(R.string.negatives_printed, frames.size, printed),
+                    color = Palette.Ink, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, maxLines = 1,
+                )
             }
             if (!selecting) {
                 SecondaryButton(onClick = { selecting = true; selected = emptySet() }) { Text(stringResource(R.string.select)) }
@@ -238,6 +262,12 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
             }
         }
 
+        Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp)) {
+            Text(stringResource(R.string.contact_sheet, roll.id.toString().padStart(2, '0')).uppercase(),
+                color = Color(0xFF2A2522), fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 0.6.sp, modifier = Modifier.weight(1f))
+            Text("${roll.exposures} · " + (if (roll.isBw) "B&W" else "COLOR") + if (roll.push != 0) " · PUSH ${if (roll.push > 0) "+" else ""}${roll.push}" else "",
+                color = Color(0xFF2A2522), fontFamily = Mono, fontSize = 10.sp)
+        }
         BoxWithConstraints(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
             val stripHeight = (maxHeight * 0.62f)
             LazyRow(

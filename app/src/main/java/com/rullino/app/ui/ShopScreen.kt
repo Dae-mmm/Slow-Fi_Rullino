@@ -1,5 +1,6 @@
 package com.rullino.app.ui
 
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.material3.FilterChip
 import com.rullino.app.R
 import androidx.compose.ui.res.stringResource
@@ -77,36 +78,49 @@ fun ShopScreen(vm: AppViewModel) {
 
     LaunchedEffect(Unit) { if (vm.shopkeeperLine.value == null) vm.shopkeeperLine.value = greeting(res) }
 
-    Row(Modifier.fillMaxSize().background(Color(0xFF1A1420))) {
-        // ---- Il bancone con il negoziante ----
-        Column(
-            Modifier.width(300.dp).fillMaxHeight().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    Row(Modifier.fillMaxSize().dottedPage()) {
+        // ---- La scena: muro blu notte, insegna al neon, negoziante, bancone (design) ----
+        Box(
+            Modifier.width(300.dp).fillMaxHeight().drawBehind {
+                drawRect(Color(0xFF15202A))
+                var y = 0f
+                while (y < size.height) { drawLine(Color(0xFF1C2A36), Offset(0f, y), Offset(size.width, y), 2f); y += 6.dp.toPx() }
+                drawLine(Color(0xFF0B0A0A), Offset(size.width, 0f), Offset(size.width, size.height), 6f)
+            },
         ) {
-            NeonSign("FOTO LAB")
-            Spacer(Modifier.height(8.dp))
-            SpeechBubble(line ?: greeting(res))
-            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
-                Shopkeeper(Modifier.fillMaxWidth(0.8f).fillMaxHeight(0.95f))
+            Box(Modifier.fillMaxSize().padding(top = 70.dp, bottom = 50.dp), contentAlignment = Alignment.BottomCenter) {
+                Shopkeeper(Modifier.fillMaxWidth(0.82f).fillMaxHeight())
             }
-            // Bancone in legno
-            Box(
-                Modifier.fillMaxWidth().height(26.dp)
-                    .background(Color(0xFF6B3E22), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                    .border(2.dp, Color(0xFF8A5530), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)),
-            )
+            NeonSign(Modifier.align(Alignment.TopStart).padding(start = 18.dp, top = 18.dp))
+            SpeechBubble(line ?: greeting(res), Modifier.align(Alignment.TopEnd).padding(top = 16.dp, end = 12.dp).width(150.dp))
+            // Bancone in legno con la targhetta
+            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+                Box(Modifier.fillMaxWidth().height(9.dp).background(Color(0xFF8A5A36)))
+                Box(
+                    Modifier.fillMaxWidth().height(48.dp).drawBehind {
+                        drawRect(Color(0xFF5B3820))
+                        var x = 0f
+                        while (x < size.width) { drawLine(Color(0xFF4A2D19), Offset(x, 0f), Offset(x, size.height), 2f); x += 32.dp.toPx() }
+                    },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(stringResource(R.string.since).uppercase(), color = Color(0xFFB98A64), fontSize = 10.sp, letterSpacing = 3.sp)
+                }
+            }
         }
 
         // ---- Scaffali e laboratorio ----
         LazyColumn(
             Modifier.weight(1f).fillMaxHeight(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.coins, coins), color = Color(0xFFFFD36B), fontFamily = Mono, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                    Text(stringResource(R.string.stock_total, inventory.values.sum()), color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
+                PageHeading(stringResource(R.string.kick_lab), greeting(res).substringBefore('!').substringBefore('.').trim() + ".") {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("◉ $coins", color = Palette.Safelight, fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 24.sp)
+                        Text(stringResource(R.string.stock_total, inventory.values.sum()).uppercase(), color = Palette.Muted, fontFamily = Mono, fontSize = 9.sp)
+                    }
                 }
             }
 
@@ -182,40 +196,39 @@ private fun greeting(res: android.content.res.Resources): String {
 }
 
 @Composable
-private fun NeonSign(text: String) {
-    Text(
-        text,
-        style = TextStyle(
-            color = Color(0xFFFF4FA3),
-            fontFamily = Mono,
-            fontWeight = FontWeight.Bold,
-            fontSize = 26.sp,
-            letterSpacing = 4.sp,
-            shadow = Shadow(color = Color(0xFFFF4FA3), offset = Offset.Zero, blurRadius = 18f),
-        ),
-    )
+private fun NeonSign(modifier: Modifier = Modifier) {
+    // Insegna al neon in una cornice scura: FOTO arancione, LAB verde acqua.
+    Column(
+        modifier.border(4.dp, Color(0xFF3A2620)).background(Color(0xFF0E1218)).padding(horizontal = 12.dp, vertical = 4.dp),
+    ) {
+        Text("FOTO", style = TextStyle(color = Color(0xFFFF7A4D), fontFamily = Barlow, fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 26.sp,
+            shadow = Shadow(color = Color(0xFFFF6A3D), offset = Offset.Zero, blurRadius = 16f)))
+        Text("LAB", style = TextStyle(color = Color(0xFF7FE0D0), fontFamily = Barlow, fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 26.sp,
+            shadow = Shadow(color = Color(0xFF4FD1C0), offset = Offset.Zero, blurRadius = 16f)))
+    }
 }
 
 @Composable
-private fun SpeechBubble(text: String) {
+private fun SpeechBubble(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
         color = Color(0xFF1A1420),
         fontSize = 13.sp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFF4F1EA), RoundedCornerShape(10.dp))
-            .padding(10.dp),
+        fontWeight = FontWeight.SemiBold,
+        modifier = modifier
+            .background(Color(0xFFF2E8D5))
+            .border(2.dp, Color(0xFF1A1420))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
     )
 }
 
 @Composable
 private fun ShopPanel(title: String, content: @Composable () -> Unit) {
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Palette.Plate).padding(14.dp),
+        Modifier.fillMaxWidth().card().padding(horizontal = 18.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(title.uppercase(), color = Color(0xFF7FE0D0), fontFamily = Mono, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 2.sp)
+        Text(title.uppercase(), color = Palette.Safelight, fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 10.sp, letterSpacing = 1.4.sp)
         content()
     }
 }
@@ -233,9 +246,10 @@ private fun LabRow(r: RollEntity, status: String, action: @Composable () -> Unit
 
 @Composable
 private fun ShelfRow(e: EmulsionEntity, owned: Int, canAfford: Boolean, freeToday: Boolean, onFree: () -> Unit, onBuy: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        FilmBox(e.name, e.iso, toneFor(e.isBw, VirtualCameraSlide(e)), compact = true)
         Column(Modifier.weight(1f)) {
-            Text(e.name, color = Palette.Ink)
+            Text(e.name, color = Palette.Ink, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
             Text(stringResource(R.string.iso_owned, e.iso, owned), color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
         }
         if (freeToday) PrimaryButton(onClick = onFree) { Text(stringResource(R.string.free_today)) }
@@ -319,3 +333,6 @@ private fun PlaceholderShopkeeper(modifier: Modifier) {
         }
     }
 }
+
+private fun VirtualCameraSlide(e: EmulsionEntity) =
+    com.rullino.app.develop.VirtualCamera.isSlide("", e.id, e.name)

@@ -67,10 +67,20 @@ import java.util.Locale
 @Composable
 fun EmulsionsScreen(vm: AppViewModel, onLoaded: () -> Unit) {
     var page by rememberSaveable { mutableIntStateOf(0) }
-    Column(Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = page, containerColor = Palette.Body, contentColor = Palette.Ink) {
-            Tab(selected = page == 0, onClick = { page = 0 }, text = { Text(stringResource(R.string.mine)) })
-            Tab(selected = page == 1, onClick = { page = 1 }, text = { Text(stringResource(R.string.catalog_tab)) })
+    Column(Modifier.fillMaxSize().dottedPage()) {
+        PageHeading(stringResource(R.string.kick_library), stringResource(R.string.tab_emulsions), Modifier.padding(start = 24.dp, end = 24.dp, top = 18.dp)) {
+            // Interruttore a due posizioni del design: Le tue / Catalogo.
+            Row(Modifier.border(1.dp, Color(0xFF3A3533), RoundedCornerShape(4.dp)).padding(4.dp)) {
+                listOf(R.string.mine, R.string.catalog_tab).forEachIndexed { i, label ->
+                    val on = page == i
+                    Text(
+                        stringResource(label).uppercase(),
+                        color = if (on) Palette.Safelight else Palette.Muted, fontSize = 15.sp, letterSpacing = 1.4.sp,
+                        modifier = Modifier.clip(RoundedCornerShape(2.dp)).background(if (on) Color(0xFF3A1D14) else Color.Transparent)
+                            .clickable { page = i }.padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                }
+            }
         }
         if (page == 0) MyEmulsions(vm, onLoaded) else Store(vm)
     }
@@ -88,7 +98,7 @@ private fun MyEmulsions(vm: AppViewModel, onLoaded: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.n_emulsions, list.size), color = Palette.Muted, modifier = Modifier.weight(1f))
             if (devMode) SecondaryButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.import_emulsion)) }
         }
@@ -100,7 +110,7 @@ private fun MyEmulsions(vm: AppViewModel, onLoaded: () -> Unit) {
             )
         }
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(150.dp),
+            columns = GridCells.Adaptive(280.dp),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -118,20 +128,23 @@ private fun MyEmulsions(vm: AppViewModel, onLoaded: () -> Unit) {
 
 @Composable
 private fun EmulsionCard(e: EmulsionEntity, owned: Int, onClick: () -> Unit) {
-    Column(
+    Row(
         Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(Palette.Plate)
+            .card()
             .clickable(onClick = onClick)
-            .padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        BoxArt(e, Modifier.fillMaxWidth().aspectRatio(1f))
-        Text(e.name, color = Palette.Ink, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Tag("ISO ${e.iso}")
-            Tag(if (e.isBw) stringResource(R.string.tag_bw) else stringResource(R.string.tag_color))
-            if (owned > 0) Tag("×$owned")
+        BoxArt(e, Modifier.size(width = 72.dp, height = 82.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(e.name.uppercase(), color = Palette.Ink, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (e.note.isNotBlank()) Text(e.note, color = Palette.Muted, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Chip("ISO ${e.iso}")
+                Chip(if (e.isBw) stringResource(R.string.tag_bw) else stringResource(R.string.tag_color), active = !e.isBw)
+                if (owned > 0) Chip("×$owned", active = true)
+            }
         }
     }
 }
@@ -139,14 +152,12 @@ private fun EmulsionCard(e: EmulsionEntity, owned: Int, onClick: () -> Unit) {
 @Composable
 private fun BoxArt(e: EmulsionEntity, modifier: Modifier) {
     val box = e.boxFile?.let { File(e.dir, it) }
-    Box(modifier.clip(RoundedCornerShape(8.dp)).background(Palette.PlateHi), contentAlignment = Alignment.Center) {
+    Box(modifier, contentAlignment = Alignment.Center) {
         if (box != null && box.exists()) {
-            AsyncImage(model = box, contentDescription = stringResource(R.string.box_of, e.name), contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize().padding(8.dp))
+            AsyncImage(model = box, contentDescription = stringResource(R.string.box_of, e.name), contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
         } else {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(e.iso.toString(), color = Palette.Safelight, fontFamily = Mono, fontSize = 34.sp, fontWeight = FontWeight.Bold)
-                Text(e.name.uppercase(), color = Palette.Ink, fontSize = 11.sp, maxLines = 2, modifier = Modifier.padding(horizontal = 8.dp))
-            }
+            // Nessuna immagine: la scatola disegnata del design.
+            FilmBox(e.name, e.iso, toneFor(e.isBw, com.rullino.app.develop.VirtualCamera.isSlide("", e.id, e.name)), exposures = e.exposures, compact = true)
         }
     }
 }
