@@ -213,7 +213,9 @@ final class Account: ObservableObject {
 
 extension ISO8601DateFormatter {
     /// Date di Postgres, con o senza frazioni di secondo.
-    static func flexible(_ s: String) -> Date? {
+    static func flexible(_ raw: String) -> Date? {
+        // Postgres manda fino a 6 decimali: ne teniamo 3, che il formatter legge di sicuro.
+        let s = raw.replacingOccurrences(of: #"(\.\d{3})\d+"#, with: "$1", options: .regularExpression)
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let d = f.date(from: s) { return d }
