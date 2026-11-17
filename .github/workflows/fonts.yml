@@ -1,0 +1,43 @@
+name: Fonts (one-off)
+
+# Scarica i font OFL usati dal design (Barlow Condensed, IBM Plex Mono) e li salva nel repo,
+# per Android (res/font) e iOS (Rullino/Fonts). Si rilancia a mano se servono altri pesi.
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/fonts.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fonts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download
+        run: |
+          set -e
+          base=https://raw.githubusercontent.com/google/fonts/main/ofl
+          mkdir -p app/src/main/res/font ios/Rullino/Fonts
+          for w in Regular Medium SemiBold Bold; do
+            curl -sSfL -o "ios/Rullino/Fonts/BarlowCondensed-$w.ttf" "$base/barlowcondensed/BarlowCondensed-$w.ttf"
+            lw=$(echo $w | tr 'A-Z' 'a-z')
+            cp "ios/Rullino/Fonts/BarlowCondensed-$w.ttf" "app/src/main/res/font/barlow_condensed_$lw.ttf"
+          done
+          for w in Regular Medium SemiBold; do
+            curl -sSfL -o "ios/Rullino/Fonts/IBMPlexMono-$w.ttf" "$base/ibmplexmono/IBMPlexMono-$w.ttf"
+            lw=$(echo $w | tr 'A-Z' 'a-z')
+            cp "ios/Rullino/Fonts/IBMPlexMono-$w.ttf" "app/src/main/res/font/ibm_plex_mono_$lw.ttf"
+          done
+          curl -sSfL -o ios/Rullino/Fonts/OFL-BarlowCondensed.txt "$base/barlowcondensed/OFL.txt"
+          curl -sSfL -o ios/Rullino/Fonts/OFL-IBMPlexMono.txt "$base/ibmplexmono/OFL.txt"
+          ls -la app/src/main/res/font ios/Rullino/Fonts
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/res/font ios/Rullino/Fonts
+          git diff --cached --quiet || git commit -m "Add OFL fonts (Barlow Condensed, IBM Plex Mono)"
+          git push
