@@ -18,13 +18,15 @@ android {
     compileSdk = 35
 
     defaultConfig {
+        // Catalogo Slow-Fi su Supabase: la chiave pubblicabile è fatta per stare nelle app
+        // (le regole RLS danno solo lettura delle emulsioni pubblicate). local.properties la sovrascrive.
         applicationId = "com.rullino.app"
         minSdk = 29
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
-        buildConfigField("String", "SUPABASE_URL", "\"${localProps.getProperty("supabase.url", "")}\"")
-        buildConfigField("String", "SUPABASE_KEY", "\"${localProps.getProperty("supabase.key", "")}\"")
+        buildConfigField("String", "SUPABASE_URL", "\"${localProps.getProperty("supabase.url", "https://voxkoarjawgabrljvvon.supabase.co")}\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"${localProps.getProperty("supabase.key", "sb_publishable_sl-yaeRs7zND4Ldw5Fbo7w_pcMrdqbH")}\"")
     }
 
     // Stessa chiave per Android Studio e per GitHub: così l'APK scaricato da Releases

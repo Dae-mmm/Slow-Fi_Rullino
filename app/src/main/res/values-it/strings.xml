@@ -251,4 +251,6 @@
     <string name="cam_r_hint">R acceso · ogni giro di\nmanovella torna di una posa</string>
     <string name="rewind_all_out">Riavvolgi tutto e toglilo per il laboratorio</string>
     <string name="crank">Manovella di riavvolgimento</string>
+    <string name="update">Aggiorna</string>
+    <string name="updated">“%1$s” aggiornata</string>
 </resources>

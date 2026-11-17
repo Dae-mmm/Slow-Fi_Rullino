@@ -57,14 +57,65 @@ final class Store: ObservableObject {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         guard let bytes = try? Data(contentsOf: url) else { say("open_file_failed"); return }
+        if let e = install(bytes) { say("emulsion_added", e.name) }
+    }
+
+    @discardableResult
+    private func install(_ bytes: Data) -> Emulsion? {
         do {
             let e = try EmulsionInstaller.install(bytes, into: root)
             if let i = emulsions.firstIndex(where: { $0.id == e.id }) { emulsions[i] = e } else { emulsions.append(e) }
-            say("emulsion_added", e.name)
+            return e
         } catch let err as EmulsionError {
             toast = err.message
         } catch {
             say("invalid_file")
+        }
+        return nil
+    }
+
+    /* ---------------- Catalogo online ---------------- */
+
+    static let catalogURL = "https://voxkoarjawgabrljvvon.supabase.co"
+    /// Chiave pubblicabile: fatta per stare nelle app, le regole del database danno solo lettura.
+    static let catalogKey = "sb_publishable_sl-yaeRs7zND4Ldw5Fbo7w_pcMrdqbH"
+
+    @Published var catalog: [CatalogItem]?
+    @Published var catalogFailed = false
+    @Published var downloading: Set<String> = []
+
+    func loadCatalog() async {
+        catalogFailed = false
+        guard var req = URL(string: Store.catalogURL + "/rest/v1/emulsions?select=*&published=eq.true&order=sort.asc,name.asc")
+            .map({ URLRequest(url: $0, timeoutInterval: 15) }) else { return }
+        req.setValue(Store.catalogKey, forHTTPHeaderField: "apikey")
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        do {
+            let (d, resp) = try await URLSession.shared.data(for: req)
+            guard (resp as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? false else { throw URLError(.badServerResponse) }
+            catalog = try JSONDecoder().decode([CatalogItem].self, from: d)
+        } catch {
+            catalogFailed = true
+        }
+    }
+
+    func isInstalled(_ item: CatalogItem) -> Bool { emulsion(item.id) != nil }
+    func needsUpdate(_ item: CatalogItem) -> Bool { isInstalled(item) && (data.catalogVersions[item.id] ?? 1) < item.version }
+
+    func download(_ item: CatalogItem) async {
+        guard !downloading.contains(item.id), let url = URL(string: item.fileUrl) else { return }
+        let update = isInstalled(item)
+        downloading.insert(item.id)
+        defer { downloading.remove(item.id) }
+        do {
+            let (d, resp) = try await URLSession.shared.data(from: url)
+            guard (resp as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? false else { throw URLError(.badServerResponse) }
+            if let e = install(d) {
+                data.catalogVersions[item.id] = item.version
+                say(update ? "updated" : "downloaded", e.name)
+            }
+        } catch {
+            say("download_failed")
         }
     }
 

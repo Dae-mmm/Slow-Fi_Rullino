@@ -153,4 +153,45 @@ struct AppData: Codable, Equatable {
     var labTime = LabTime.day
     var devMode = false
     var skipLab = false
+    /// Versione del catalogo installata per ogni emulsione scaricata.
+    var catalogVersions: [String: Int] = [:]
+
+    init() {}
+
+    // Decodifica tollerante: i campi aggiunti nelle versioni nuove non azzerano i dati salvati.
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        rolls = c.v(.rolls, []); exposures = c.v(.exposures, []); frames = c.v(.frames, [])
+        inventory = c.v(.inventory, [:]); coins = c.v(.coins, 0); lastDaily = c.v(.lastDaily, "")
+        nextId = c.v(.nextId, 1); labTime = c.v(.labTime, .day); devMode = c.v(.devMode, false)
+        skipLab = c.v(.skipLab, false); catalogVersions = c.v(.catalogVersions, [:])
+    }
+}
+
+/// Una riga del catalogo online (tabella `emulsions` su Supabase).
+struct CatalogItem: Decodable, Identifiable {
+    var id: String
+    var name: String
+    var iso: Int
+    var exposures: Int
+    var type: String
+    var note: String
+    var version: Int
+    var sizeBytes: Int
+    var priceCents: Int
+    var boxUrl: String?
+    var fileUrl: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, iso, exposures, type, note, version
+        case sizeBytes = "size_bytes", priceCents = "price_cents", boxUrl = "box_url", fileUrl = "file_url"
+    }
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        fileUrl = try c.decode(String.self, forKey: .fileUrl)
+        name = c.v(.name, id); iso = c.v(.iso, 400); exposures = c.v(.exposures, 36)
+        type = c.v(.type, "color"); note = c.v(.note, ""); version = c.v(.version, 1)
+        sizeBytes = c.v(.sizeBytes, 0); priceCents = c.v(.priceCents, 0); boxUrl = c.v(.boxUrl, nil)
+    }
 }

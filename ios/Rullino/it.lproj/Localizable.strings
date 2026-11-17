@@ -250,3 +250,5 @@
 "cam_r_hint" = "R acceso · ogni giro di\nmanovella torna di una posa";
 "rewind_all_out" = "Riavvolgi tutto e toglilo per il laboratorio";
 "crank" = "Manovella di riavvolgimento";
+"update" = "Aggiorna";
+"updated" = "“%1$@” aggiornata";

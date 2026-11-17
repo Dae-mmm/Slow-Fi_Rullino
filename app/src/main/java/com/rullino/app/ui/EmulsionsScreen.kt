@@ -278,6 +278,7 @@ private fun Store(vm: AppViewModel) {
                     StoreRow(
                         item = item,
                         isInstalled = installed.any { it.id == item.id },
+                        needsUpdate = installed.any { it.id == item.id && it.version < item.version },
                         isDownloading = item.id in downloading,
                         onGet = { vm.download(item) },
                     )
@@ -288,7 +289,7 @@ private fun Store(vm: AppViewModel) {
 }
 
 @Composable
-private fun StoreRow(item: CatalogItem, isInstalled: Boolean, isDownloading: Boolean, onGet: () -> Unit) {
+private fun StoreRow(item: CatalogItem, isInstalled: Boolean, needsUpdate: Boolean, isDownloading: Boolean, onGet: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Palette.Plate).padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -310,6 +311,8 @@ private fun StoreRow(item: CatalogItem, isInstalled: Boolean, isDownloading: Boo
             if (item.note.isNotBlank()) Text(item.note, color = Palette.Muted, fontSize = 12.sp, maxLines = 2)
         }
         when {
+            isDownloading -> Text(stringResource(R.string.downloading), color = Palette.Muted, fontSize = 12.sp)
+            needsUpdate -> Button(onClick = onGet) { Text(stringResource(R.string.update)) }
             isInstalled -> Text(stringResource(R.string.installed), color = Palette.Muted, fontSize = 12.sp)
             isDownloading -> Text(stringResource(R.string.downloading), color = Palette.Muted, fontSize = 12.sp)
             item.priceCents > 0 -> Column(horizontalAlignment = Alignment.End) {

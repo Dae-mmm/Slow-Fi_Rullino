@@ -250,3 +250,5 @@
 "cam_r_hint" = "R an · jede Kurbelumdrehung\ngeht ein Bild zurück";
 "rewind_all_out" = "Alles zurückspulen und fürs Labor herausnehmen";
 "crank" = "Rückspulkurbel";
+"update" = "Aktualisieren";
+"updated" = "„%1$@“ aktualisiert";

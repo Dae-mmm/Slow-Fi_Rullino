@@ -251,4 +251,6 @@
     <string name="cam_r_hint">R activado · cada vuelta de\nmanivela retrocede una foto</string>
     <string name="rewind_all_out">Rebobinar todo y sacarlo para el laboratorio</string>
     <string name="crank">Manivela de rebobinado</string>
+    <string name="update">Actualizar</string>
+    <string name="updated">«%1$s» actualizada</string>
 </resources>

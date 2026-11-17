@@ -216,7 +216,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             runCatching {
                 val file = File(app.cacheDir, "download/${item.id}.emulsion")
                 repo.catalog.download(item.fileUrl, file)
-                file.inputStream().use { repo.installer.install(it, "store") }.also { file.delete() }
+                file.inputStream().use { repo.installer.install(it, "store", item.version) }.also { file.delete() }
             }.onSuccess { say(R.string.downloaded, it.name) }
                 .onFailure { say(str(R.string.download_failed)) }
             downloading.value = downloading.value - item.id

@@ -251,4 +251,6 @@
     <string name="cam_r_hint">R an · jede Kurbelumdrehung\ngeht ein Bild zurück</string>
     <string name="rewind_all_out">Alles zurückspulen und fürs Labor herausnehmen</string>
     <string name="crank">Rückspulkurbel</string>
+    <string name="update">Aktualisieren</string>
+    <string name="updated">„%1$s“ aktualisiert</string>
 </resources>

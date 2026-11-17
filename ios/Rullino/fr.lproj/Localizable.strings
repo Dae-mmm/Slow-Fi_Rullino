@@ -250,3 +250,5 @@
 "cam_r_hint" = "R activé · chaque tour de\nmanivelle recule d'une vue";
 "rewind_all_out" = "Tout rembobiner et la sortir pour le labo";
 "crank" = "Manivelle de rembobinage";
+"update" = "Mettre à jour";
+"updated" = "« %1$@ » mise à jour";

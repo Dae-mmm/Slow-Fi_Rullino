@@ -252,4 +252,6 @@
     <string name="cam_r_hint">R on · each turn of the\ncrank goes back one frame</string>
     <string name="rewind_all_out">Rewind it all and take it out for the lab</string>
     <string name="crank">Rewind crank</string>
+    <string name="update">Update</string>
+    <string name="updated">“%1$s” updated</string>
 </resources>

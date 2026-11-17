@@ -250,3 +250,5 @@
 "cam_r_hint" = "R activado · cada vuelta de\nmanivela retrocede una foto";
 "rewind_all_out" = "Rebobinar todo y sacarlo para el laboratorio";
 "crank" = "Manivela de rebobinado";
+"update" = "Actualizar";
+"updated" = "«%1$@» actualizada";

@@ -250,3 +250,5 @@
 "cam_r_hint" = "R on · each turn of the\ncrank goes back one frame";
 "rewind_all_out" = "Rewind it all and take it out for the lab";
 "crank" = "Rewind crank";
+"update" = "Update";
+"updated" = "“%1$@” updated";

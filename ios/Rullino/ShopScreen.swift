@@ -25,9 +25,63 @@ struct ShopScreen: View {
                     ForEach(store.emulsions) { e in card(e) }
                 }
                 Text(L("tokens_note")).font(.caption).foregroundStyle(Palette.muted)
+
+                Text(L("catalog_tab")).font(.headline).foregroundStyle(Palette.ink).padding(.top, 8)
+                catalogSection
             }
             .padding(18)
         }
+    }
+
+    @ViewBuilder
+    private var catalogSection: some View {
+        if let items = store.catalog {
+            if items.isEmpty {
+                Text(L("store_empty")).foregroundStyle(Palette.muted)
+            }
+            ForEach(items) { item in catalogRow(item) }
+        } else if store.catalogFailed {
+            HStack {
+                Text(L("store_unreachable")).foregroundStyle(Palette.muted)
+                Button(L("retry")) { Task { await store.loadCatalog() } }.buttonStyle(.bordered).tint(Palette.ink)
+            }
+        } else {
+            Text(L("store_loading")).foregroundStyle(Palette.muted)
+                .task { await store.loadCatalog() }
+        }
+    }
+
+    private func catalogRow(_ item: CatalogItem) -> some View {
+        HStack(spacing: 12) {
+            Group {
+                if let s = item.boxUrl, let u = URL(string: s) {
+                    AsyncImage(url: u) { img in img.resizable().scaledToFit() } placeholder: { Color.clear }
+                } else {
+                    Canister(name: item.name, iso: item.iso, bw: item.type == "bw")
+                }
+            }
+            .frame(width: 56, height: 40)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.name).font(.headline).foregroundStyle(Palette.ink)
+                Text("ISO \(item.iso) · " + (item.type == "bw" ? L("tag_bw") : L("color_long")) + (item.sizeBytes > 0 ? " · \(item.sizeBytes / 1024) KB" : ""))
+                    .font(mono).foregroundStyle(Palette.muted)
+                if !item.note.isEmpty { Text(item.note).font(.caption).foregroundStyle(Palette.muted).lineLimit(2) }
+            }
+            Spacer()
+            if store.downloading.contains(item.id) {
+                ProgressView()
+            } else if store.needsUpdate(item) {
+                Button(L("update")) { Task { await store.download(item) } }.buttonStyle(.borderedProminent).tint(Palette.safelight)
+            } else if store.isInstalled(item) {
+                Text(L("installed")).font(.caption).foregroundStyle(Palette.muted)
+            } else if item.priceCents > 0 {
+                Text(L("soon")).font(.caption).foregroundStyle(Palette.muted)
+            } else {
+                Button(L("free")) { Task { await store.download(item) } }.buttonStyle(.borderedProminent).tint(Palette.safelight)
+            }
+        }
+        .padding(12)
+        .background(Palette.plate, in: RoundedRectangle(cornerRadius: 10))
     }
 
     private var greeting: String {

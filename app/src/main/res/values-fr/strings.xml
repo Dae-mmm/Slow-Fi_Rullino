@@ -251,4 +251,6 @@
     <string name="cam_r_hint">R activé · chaque tour de\nmanivelle recule d\'une vue</string>
     <string name="rewind_all_out">Tout rembobiner et la sortir pour le labo</string>
     <string name="crank">Manivelle de rembobinage</string>
+    <string name="update">Mettre à jour</string>
+    <string name="updated">« %1$s » mise à jour</string>
 </resources>

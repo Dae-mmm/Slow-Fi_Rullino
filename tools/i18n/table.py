@@ -251,4 +251,6 @@ T = [
 ("cam_r_hint","R on · each turn of the\ncrank goes back one frame","R acceso · ogni giro di\nmanovella torna di una posa","R activé · chaque tour de\nmanivelle recule d'une vue","R activado · cada vuelta de\nmanivela retrocede una foto","R an · jede Kurbelumdrehung\ngeht ein Bild zurück"),
 ("rewind_all_out","Rewind it all and take it out for the lab","Riavvolgi tutto e toglilo per il laboratorio","Tout rembobiner et la sortir pour le labo","Rebobinar todo y sacarlo para el laboratorio","Alles zurückspulen und fürs Labor herausnehmen"),
 ("crank","Rewind crank","Manovella di riavvolgimento","Manivelle de rembobinage","Manivela de rebobinado","Rückspulkurbel"),
+("update","Update","Aggiorna","Mettre à jour","Actualizar","Aktualisieren"),
+("updated","“%1$s” updated","“%1$s” aggiornata","« %1$s » mise à jour","«%1$s» actualizada","„%1$s“ aktualisiert"),
 ]

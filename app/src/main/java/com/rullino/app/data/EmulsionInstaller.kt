@@ -25,7 +25,7 @@ class EmulsionInstaller(private val context: Context, private val db: AppDb) {
         private const val MAX_TOTAL_BYTES = 60L * 1024 * 1024
     }
 
-    suspend fun install(input: InputStream, source: String): EmulsionEntity = withContext(Dispatchers.IO) {
+    suspend fun install(input: InputStream, source: String, version: Int = 1): EmulsionEntity = withContext(Dispatchers.IO) {
         val entries = readZip(input)
 
         entries["mimetype"]?.let {
@@ -88,7 +88,7 @@ class EmulsionInstaller(private val context: Context, private val db: AppDb) {
             canisterFile = canister,
             demoFiles = demos.joinToString("|"),
             source = source,
-            version = manifest.formatVersion,
+            version = version,
             installedAt = System.currentTimeMillis(),
         )
         db.emulsions().upsert(entity)

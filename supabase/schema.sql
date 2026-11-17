@@ -29,3 +29,32 @@ create policy "catalogo pubblico" on public.emulsions
 insert into storage.buckets (id, name, public)
 values ('emulsions', 'emulsions', true)
 on conflict (id) do nothing;
+
+-- Sincronizzazione automatica del catalogo (vedi functions/sync-catalog).
+alter table public.emulsions
+  add column if not exists file_sha text,
+  add column if not exists file_path text,
+  add column if not exists updated_at timestamptz not null default now();
+
+create extension if not exists pg_net with schema extensions;
+create schema if not exists private;
+
+create or replace function private.emulsions_bucket_changed()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if coalesce(new.bucket_id, old.bucket_id) = 'emulsions'
+     and lower(coalesce(new.name, old.name)) like '%.emulsion' then
+    perform net.http_post(
+      url := 'https://voxkoarjawgabrljvvon.supabase.co/functions/v1/sync-catalog',
+      body := '{}'::jsonb,
+      headers := '{"Content-Type": "application/json"}'::jsonb
+    );
+  end if;
+  return null;
+end; $$;
+revoke all on function private.emulsions_bucket_changed() from public, anon, authenticated;
+
+drop trigger if exists emulsions_bucket_changed on storage.objects;
+create trigger emulsions_bucket_changed
+  after insert or update or delete on storage.objects
+  for each row execute function private.emulsions_bucket_changed();
