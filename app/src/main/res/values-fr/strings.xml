@@ -368,4 +368,5 @@
     <string name="ct_err_closed">Le concours est terminé</string>
     <string name="ct_err_rules">Cette photo ne respecte pas les règles du concours</string>
     <string name="ct_err_already">Tu as déjà envoyé une photo à ce concours</string>
+    <string name="ct_ios_no_release">Sur iPhone les autorisations ne sont pas encore disponibles : envoie les photos avec des personnes depuis l\'app Android.</string>
 </resources>

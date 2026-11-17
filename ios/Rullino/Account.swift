@@ -55,6 +55,10 @@ final class Account: ObservableObject {
     private let key = Store.catalogKey
 
     var email: String? { session?.email }
+    var userId: String? { session?.userId }
+
+    /// Token valido per gli altri client (concorsi); lo rinnova se sta per scadere.
+    func accessToken() async -> String? { try? await validToken() }
 
     init() {
         session = Keychain.load()

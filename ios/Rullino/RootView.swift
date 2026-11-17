@@ -1,11 +1,11 @@
 import SwiftUI
 
-enum Tab: CaseIterable { case camera, rolls, shop, options
+enum Tab: CaseIterable { case camera, rolls, shop, contests, options
     var key: String {
-        switch self { case .camera: "tab_camera"; case .rolls: "tab_rolls"; case .shop: "tab_shop"; case .options: "tab_options" }
+        switch self { case .camera: "tab_camera"; case .rolls: "tab_rolls"; case .shop: "tab_shop"; case .contests: "tab_contests"; case .options: "tab_options" }
     }
     var glyph: String {
-        switch self { case .camera: "◉"; case .rolls: "▣"; case .shop: "⌂"; case .options: "⚙" }
+        switch self { case .camera: "◉"; case .rolls: "▣"; case .shop: "⌂"; case .contests: "◈"; case .options: "⚙" }
     }
 }
 
@@ -31,7 +31,7 @@ struct RootView: View {
                             Text(L(t.key).uppercased()).font(Fonts.barlow(9)).tracking(0.8).lineLimit(1)
                         }
                         .foregroundStyle(on ? Palette.safelight : Palette.faint)
-                        .frame(width: 68, height: 58)
+                        .frame(width: 68, height: 54)
                         .background(on ? LinearGradient(colors: [Color(hex: 0x291711), .clear], startPoint: .leading, endPoint: .trailing) : LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing))
                         .overlay(alignment: .leading) { if on { Rectangle().fill(Palette.safelight).frame(width: 2) } }
                     }
@@ -49,6 +49,7 @@ struct RootView: View {
                 case .camera: CameraScreen(goShop: { tab = .shop }, goRolls: { tab = .rolls })
                 case .rolls: RollsScreen()
                 case .shop: ShopScreen()
+                case .contests: ContestsScreen(goCamera: { tab = .camera }, goAccount: { tab = .options })
                 case .options: OptionsScreen()
                 }
             }

@@ -369,4 +369,5 @@
     <string name="ct_err_closed">The contest is closed</string>
     <string name="ct_err_rules">This photo doesn\'t meet the contest rules</string>
     <string name="ct_err_already">You\'ve already sent a photo to this contest</string>
+    <string name="ct_ios_no_release">On iPhone releases aren\'t available yet: send photos with people from the Android app.</string>
 </resources>

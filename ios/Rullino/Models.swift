@@ -127,6 +127,9 @@ struct Roll: Codable, Identifiable, Equatable {
     var readyAt: Date?
     /// Sviluppo chiesto al laboratorio: -1 pull, 0 normale, +1/+2 push.
     var push = 0
+    /// Rullino regalato da un concorso: id del concorso e codice del regalo sul server.
+    var contestId: String?
+    var contestRef: String?
 
     init(id: Int, emulsionId: String, emulsionName: String, iso: Int, exposures: Int, isBw: Bool) {
         self.id = id; self.emulsionId = emulsionId; self.emulsionName = emulsionName
@@ -134,7 +137,7 @@ struct Roll: Codable, Identifiable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, emulsionId, emulsionName, iso, exposures, isBw, cursor, shotCount, wound, state, createdAt, readyAt, push
+        case id, emulsionId, emulsionName, iso, exposures, isBw, cursor, shotCount, wound, state, createdAt, readyAt, push, contestId, contestRef
     }
 
     // Decodifica tollerante: i campi nuovi non fanno perdere i rullini salvati.
@@ -146,6 +149,7 @@ struct Roll: Codable, Identifiable, Equatable {
         isBw = c.v(.isBw, false); cursor = c.v(.cursor, 1); shotCount = c.v(.shotCount, 0)
         wound = c.v(.wound, false); state = c.v(.state, .loaded); createdAt = c.v(.createdAt, Date())
         readyAt = c.v(.readyAt, nil); push = c.v(.push, 0)
+        contestId = c.v(.contestId, nil); contestRef = c.v(.contestRef, nil)
     }
 
     var canWind: Bool { state == .loaded && !wound && cursor <= exposures }

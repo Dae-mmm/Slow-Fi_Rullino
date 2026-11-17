@@ -189,7 +189,7 @@ struct LightTable: View {
         }
         .background(Palette.body)
         .fullScreenCover(item: Binding(get: { loupe.map { LoupeItem(f: $0) } }, set: { loupe = $0?.f })) { item in
-            Loupe(frame: item.f, url: store.url(item.f), close: { loupe = nil })
+            Loupe(frame: item.f, url: store.url(item.f), roll: roll, close: { loupe = nil })
         }
         .alert(L("delete_all_confirm"), isPresented: $confirmDelete) {
             Button(L("delete"), role: .destructive) { store.deleteRoll(roll); close() }
@@ -252,10 +252,13 @@ struct NegativeFrame: View {
 /// Lente: il positivo grande, da stampare.
 struct Loupe: View {
     @EnvironmentObject var store: Store
+    @EnvironmentObject var contests: ContestsModel
     let frame: DevFrame
     let url: URL
+    let roll: Roll
     let close: () -> Void
     @State private var image: UIImage?
+    @State private var sending = false
 
     var body: some View {
         ZStack {
@@ -269,6 +272,9 @@ struct Loupe: View {
                     let printed = store.data.frames.first { $0.file == frame.file }?.printed ?? false
                     Button(printed ? L("already_printed") : L("print")) { store.printFrames([frame]) }
                         .buttonStyle(.primary).disabled(printed)
+                    if !contests.eligible(roll).isEmpty {
+                        Button(L("ct_send_short")) { sending = true }.buttonStyle(.primary)
+                    }
                     Button(L("back_on_table"), action: close).buttonStyle(.secondary)
                 }
                 .padding(16)
@@ -278,6 +284,11 @@ struct Loupe: View {
         .task {
             let u = url
             image = await Task.detached { Developer.thumbnail(u, maxPixel: 2400).map { UIImage(cgImage: $0) } }.value
+            if contests.contests.isEmpty { await contests.refresh() }
+        }
+        .sheet(isPresented: $sending) {
+            SendToContestView(roll: roll, frame: frame, url: url, contests: contests.eligible(roll)) { sending = false }
+                .environmentObject(contests)
         }
     }
 }

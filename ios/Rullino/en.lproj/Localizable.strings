@@ -367,3 +367,4 @@
 "ct_err_closed" = "The contest is closed";
 "ct_err_rules" = "This photo doesn't meet the contest rules";
 "ct_err_already" = "You've already sent a photo to this contest";
+"ct_ios_no_release" = "On iPhone releases aren't available yet: send photos with people from the Android app.";

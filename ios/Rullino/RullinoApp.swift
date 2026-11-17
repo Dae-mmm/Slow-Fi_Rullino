@@ -4,6 +4,7 @@ import SwiftUI
 struct RullinoApp: App {
     @StateObject private var store = Store()
     @StateObject private var account = Account()
+    @StateObject private var contests = ContestsModel()
 
     var body: some Scene {
         WindowGroup {
@@ -11,6 +12,8 @@ struct RullinoApp: App {
                 .font(Fonts.barlow(16))
                 .environmentObject(store)
                 .environmentObject(account)
+                .environmentObject(contests)
+                .onAppear { contests.account = account; contests.store = store }
                 .preferredColorScheme(.dark)
                 .statusBarHidden(true)
                 .persistentSystemOverlays(.hidden)

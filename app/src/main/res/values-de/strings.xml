@@ -368,4 +368,5 @@
     <string name="ct_err_closed">Der Wettbewerb ist beendet</string>
     <string name="ct_err_rules">Dieses Foto entspricht nicht den Regeln</string>
     <string name="ct_err_already">Du hast schon ein Foto eingereicht</string>
+    <string name="ct_ios_no_release">Auf dem iPhone gibt es noch keine Freigaben: Fotos mit Personen bitte über die Android-App einreichen.</string>
 </resources>

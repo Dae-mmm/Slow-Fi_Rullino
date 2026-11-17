@@ -367,3 +367,4 @@
 "ct_err_closed" = "Il concorso è chiuso";
 "ct_err_rules" = "Questa foto non rispetta le regole del concorso";
 "ct_err_already" = "Hai già mandato una foto a questo concorso";
+"ct_ios_no_release" = "Su iPhone le liberatorie non ci sono ancora: le foto con persone si mandano dall'app Android.";

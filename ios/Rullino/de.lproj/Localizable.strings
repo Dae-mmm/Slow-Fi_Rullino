@@ -367,3 +367,4 @@
 "ct_err_closed" = "Der Wettbewerb ist beendet";
 "ct_err_rules" = "Dieses Foto entspricht nicht den Regeln";
 "ct_err_already" = "Du hast schon ein Foto eingereicht";
+"ct_ios_no_release" = "Auf dem iPhone gibt es noch keine Freigaben: Fotos mit Personen bitte über die Android-App einreichen.";

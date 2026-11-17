@@ -367,3 +367,4 @@
 "ct_err_closed" = "Le concours est terminé";
 "ct_err_rules" = "Cette photo ne respecte pas les règles du concours";
 "ct_err_already" = "Tu as déjà envoyé une photo à ce concours";
+"ct_ios_no_release" = "Sur iPhone les autorisations ne sont pas encore disponibles : envoie les photos avec des personnes depuis l'app Android.";

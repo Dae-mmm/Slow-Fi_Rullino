@@ -61,7 +61,7 @@ final class Store: ObservableObject {
     }
 
     @discardableResult
-    private func install(_ bytes: Data) -> Emulsion? {
+    func install(_ bytes: Data) -> Emulsion? {
         do {
             let e = try EmulsionInstaller.install(bytes, into: root)
             if let i = emulsions.firstIndex(where: { $0.id == e.id }) { emulsions[i] = e } else { emulsions.append(e) }
@@ -150,8 +150,23 @@ final class Store: ObservableObject {
         data.rolls.append(r)
     }
 
-    /// Rullino caricato e mai scattato: torna in magazzino.
+    /// Carica in macchina il rullino regalato da un concorso (non passa dal magazzino).
+    func loadGiftRoll(_ e: Emulsion, exposures: Int, contestId: String, ref: String) -> Bool {
+        if let a = activeRoll {
+            if a.shotCount == 0 && a.contestId != nil { update(a.id) { $0.state = .shelved; $0.wound = false } }
+            else if a.shotCount == 0 { unloadEmptyRoll(a) }
+            else { say("err_roll_in_camera"); return false }
+        }
+        var r = Roll(id: data.nextId, emulsionId: e.id, emulsionName: e.name, iso: e.iso, exposures: exposures, isBw: e.isBw)
+        r.contestId = contestId; r.contestRef = ref
+        data.nextId += 1
+        data.rolls.append(r)
+        return true
+    }
+
+    /// Rullino caricato e mai scattato: torna in magazzino (quello di un concorso resta da parte).
     func unloadEmptyRoll(_ r: Roll) {
+        if r.contestId != nil { update(r.id) { $0.state = .shelved; $0.wound = false }; return }
         data.rolls.removeAll { $0.id == r.id }
         data.inventory[r.emulsionId] = (data.inventory[r.emulsionId] ?? 0) + 1
     }
