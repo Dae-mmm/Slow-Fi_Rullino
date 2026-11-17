@@ -22,7 +22,16 @@ import java.io.File
 /** Crea il PDF della liberatoria firmata e lo salva in Download/Rullino. */
 object ReleasePdf {
 
-    suspend fun export(context: Context, release: ReleaseEntity, text: String): Uri = withContext(Dispatchers.IO) {
+    /** Il PDF in memoria, per mandarlo insieme alla foto di un concorso. */
+    suspend fun bytes(context: Context, release: ReleaseEntity, text: String): ByteArray = withContext(Dispatchers.IO) {
+        val doc = render(context, release, text)
+        val out = java.io.ByteArrayOutputStream()
+        doc.writeTo(out)
+        doc.close()
+        out.toByteArray()
+    }
+
+    private fun render(context: Context, release: ReleaseEntity, text: String): PdfDocument {
         val doc = PdfDocument()
         val page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, 1).create()) // A4 in punti
         val c = page.canvas
@@ -53,6 +62,11 @@ object ReleasePdf {
         c.drawText(context.getString(R.string.pdf_footer, release.rollId.toString(), release.frame.toString()), margin, 842 - 30f, label)
         doc.finishPage(page)
 
+        return doc
+    }
+
+    suspend fun export(context: Context, release: ReleaseEntity, text: String): Uri = withContext(Dispatchers.IO) {
+        val doc = render(context, release, text)
         val name = context.getString(R.string.pdf_prefix) + "_${release.lastName.ifBlank { context.getString(R.string.pdf_noname) }}_${release.rollId}-${release.frame}.pdf"
             .replace(Regex("[^\\p{L}\\p{N}._-]"), "_")
         val values = ContentValues().apply {

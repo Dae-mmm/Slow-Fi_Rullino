@@ -143,6 +143,11 @@ class Account(context: Context, private val baseUrl: String, private val key: St
 
     /* ---------------- sessione ---------------- */
 
+    val userId: String? get() = session?.userId
+
+    /** Token valido per le chiamate di altri client (concorsi); lo rinnova se sta per scadere. */
+    suspend fun accessToken(): String? = validToken()
+
     private suspend fun validToken(): String? {
         val s = session ?: return null
         if (s.expiresAt - 60_000 > System.currentTimeMillis()) return s.accessToken

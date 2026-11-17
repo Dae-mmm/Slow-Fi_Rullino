@@ -25,6 +25,7 @@ class RullinoApp : Application() {
     lateinit var shop: Shop
         private set
     lateinit var account: Account
+    lateinit var contests: com.rullino.app.data.ContestsClient
         private set
 
     override fun onCreate() {
@@ -34,6 +35,7 @@ class RullinoApp : Application() {
         settings = Settings(this)
         shop = Shop(this)
         account = Account(this, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY)
+        contests = com.rullino.app.data.ContestsClient(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, account)
         developer = Developer(this, repo, settings)
         appScope.launch { runCatching { account.refresh() } }
         appScope.launch {

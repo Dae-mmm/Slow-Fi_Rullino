@@ -48,7 +48,10 @@ class Repository(private val context: Context, val db: AppDb) {
     /** In macchina c'è posto se non c'è un rullino, o se quello caricato è ancora vergine (torna in magazzino). */
     private suspend fun makeRoomInCamera() {
         for (current in db.rolls().activeNow()) {
-            if (current.shotCount == 0) {
+            if (current.shotCount == 0 && current.contestId != null) {
+                // Il rullino del concorso non torna in magazzino: resta da parte, intatto.
+                db.rolls().update(current.copy(state = RollState.SHELVED, wound = false))
+            } else if (current.shotCount == 0) {
                 db.rolls().delete(current)
                 addToInventory(current.emulsionId, 1)
             } else throw IllegalStateException(context.getString(R.string.err_roll_in_camera))
@@ -69,6 +72,17 @@ class Repository(private val context: Context, val db: AppDb) {
         )
     }
 
+    /** Carica in macchina il rullino regalato da un concorso (non passa dal magazzino). */
+    suspend fun loadGiftRoll(e: EmulsionEntity, exposures: Int, contestId: String, ref: String): Long = db.withTransaction {
+        makeRoomInCamera()
+        db.rolls().insert(
+            RollEntity(
+                emulsionId = e.id, emulsionName = e.name, iso = e.iso, exposures = exposures,
+                isBw = e.isBw, loadedAt = System.currentTimeMillis(), contestId = contestId, contestRef = ref,
+            )
+        )
+    }
+
     /** Ricarica un rullino messo da parte: riprende dal fotogramma dove era rimasto. */
     suspend fun reloadRoll(rollId: Long) = db.withTransaction {
         val r = db.rolls().get(rollId) ?: return@withTransaction
@@ -80,7 +94,9 @@ class Repository(private val context: Context, val db: AppDb) {
     /** Toglie dalla macchina un rullino su cui non si è ancora scattato: torna in magazzino. */
     suspend fun unloadEmptyRoll(roll: RollEntity) = db.withTransaction {
         val fresh = db.rolls().get(roll.id) ?: return@withTransaction
-        if (fresh.shotCount == 0) {
+        if (fresh.shotCount == 0 && fresh.contestId != null) {
+            db.rolls().update(fresh.copy(state = RollState.SHELVED, wound = false))
+        } else if (fresh.shotCount == 0) {
             db.rolls().delete(fresh)
             addToInventory(fresh.emulsionId, 1)
             rollDir(fresh.id).deleteRecursively()

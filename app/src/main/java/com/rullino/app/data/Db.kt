@@ -77,6 +77,9 @@ data class RollEntity(
     val pickedUp: Boolean = false,
     /** Sviluppo chiesto al laboratorio: -1 pull, 0 normale, +1/+2 push. */
     @ColumnInfo(defaultValue = "0") val push: Int = 0,
+    /** Rullino regalato da un concorso: id del concorso e codice del regalo sul server. */
+    val contestId: String? = null,
+    val contestRef: String? = null,
 ) {
     val canWind get() = state == RollState.LOADED && !wound && cursor <= exposures
     /** Tutte le pose esposte: va riavvolto. */
@@ -161,6 +164,9 @@ interface RollDao {
 
     @Query("SELECT * FROM rolls WHERE id = :id")
     suspend fun get(id: Long): RollEntity?
+
+    @Query("SELECT * FROM rolls")
+    suspend fun allNow(): List<RollEntity>
 
     @Query("SELECT id FROM rolls")
     suspend fun allIds(): List<Long>
@@ -261,7 +267,7 @@ interface FrameDao {
         EmulsionEntity::class, RollEntity::class, ExposureEntity::class, FrameEntity::class,
         InventoryEntity::class, ReleaseEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = false,
 )
 abstract class AppDb : RoomDatabase() {
@@ -287,10 +293,17 @@ abstract class AppDb : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE rolls ADD COLUMN contestId TEXT")
+                db.execSQL("ALTER TABLE rolls ADD COLUMN contestRef TEXT")
+            }
+        }
+
         fun build(context: Context): AppDb =
             Room.databaseBuilder(context, AppDb::class.java, "rullino.db")
                 // App ancora in sviluppo: cambiando schema si riparte da zero.
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .fallbackToDestructiveMigration(true)
                 .build()
     }

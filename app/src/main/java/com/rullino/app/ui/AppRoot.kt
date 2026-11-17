@@ -55,12 +55,18 @@ enum class AppTab(@StringRes val label: Int, val glyph: String) {
     ROLLS(R.string.tab_rolls, "▣"),
     SHOP(R.string.tab_shop, "⌂"),
     EMULSIONS(R.string.tab_emulsions, "▥"),
+    CONTESTS(R.string.tab_contests, "◈"),
     OPTIONS(R.string.tab_options, "⚙"),
 }
 
 @Composable
 fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = viewModel()) {
     var tab by rememberSaveable { mutableStateOf(AppTab.CAMERA) }
+    val cvm: ContestsViewModel = viewModel()
+    val contestMessage by cvm.message.collectAsState()
+    LaunchedEffect(contestMessage) {
+        contestMessage?.let { vm.say(it); cvm.message.value = null }
+    }
     val snackbar = remember { SnackbarHostState() }
     val message by vm.message.collectAsState()
 
@@ -118,6 +124,7 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
                     AppTab.SHOP -> ShopScreen(vm)
                     AppTab.EMULSIONS -> EmulsionsScreen(vm, onLoaded = { tab = AppTab.CAMERA })
                     AppTab.ROLLS -> RollsScreen(vm, onOpenCamera = { tab = AppTab.CAMERA }, onGoLab = { tab = AppTab.SHOP })
+                    AppTab.CONTESTS -> ContestsScreen(vm, cvm, onOpenCamera = { tab = AppTab.CAMERA }, onSignIn = { tab = AppTab.OPTIONS })
                     AppTab.OPTIONS -> OptionsScreen(vm)
                 }
             }
@@ -147,7 +154,7 @@ private fun NavRail(tab: AppTab, onTab: (AppTab) -> Unit) {
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .height(58.dp)
+                    .height(52.dp)
                     .background(if (on) Brush.horizontalGradient(listOf(Color(0xFF291711), Color.Transparent)) else Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent)))
                     .drawBehind { if (on) drawRect(Palette.Safelight, size = androidx.compose.ui.geometry.Size(2.dp.toPx(), size.height)) }
                     .clickable { onTab(t) },
@@ -155,7 +162,7 @@ private fun NavRail(tab: AppTab, onTab: (AppTab) -> Unit) {
                 verticalArrangement = Arrangement.Center,
             ) {
                 val c = if (on) Palette.Safelight else Palette.Faint
-                Text(t.glyph, color = c, fontFamily = Mono, fontSize = 20.sp, lineHeight = 22.sp)
+                Text(t.glyph, color = c, fontFamily = Mono, fontSize = 18.sp, lineHeight = 20.sp)
                 Text(stringResource(t.label).uppercase(), color = c, fontSize = 9.sp, letterSpacing = 0.8.sp, maxLines = 1)
             }
         }

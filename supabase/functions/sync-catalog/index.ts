@@ -1,6 +1,7 @@
 // Rigenera il catalogo leggendo i file .emulsion del bucket "emulsions".
 // Parte da sola (trigger su storage.objects) ogni volta che aggiungi, sostituisci o togli un file.
 // Non usa nulla della richiesta: chiunque la chiami ottiene solo una nuova sincronizzazione.
+// Le cartelle "boxes" (immagini) ed "exclusive" (emulsioni premio dei concorsi) non vanno a catalogo.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { unzipSync, strFromU8 } from "npm:fflate@0.8.2";
@@ -19,7 +20,7 @@ async function listAll(sb: any, prefix = ""): Promise<string[]> {
   if (error) throw error;
   for (const o of data ?? []) {
     const path = prefix ? `${prefix}/${o.name}` : o.name;
-    if (o.id === null) { if (o.name !== "boxes") out.push(...(await listAll(sb, path))); }
+    if (o.id === null) { if (o.name !== "boxes" && o.name !== "exclusive") out.push(...(await listAll(sb, path))); }
     else if (o.name.toLowerCase().endsWith(".emulsion")) out.push(path);
   }
   return out;

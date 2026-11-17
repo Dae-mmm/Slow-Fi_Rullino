@@ -62,6 +62,7 @@ import com.rullino.app.data.FrameEntity
 import com.rullino.app.data.RollEntity
 import com.rullino.app.data.RollState
 import java.io.File
+import androidx.compose.runtime.LaunchedEffect
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -216,6 +217,17 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
     val releases by remember(roll.id) { vm.releases(roll.id) }.collectAsState(initial = emptyList())
     var releaseFrame by remember { mutableStateOf<Int?>(null) }
     releaseFrame?.let { f -> ReleasesDialog(vm, roll, f, onClose = { releaseFrame = null }) }
+    // Concorsi aperti a cui questo rullino può partecipare.
+    val cvm: ContestsViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    val contests by cvm.contests.collectAsState()
+    val mine by cvm.mine.collectAsState()
+    val signedIn by vm.account.signedIn.collectAsState()
+    LaunchedEffect(signedIn) { if (signedIn && contests.isEmpty()) cvm.refresh() }
+    val eligible = remember(contests, mine, roll) { cvm.eligible(roll) }
+    var sendFrame by remember { mutableStateOf<FrameEntity?>(null) }
+    sendFrame?.let { f ->
+        SendToContestDialog(cvm, roll, f, eligible, hasRelease = releases.any { it.frame == f.frame }, onClose = { sendFrame = null })
+    }
 
     Column(
         Modifier
@@ -303,6 +315,7 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
             onClose = { loupe = null },
             onPrint = { vm.print(roll, listOf(f)); loupe = null },
             onRelease = { loupe = null; releaseFrame = f.frame },
+            onContest = if (eligible.isNotEmpty()) ({ loupe = null; sendFrame = f }) else null,
         )
     }
 
@@ -409,7 +422,7 @@ private fun Sprockets(base: Color, label: String?, number: Int) {
 
 /** Il lentino: il fotogramma in positivo, grande, con la stampa. */
 @Composable
-private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, onRelease: () -> Unit) {
+private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, onRelease: () -> Unit, onContest: (() -> Unit)? = null) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
             Modifier.fillMaxSize().background(Color(0xEE0C0B0B)).padding(16.dp),
@@ -430,6 +443,7 @@ private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, 
                 if (frame.printUri == null) PrimaryButton(onClick = onPrint) { Text(stringResource(R.string.print)) }
                 else Text(stringResource(R.string.already_printed), color = Palette.Ink)
                 SecondaryButton(onClick = onRelease) { Text(stringResource(R.string.release)) }
+                if (onContest != null) PrimaryButton(onClick = onContest) { Text(stringResource(R.string.ct_send_short)) }
                 SecondaryButton(onClick = onClose) { Text(stringResource(R.string.back_on_table)) }
             }
         }
