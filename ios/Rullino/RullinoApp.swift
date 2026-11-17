@@ -3,11 +3,13 @@ import SwiftUI
 @main
 struct RullinoApp: App {
     @StateObject private var store = Store()
+    @StateObject private var account = Account()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(store)
+                .environmentObject(account)
                 .preferredColorScheme(.dark)
                 .statusBarHidden(true)
                 .persistentSystemOverlays(.hidden)

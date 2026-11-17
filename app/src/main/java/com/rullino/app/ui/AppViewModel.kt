@@ -1,5 +1,7 @@
 package com.rullino.app.ui
 
+import com.rullino.app.data.Role
+import com.rullino.app.data.AccountException
 import com.rullino.app.R
 import androidx.annotation.StringRes
 import android.content.res.Resources
@@ -43,6 +45,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val settings = app.settings
     val shop = app.shop
     val releaseTemplate = ReleaseTemplate(application)
+    val account = app.account
+    val accountBusy = MutableStateFlow(false)
+    /** Email a cui è stato mandato il codice (null = si chiede l'email). */
+    val pendingEmail = MutableStateFlow<String?>(null)
 
     val inventory: StateFlow<Map<String, Int>> = repo.inventory
         .map { list -> list.associate { it.emulsionId to it.count } }
@@ -208,6 +214,55 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 .getOrElse { StoreState.Error(str(R.string.store_unreachable)) }
         }
     }
+
+    /* ---------------- Account ---------------- */
+
+    private fun accountAction(block: suspend () -> Unit) {
+        if (accountBusy.value) return
+        accountBusy.value = true
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (e: AccountException) {
+                say(
+                    when (e.kind) {
+                        AccountException.Kind.NETWORK -> R.string.acc_err_network
+                        AccountException.Kind.SEND -> R.string.acc_err_send
+                        AccountException.Kind.CODE -> R.string.acc_err_code
+                        AccountException.Kind.USERNAME_TAKEN -> R.string.acc_username_taken
+                        AccountException.Kind.USERNAME_INVALID -> R.string.acc_username_invalid
+                        AccountException.Kind.OTHER -> R.string.acc_err_network
+                    }
+                )
+            } finally {
+                accountBusy.value = false
+            }
+        }
+    }
+
+    fun sendCode(email: String) = accountAction {
+        account.sendCode(email)
+        pendingEmail.value = email.trim()
+    }
+
+    fun verifyCode(code: String) = accountAction {
+        val email = pendingEmail.value ?: return@accountAction
+        account.verify(email, code)
+        pendingEmail.value = null
+        // Gli OP hanno sempre gli strumenti da sviluppatore.
+        if (account.profile.value?.role == Role.OP) settings.setDeveloperMode(true)
+    }
+
+    fun cancelCode() { pendingEmail.value = null }
+
+    fun saveProfile(username: String, displayName: String) = accountAction {
+        account.updateProfile(username, displayName)
+        say(R.string.acc_saved)
+    }
+
+    fun signOut() = accountAction { account.signOut(); say(R.string.acc_signed_out) }
+
+    fun deleteAccount() = accountAction { account.deleteAccount(); say(R.string.acc_deleted) }
 
     fun download(item: CatalogItem) {
         if (item.id in downloading.value) return

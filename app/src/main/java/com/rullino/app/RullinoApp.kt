@@ -1,5 +1,6 @@
 package com.rullino.app
 
+import com.rullino.app.data.Account
 import android.app.Application
 import android.util.Log
 import com.rullino.app.data.AppDb
@@ -23,6 +24,8 @@ class RullinoApp : Application() {
         private set
     lateinit var shop: Shop
         private set
+    lateinit var account: Account
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -30,7 +33,9 @@ class RullinoApp : Application() {
         repo = Repository(this, db)
         settings = Settings(this)
         shop = Shop(this)
+        account = Account(this, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY)
         developer = Developer(this, repo, settings)
+        appScope.launch { runCatching { account.refresh() } }
         appScope.launch {
             cleanOrphanRolls(db)
             installBundledEmulsions()

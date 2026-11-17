@@ -1,5 +1,11 @@
 package com.rullino.app.ui
 
+import com.rullino.app.data.Role
+import com.rullino.app.data.Features
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import com.rullino.app.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
@@ -52,6 +58,8 @@ fun OptionsScreen(vm: AppViewModel) {
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        AccountSection(vm)
+
         Section(stringResource(R.string.lab_title)) {
             Text(stringResource(R.string.opt_lab_text), color = Palette.Muted, fontSize = 13.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -132,6 +140,93 @@ fun OptionsScreen(vm: AppViewModel) {
             }
             if (hint != null) Text(hint, color = Palette.Safelight, fontFamily = Mono, fontSize = 12.sp)
         }
+    }
+}
+
+@Composable
+private fun AccountSection(vm: AppViewModel) {
+    val signedIn by vm.account.signedIn.collectAsState()
+    val profile by vm.account.profile.collectAsState()
+    val entitlements by vm.account.entitlements.collectAsState()
+    val busy by vm.accountBusy.collectAsState()
+    val pending by vm.pendingEmail.collectAsState()
+    var email by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf("") }
+    var confirmDelete by remember { mutableStateOf(false) }
+
+    Section(stringResource(R.string.account)) {
+        if (!signedIn) {
+            Text(stringResource(R.string.acc_intro), color = Palette.Muted, fontSize = 13.sp)
+            if (pending == null) {
+                OutlinedTextField(
+                    value = email, onValueChange = { email = it }, singleLine = true,
+                    label = { Text(stringResource(R.string.acc_email)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
+                )
+                Button(onClick = { vm.sendCode(email) }, enabled = !busy && "@" in email) {
+                    Text(stringResource(R.string.acc_send_code))
+                }
+            } else {
+                Text(stringResource(R.string.acc_code_sent, pending!!), color = Palette.Ink, fontSize = 13.sp)
+                OutlinedTextField(
+                    value = code, onValueChange = { code = it.filter(Char::isDigit).take(8) }, singleLine = true,
+                    label = { Text(stringResource(R.string.acc_code)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier.widthIn(max = 240.dp),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { vm.verifyCode(code) }, enabled = !busy && code.length >= 6) { Text(stringResource(R.string.acc_sign_in)) }
+                    TextButton(onClick = { code = ""; vm.cancelCode() }) { Text(stringResource(R.string.acc_change_email)) }
+                }
+            }
+        } else {
+            val p = profile
+            Text(stringResource(R.string.acc_signed_in_as, vm.account.email ?: ""), color = Palette.Ink)
+            if (p != null) {
+                val roleName = stringResource(
+                    when (p.role) { Role.OP -> R.string.role_op; Role.JUDGE -> R.string.role_judge; Role.USER -> R.string.role_user }
+                )
+                Text(
+                    stringResource(R.string.acc_role, roleName) + if (Features.PRO_VISIBLE && entitlements.pro) " · PRO" else "",
+                    color = if (p.role == Role.USER) Palette.Muted else Palette.Safelight, fontSize = 13.sp,
+                )
+                var username by remember(p.username) { mutableStateOf(p.username ?: "") }
+                var shown by remember(p.displayName) { mutableStateOf(p.displayName ?: "") }
+                OutlinedTextField(
+                    value = username, onValueChange = { username = it.take(24) }, singleLine = true,
+                    label = { Text(stringResource(R.string.acc_username)) },
+                    supportingText = { Text(stringResource(R.string.acc_username_invalid), fontSize = 11.sp) },
+                    modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = shown, onValueChange = { shown = it.take(60) }, singleLine = true,
+                    label = { Text(stringResource(R.string.acc_display_name)) },
+                    modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
+                )
+                Button(onClick = { vm.saveProfile(username, shown) }, enabled = !busy) { Text(stringResource(R.string.save)) }
+                if (p.role != Role.USER) Text(stringResource(R.string.acc_judge_area), color = Palette.Muted, fontSize = 12.sp)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { vm.signOut() }, enabled = !busy) { Text(stringResource(R.string.acc_sign_out)) }
+                TextButton(onClick = { confirmDelete = true }, enabled = !busy) {
+                    Text(stringResource(R.string.acc_delete), color = Color(0xFFFF8A80))
+                }
+            }
+        }
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            text = { Text(stringResource(R.string.acc_delete_confirm)) },
+            confirmButton = {
+                TextButton(onClick = { confirmDelete = false; vm.deleteAccount() }) {
+                    Text(stringResource(R.string.acc_delete), color = Color(0xFFFF8A80))
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
 }
 
