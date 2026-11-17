@@ -109,6 +109,20 @@ object VirtualCamera {
         return log2(shutter / needed).toFloat().coerceIn(-5f, 5f)
     }
 
+    /**
+     * Il tempo che usa davvero la compatta in automatico: cerca l'esposizione giusta aprendo prima il
+     * diaframma (fino a f/2.8) e poi allungando il tempo, sempre tra 1/500 e 1/30.
+     */
+    fun autoShutter(ev100: Double, filmIso: Int): Double {
+        val needed = 1.0 / (2.0.pow(ev100) * filmIso.coerceAtLeast(1) / 100.0)   // t/N²
+        val atF8 = needed * 8.0 * 8.0
+        return when {
+            atF8 in FASTEST..SLOWEST -> atF8
+            atF8 < FASTEST -> FASTEST
+            else -> (needed * WIDEST * WIDEST).coerceIn(FASTEST, SLOWEST)
+        }
+    }
+
     /** Errore della compatta per una scena di luminosità [ev100] con una pellicola da [filmIso]. */
     fun errorFor(ev100: Double, filmIso: Int): Float {
         // Esposizione richiesta, espressa come t/N² (secondi per f-stop²).

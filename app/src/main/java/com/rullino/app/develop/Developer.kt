@@ -66,7 +66,14 @@ class Developer(private val context: Context, private val repo: Repository, priv
                     // Errore medio della compatta virtuale sulle esposizioni di questo fotogramma.
                     // La luce vera della scena: dati EXIF corretti da quanto è chiara davvero la foto del telefono.
                     val offsets = layers.map { VirtualCamera.lumaOffset(File(it.rawPath)) }
-                    val errors = layers.mapIndexedNotNull { k, it -> VirtualCamera.errorStops(File(it.rawPath), start.iso, it.shutter, offsets[k]) }
+                    // Prima scelta: quello che diceva l'esposimetro allo scatto (è quello che hai visto).
+                    // Per gli scatti vecchi: dati EXIF corretti dalla luminosità vera della foto.
+                    val errors = layers.mapIndexedNotNull { k, it ->
+                        val ev = it.meterEv
+                        if (ev != null) {
+                            it.shutter?.let { s -> VirtualCamera.manualError(ev, start.iso, s) } ?: VirtualCamera.errorFor(ev, start.iso)
+                        } else VirtualCamera.errorStops(File(it.rawPath), start.iso, it.shutter, offsets[k])
+                    }
                     val look = DevelopLook(
                         // La foto del telefono si riporta prima a un'esposizione media, poi la pellicola fa il resto.
                         base = -offsets.average().toFloat(),

@@ -67,7 +67,8 @@ enum RollShare {
             guard let bytes = shrink(store.root.appendingPathComponent(e.file)) else { continue }
             zip.add(name, bytes)
             shots.append(["frame": e.frame, "file": name, "takenAt": Int(Date().timeIntervalSince1970 * 1000),
-                          "shutter": e.shutter.map { $0 as Any } ?? NSNull()])
+                          "shutter": e.shutter.map { $0 as Any } ?? NSNull(),
+                          "meterEv": e.meterEv.map { $0 as Any } ?? NSNull()])
         }
         let manifest: [String: Any] = [
             "format": "rullino", "version": 1, "from": from.map { $0 as Any } ?? NSNull(),
@@ -120,7 +121,8 @@ enum RollShare {
             guard let file = s["file"] as? String, let bytes = entries[file] else { continue }
             let rel = "rolls/\(roll.id)/raw/" + (file as NSString).lastPathComponent
             try bytes.write(to: store.root.appendingPathComponent(rel))
-            exposures.append(Exposure(rollId: roll.id, frame: s["frame"] as? Int ?? 1, file: rel, shutter: s["shutter"] as? Double))
+            exposures.append(Exposure(rollId: roll.id, frame: s["frame"] as? Int ?? 1, file: rel,
+                                      shutter: s["shutter"] as? Double, meterEv: s["meterEv"] as? Double))
         }
         _ = dir
         store.data.nextId += 1

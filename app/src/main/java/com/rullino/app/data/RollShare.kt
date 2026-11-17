@@ -57,7 +57,7 @@ object RollShare {
                 val file = "shots/%02d_%02d.jpg".format(s.frame, i)
                 val bytes = shrink(File(s.rawPath)) ?: return@forEachIndexed
                 stored(zip, file, bytes)
-                list.put(JSONObject().put("frame", s.frame).put("file", file).put("takenAt", s.takenAt).put("shutter", s.shutter ?: JSONObject.NULL))
+                list.put(JSONObject().put("frame", s.frame).put("file", file).put("takenAt", s.takenAt).put("shutter", s.shutter ?: JSONObject.NULL).put("meterEv", s.meterEv ?: JSONObject.NULL))
             }
             val manifest = JSONObject()
                 .put("format", FORMAT).put("version", VERSION)
@@ -138,6 +138,7 @@ object RollShare {
                             rollId = id, frame = s.optInt("frame"), rawPath = dest.absolutePath,
                             takenAt = s.optLong("takenAt", System.currentTimeMillis()),
                             shutter = if (s.isNull("shutter")) null else s.optDouble("shutter"),
+                            meterEv = if (!s.has("meterEv") || s.isNull("meterEv")) null else s.optDouble("meterEv"),
                         )
                     )
                 }

@@ -226,9 +226,9 @@ final class Store: ObservableObject {
         return (root.appendingPathComponent(name), name)
     }
 
-    func recordShot(_ rollId: Int, file: String, shutter: Double? = nil) {
+    func recordShot(_ rollId: Int, file: String, shutter: Double? = nil, meterEv: Double? = nil) {
         guard let r = roll(rollId), r.state == .loaded, r.wound else { return }
-        data.exposures.append(Exposure(rollId: rollId, frame: r.cursor, file: file, shutter: shutter))
+        data.exposures.append(Exposure(rollId: rollId, frame: r.cursor, file: file, shutter: shutter, meterEv: meterEv))
         update(rollId) {
             $0.shotCount = max($0.shotCount, $0.cursor)
             $0.cursor += 1
@@ -296,12 +296,13 @@ final class Store: ObservableObject {
             if data.frames.contains(where: { $0.rollId == id && $0.frame == f }) { continue }
             let files = groups[f]!.map { root.appendingPathComponent($0.file) }
             let shutters = groups[f]!.map(\.shutter)
+            let meters = groups[f]!.map(\.meterEv)
             let rel = String(format: "rolls/%d/dev/%02d.jpg", id, f)
             let out = dir.appendingPathComponent(String(format: "dev/%02d.jpg", f))
             let params = e.params, iso = e.iso, push = r.push, slide = e.isSlide
             let ok = await Task.detached(priority: .userInitiated) {
                 Developer.develop(files: files, params: params, iso: iso, out: out, seed: Float.random(in: 0..<997),
-                                  push: push, slide: slide, shutters: shutters)
+                                  push: push, slide: slide, shutters: shutters, meters: meters)
             }.value
             if ok { data.frames.append(DevFrame(rollId: id, frame: f, file: rel, layers: files.count)) }
         }

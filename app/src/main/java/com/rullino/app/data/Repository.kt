@@ -149,12 +149,12 @@ class Repository(private val context: Context, val db: AppDb) {
         return File(dir, "%02d_%d.jpg".format(roll.cursor, System.currentTimeMillis()))
     }
 
-    suspend fun recordShot(rollId: Long, file: File, shutter: Double? = null) = db.withTransaction {
+    suspend fun recordShot(rollId: Long, file: File, shutter: Double? = null, meterEv: Double? = null) = db.withTransaction {
         val r = db.rolls().get(rollId) ?: return@withTransaction
         if (r.state != RollState.LOADED || !r.wound) return@withTransaction
         val frame = r.cursor
         val now = System.currentTimeMillis()
-        db.exposures().insert(ExposureEntity(rollId = rollId, frame = frame, rawPath = file.absolutePath, takenAt = now, shutter = shutter))
+        db.exposures().insert(ExposureEntity(rollId = rollId, frame = frame, rawPath = file.absolutePath, takenAt = now, shutter = shutter, meterEv = meterEv))
         // A fine rullino resta in macchina: va riavvolto con la manovella.
         db.rolls().update(r.copy(cursor = frame + 1, shotCount = maxOf(r.shotCount, frame), wound = false))
     }

@@ -20,6 +20,8 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
     /// Luce della scena (EV a ISO 100) letta dall'esposizione automatica del telefono: è l'esposimetro.
     @Published private(set) var ev100: Double?
     private var meterTimer: Timer?
+    /// Uno scatto a tempo vero ha messo l'esposizione in manuale: va rimessa in automatico dopo.
+    private var manualPending = false
 
     func start() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -76,7 +78,7 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
             self.attachRotation()
             self.meterTimer?.invalidate()
             self.meterTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
-                guard let self, let d = self.device else { return }
+                guard let self, let d = self.device, d.exposureMode != .custom else { return }
                 let t = CMTimeGetSeconds(d.exposureDuration)
                 let iso = Double(d.iso), n = Double(d.lensAperture)
                 guard t > 0, iso > 0, n > 0 else { return }
@@ -113,10 +115,24 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
 
     var maxFocal: CGFloat { 24 * maxZoom / max(baseZoom, 0.01) }
 
-    func capture(to url: URL, done: @escaping (Bool) -> Void) {
+    /// Scatta. Con seconds il tempo è vero: il sensore resta aperto per quel tempo (nei limiti del telefono)
+    /// e gli ISO portano la foto a un'esposizione media, così il mosso è giusto e la pellicola resta simulata.
+    func capture(to url: URL, seconds: Double? = nil, done: @escaping (Bool) -> Void) {
         let angle = rotation?.videoRotationAngleForHorizonLevelCapture
         queue.async {
             guard self.configured else { DispatchQueue.main.async { done(false) }; return }
+            if let seconds, let d = self.device, d.isExposureModeSupported(.custom), (try? d.lockForConfiguration()) != nil {
+                let f = d.activeFormat
+                let tAuto = CMTimeGetSeconds(d.exposureDuration), isoAuto = Double(d.iso)
+                let offset = Double(VirtualCamera.deadZone(Double(d.exposureTargetOffset)))
+                let t = min(max(seconds, CMTimeGetSeconds(f.minExposureDuration)), CMTimeGetSeconds(f.maxExposureDuration))
+                let iso = Float(min(max(isoAuto * tAuto / t * pow(2, -offset), Double(f.minISO)), Double(f.maxISO)))
+                let sem = DispatchSemaphore(value: 0)
+                d.setExposureModeCustom(duration: CMTime(seconds: t, preferredTimescale: 1_000_000), iso: iso) { _ in sem.signal() }
+                d.unlockForConfiguration()
+                _ = sem.wait(timeout: .now() + 3)
+                self.manualPending = true
+            }
             if let a = angle, let c = self.output.connection(with: .video), c.isVideoRotationAngleSupported(a) {
                 c.videoRotationAngle = a
             }
@@ -134,6 +150,11 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
             var ok = false
             if error == nil, let d = photo.fileDataRepresentation() {
                 ok = (try? d.write(to: url, options: .atomic)) != nil
+            }
+            if self.manualPending, let d = self.device, (try? d.lockForConfiguration()) != nil {
+                d.exposureMode = .continuousAutoExposure
+                d.unlockForConfiguration()
+                self.manualPending = false
             }
             DispatchQueue.main.async { done(ok) }
         }

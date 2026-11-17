@@ -9,7 +9,7 @@ enum Developer {
     static let maxSide = 3000
 
     static func develop(files: [URL], params: FilmParams, iso: Int, out: URL, seed: Float,
-                        push: Int = 0, slide: Bool = false, shutters: [Double?] = []) -> Bool {
+                        push: Int = 0, slide: Bool = false, shutters: [Double?] = [], meters: [Double?] = []) -> Bool {
         let layers = files.compactMap { load($0) }
         guard let first = layers.first else { return false }
         let ratio: CGFloat = first.width >= first.height ? 1.5 : 1 / 1.5
@@ -33,8 +33,15 @@ enum Developer {
         guard let px = ctx.data else { return false }
         // La luce vera della scena: dati EXIF corretti da quanto è chiara davvero la foto del telefono.
         let offsets = files.map { VirtualCamera.lumaOffset($0) }
-        let errors = files.enumerated().compactMap { i, u in
-            VirtualCamera.errorStops(u, filmIso: iso, shutter: i < shutters.count ? shutters[i] : nil, offset: offsets[i])
+        // Prima scelta: quello che diceva l'esposimetro allo scatto (è quello che hai visto).
+        // Per gli scatti vecchi: dati EXIF corretti dalla luminosità vera della foto.
+        let errors = files.enumerated().compactMap { i, u -> Float? in
+            let shutter = i < shutters.count ? shutters[i] : nil
+            if i < meters.count, let ev = meters[i] {
+                if let shutter { return VirtualCamera.manualError(ev100: ev, filmIso: iso, shutter: shutter) }
+                return VirtualCamera.errorFor(ev100: ev, filmIso: iso)
+            }
+            return VirtualCamera.errorStops(u, filmIso: iso, shutter: shutter, offset: offsets[i])
         }
         let err = errors.isEmpty ? 0 : errors.reduce(0, +) / Float(errors.count)
         // La foto del telefono si riporta prima a un'esposizione media, poi la pellicola fa il resto.
@@ -133,6 +140,16 @@ enum VirtualCamera {
     static func manualError(ev100: Double, filmIso: Int, shutter: Double) -> Float {
         let needed = 16 / (pow(2, ev100) * Double(max(filmIso, 1)) / 100)
         return Float(min(max(log2(shutter / needed), -5), 5))
+    }
+
+    /// Il tempo che usa davvero la compatta in automatico: f/8 se basta, altrimenti apre fino a f/2.8;
+    /// sempre tra 1/500 e 1/30.
+    static func autoShutter(ev100: Double, filmIso: Int) -> Double {
+        let needed = 1 / (pow(2, ev100) * Double(max(filmIso, 1)) / 100)   // t/N²
+        let atF8 = needed * 64
+        if atF8 >= 1.0 / 500 && atF8 <= 1.0 / 30 { return atF8 }
+        if atF8 < 1.0 / 500 { return 1.0 / 500 }
+        return min(max(needed * 2.8 * 2.8, 1.0 / 500), 1.0 / 30)
     }
 
     static func errorFor(ev100: Double, filmIso: Int) -> Float {

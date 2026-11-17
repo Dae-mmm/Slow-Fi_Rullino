@@ -161,6 +161,7 @@ struct Exposure: Codable, Equatable {
     var frame: Int
     var file: String        // relativo alla cartella dei dati
     var shutter: Double?    // tempo scelto sulla ghiera, in secondi; nil = automatico
+    var meterEv: Double?    // cosa leggeva l'esposimetro allo scatto (EV a ISO 100): lo sviluppo parte da qui
 }
 
 struct DevFrame: Codable, Equatable {

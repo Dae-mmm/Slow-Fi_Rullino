@@ -123,6 +123,8 @@ data class ExposureEntity(
     val takenAt: Long,
     /** Tempo scelto sulla ghiera, in secondi; null = automatico. */
     val shutter: Double? = null,
+    /** Cosa leggeva l'esposimetro allo scatto (EV a ISO 100): lo sviluppo parte da qui. */
+    val meterEv: Double? = null,
 )
 
 /** Un fotogramma sviluppato: [developedPath] è il positivo privato, [printUri] la stampa in galleria. */
@@ -267,7 +269,7 @@ interface FrameDao {
         EmulsionEntity::class, RollEntity::class, ExposureEntity::class, FrameEntity::class,
         InventoryEntity::class, ReleaseEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = false,
 )
 abstract class AppDb : RoomDatabase() {
@@ -300,10 +302,16 @@ abstract class AppDb : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE exposures ADD COLUMN meterEv REAL")
+            }
+        }
+
         fun build(context: Context): AppDb =
             Room.databaseBuilder(context, AppDb::class.java, "rullino.db")
                 // App ancora in sviluppo: cambiando schema si riparte da zero.
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                 .fallbackToDestructiveMigration(true)
                 .build()
     }
