@@ -12,12 +12,17 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
+        android:resizeableActivity="true"
         android:theme="@style/Theme.Rullino">
+        <!-- Schermi lunghi (RAZR e simili): l'app usa tutto lo schermo invece di avere una banda laterale. -->
+        <meta-data android:name="android.max_aspect" android:value="3.0" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="sensorLandscape"
             android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:maxAspectRatio="3.0"
             android:theme="@style/Theme.Rullino">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
