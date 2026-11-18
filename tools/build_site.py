@@ -53,6 +53,13 @@ ICONS = {
     "photo": ico(
         '<rect x="3" y="6" width="26" height="20" fill="#000"/><rect x="4" y="7" width="24" height="18" fill="#7ec8f0"/>'
         '<polygon points="4,25 12,14 18,21 21,18 28,25" fill="#2e7d32"/><rect x="21" y="9" width="4" height="4" fill="#ffd700"/>'),
+    "paint": ico(  # pennello e tavolozza
+        '<ellipse cx="14" cy="19" rx="12" ry="9" fill="#000"/><ellipse cx="14" cy="19" rx="11" ry="8" fill="#e8d2a6"/>'
+        '<rect x="7" y="15" width="3" height="3" fill="#c00000"/><rect x="12" y="13" width="3" height="3" fill="#0040c0"/>'
+        '<rect x="17" y="14" width="3" height="3" fill="#ffd700"/><rect x="8" y="20" width="3" height="3" fill="#2e7d32"/>'
+        '<ellipse cx="17" cy="22" rx="2.5" ry="2" fill="#007a78"/>'
+        '<polygon points="22,4 30,2 28,10 24,12 20,8" fill="#000"/><polygon points="23,5 29,3 27,9 24,11 21,8" fill="#c08040"/>'
+        '<polygon points="20,8 24,12 21,16 16,13" fill="#ff6a3d"/>'),
     "exe": ico(
         '<rect x="3" y="5" width="26" height="22" fill="#000"/><rect x="4" y="6" width="24" height="20" fill="#c0c0c0"/>'
         '<rect x="4" y="6" width="24" height="4" fill="#000080"/><rect x="7" y="13" width="18" height="2" fill="#808080"/>'
@@ -148,14 +155,32 @@ slow-fi.app
   <div>{ICONS['exe']}ansia_da_like.exe</div>
   <div>{ICONS['txt']}filtro_vintage_finto.preset</div>
 </div>"""),
+    dict(id="vernice", title="Senza nome - Vernice", icon="paint", w=760, h=520, body_class="paint", status="Per aiuto, chiedi a un bambino|", body="""
+<div class="pt-tools" role="toolbar" aria-label="Strumenti">
+  <button class="btn tool on" data-tool="pencil" title="Matita">✎</button>
+  <button class="btn tool" data-tool="brush" title="Pennello">🖌</button>
+  <button class="btn tool" data-tool="eraser" title="Gomma">▭</button>
+  <button class="btn tool" data-tool="fill" title="Secchiello">▼</button>
+  <button class="btn tool" data-tool="line" title="Linea">╱</button>
+  <button class="btn tool" data-tool="rect" title="Rettangolo">□</button>
+  <button class="btn tool" data-tool="ellipse" title="Ellisse">○</button>
+  <button class="btn tool" data-tool="spray" title="Aerografo">∴</button>
+  <div class="pt-sizes"><button class="btn size on" data-size="1">·</button><button class="btn size" data-size="3">•</button><button class="btn size" data-size="7">●</button></div>
+</div>
+<div class="pt-canvas sunken"><canvas width="640" height="400"></canvas></div>
+<div class="pt-bottom">
+  <div class="pt-current sunken"><i class="fg"></i><i class="bg"></i></div>
+  <div class="pt-palette"></div>
+  <div class="pt-actions"><button class="btn" data-act="new">Nuovo</button><button class="btn" data-act="save">Salva .png</button></div>
+</div>"""),
     dict(id="spegni", title="Chiudi Slow-Fi", icon="power", w=380, h=170, dialog=True, body=f"""
 {ICONS['info']}<div><p><b>È ora di spegnere.</b></p><p>Prendi la macchina e vai fuori a scattare: la luce di adesso non torna.</p>
 <div class="row"><button class="btn" data-close>OK</button></div></div>"""),
 ]
 
-DESK_ICONS = [("rullino", "film", "Rullino.exe"), ("leggimi", "txt", "LEGGIMI.txt"), ("privacy", "doc", "Privacy.doc"),
+DESK_ICONS = [("rullino", "film", "Rullino.exe"), ("vernice", "paint", "Vernice.exe"), ("leggimi", "txt", "LEGGIMI.txt"), ("privacy", "doc", "Privacy.doc"),
               ("contatti", "mail", "Posta"), ("account", "user", "Elimina account"), ("cestino", "trash", "Cestino")]
-START = [("rullino", "film", "Rullino"), ("leggimi", "txt", "Leggimi"), ("privacy", "doc", "Privacy"),
+START = [("rullino", "film", "Rullino"), ("vernice", "paint", "Vernice"), ("leggimi", "txt", "Leggimi"), ("privacy", "doc", "Privacy"),
          ("account", "user", "Eliminare l'account"), ("contatti", "mail", "Contatti"), None, ("spegni", "power", "Chiudi Slow-Fi…")]
 
 def window_src(w):

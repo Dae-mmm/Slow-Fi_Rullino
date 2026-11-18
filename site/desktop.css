@@ -141,3 +141,22 @@ a:visited{color:#551a8b}
   .icon{width:76px}
 }
 @media (prefers-reduced-motion:reduce){#boot .bar i{animation-duration:.01s}}
+
+/* ---------- Vernice ---------- */
+.body.paint{display:grid;grid-template-columns:58px 1fr;grid-template-rows:1fr auto;gap:4px;padding:4px;background:var(--face);overflow:hidden;user-select:none;-webkit-user-select:none}
+.pt-tools{display:grid;grid-template-columns:26px 26px;gap:2px;align-content:start}
+.pt-tools .tool{min-width:0;width:26px;height:26px;padding:0;font:14px/1 var(--ui)}
+.pt-tools .tool.on{background:repeating-conic-gradient(var(--face) 0 25%,#fff 0 50%) 0 0/2px 2px}
+.pt-sizes{grid-column:1/3;display:flex;flex-direction:column;gap:2px;margin-top:6px;padding:3px;box-shadow:inset -1px -1px var(--hi),inset 1px 1px var(--shadow)}
+.pt-sizes .size{min-width:0;padding:2px;font:14px/1 var(--ui)}
+.pt-canvas{overflow:auto;background:#808080;padding:4px}
+.pt-canvas canvas{display:block;background:#fff;cursor:crosshair;touch-action:none;image-rendering:pixelated}
+.pt-bottom{grid-column:1/3;display:flex;align-items:center;gap:8px}
+.pt-current{position:relative;width:34px;height:34px;flex:none;background:var(--face)}
+.pt-current i{position:absolute;width:15px;height:15px;border:1px solid #000;box-shadow:inset 1px 1px #fff}
+.pt-current .fg{left:5px;top:5px;z-index:1}
+.pt-current .bg{right:5px;bottom:5px}
+.pt-palette{display:grid;grid-template-columns:repeat(14,16px);gap:1px}
+.pt-palette button{width:16px;height:16px;padding:0;border:0;cursor:pointer;box-shadow:inset -1px -1px var(--hi),inset 1px 1px var(--shadow)}
+.pt-actions{margin-left:auto;display:flex;gap:4px}
+@media (max-width:700px){.pt-palette{grid-template-columns:repeat(7,16px)}.pt-actions .btn{min-width:0}}

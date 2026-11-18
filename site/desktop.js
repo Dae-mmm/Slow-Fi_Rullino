@@ -115,6 +115,7 @@
     }
     $$("[data-open]", el).forEach(b => b.addEventListener("click", e => { e.preventDefault(); open(b.dataset.open); }));
     $$("[data-close]", el).forEach(b => b.addEventListener("click", () => close(id)));
+    if (id === "vernice") paint(el);
     drag(el, $(".bar", el));
     const grip = $(".grip", el);
     if (grip) resize(el, grip);
@@ -128,6 +129,124 @@
     w.task.remove();
     delete state[id];
     afterHide();
+  }
+
+  /* ---------------- Vernice: un piccolo Paint ---------------- */
+  const COLORS = ["#000000","#808080","#800000","#808000","#008000","#008080","#000080","#800080","#808040","#004040","#0080ff","#004080","#8000ff","#804000",
+                  "#ffffff","#c0c0c0","#ff0000","#ffff00","#00ff00","#00ffff","#0000ff","#ff00ff","#ffff80","#00ff80","#80ffff","#8080ff","#ff0080","#ff6a3d"];
+
+  function paint(win) {
+    const cv = $("canvas", win);
+    const ctx = cv.getContext("2d", { willReadFrequently: true });
+    let tool = "pencil", size = 1, fg = "#000000", bg = "#ffffff";
+    const fgEl = $(".pt-current .fg", win), bgEl = $(".pt-current .bg", win);
+    const status = $$(".status span", win);
+    const clear = () => { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, cv.width, cv.height); };
+    clear();
+    const showColors = () => { fgEl.style.background = fg; bgEl.style.background = bg; };
+    showColors();
+
+    // Tavolozza: clic = colore principale, clic destro = colore di sfondo.
+    const pal = $(".pt-palette", win);
+    COLORS.forEach(c => {
+      const b = document.createElement("button");
+      b.style.background = c;
+      b.title = c;
+      b.addEventListener("click", () => { fg = c; showColors(); });
+      b.addEventListener("contextmenu", e => { e.preventDefault(); bg = c; showColors(); });
+      pal.append(b);
+    });
+    $$(".tool", win).forEach(b => b.addEventListener("click", () => {
+      $$(".tool", win).forEach(x => x.classList.remove("on")); b.classList.add("on"); tool = b.dataset.tool;
+    }));
+    $$(".size", win).forEach(b => b.addEventListener("click", () => {
+      $$(".size", win).forEach(x => x.classList.remove("on")); b.classList.add("on"); size = +b.dataset.size;
+    }));
+    $('[data-act="new"]', win).addEventListener("click", clear);
+    $('[data-act="save"]', win).addEventListener("click", () => {
+      cv.toBlob(blob => {
+        if (!blob) return;
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "vernice-slow-fi.png";
+        document.body.append(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      }, "image/png");
+    });
+
+    const pos = e => {
+      const r = cv.getBoundingClientRect();
+      return { x: Math.floor((e.clientX - r.left) * cv.width / r.width), y: Math.floor((e.clientY - r.top) * cv.height / r.height) };
+    };
+    const width = () => tool === "brush" ? size * 3 + 2 : tool === "eraser" ? size * 4 + 6 : size;
+    const stroke = (a, b, color) => {
+      ctx.strokeStyle = color; ctx.lineWidth = width(); ctx.lineCap = tool === "pencil" ? "square" : "round";
+      ctx.beginPath(); ctx.moveTo(a.x + .5, a.y + .5); ctx.lineTo(b.x + .5, b.y + .5); ctx.stroke();
+    };
+    const spray = (p, color) => {
+      ctx.fillStyle = color;
+      const r = size * 4 + 6;
+      for (let i = 0; i < 24; i++) {
+        const a = Math.random() * Math.PI * 2, d = Math.random() * r;
+        ctx.fillRect(Math.round(p.x + Math.cos(a) * d), Math.round(p.y + Math.sin(a) * d), 1, 1);
+      }
+    };
+    const shape = (a, b, color) => {
+      ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = "butt";
+      ctx.beginPath();
+      if (tool === "line") { ctx.moveTo(a.x + .5, a.y + .5); ctx.lineTo(b.x + .5, b.y + .5); }
+      else if (tool === "rect") ctx.rect(Math.min(a.x, b.x) + .5, Math.min(a.y, b.y) + .5, Math.abs(b.x - a.x), Math.abs(b.y - a.y));
+      else ctx.ellipse((a.x + b.x) / 2, (a.y + b.y) / 2, Math.abs(b.x - a.x) / 2, Math.abs(b.y - a.y) / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    };
+    // Secchiello: riempimento a scansione di righe, colore esatto.
+    const fill = (p, color) => {
+      const { width: w, height: h } = cv;
+      const img = ctx.getImageData(0, 0, w, h), d = new Uint32Array(img.data.buffer);
+      const tmp = document.createElement("canvas").getContext("2d");
+      tmp.fillStyle = color; tmp.fillRect(0, 0, 1, 1);
+      const nc = new Uint32Array(tmp.getImageData(0, 0, 1, 1).data.buffer)[0];
+      const target = d[p.y * w + p.x];
+      if (target === nc) return;
+      const stack = [[p.x, p.y]];
+      while (stack.length) {
+        let [x, y] = stack.pop();
+        while (x >= 0 && d[y * w + x] === target) x--;
+        x++;
+        let up = false, down = false;
+        while (x < w && d[y * w + x] === target) {
+          d[y * w + x] = nc;
+          if (y > 0) { const t = d[(y - 1) * w + x] === target; if (t && !up) stack.push([x, y - 1]); up = t; }
+          if (y < h - 1) { const t = d[(y + 1) * w + x] === target; if (t && !down) stack.push([x, y + 1]); down = t; }
+          x++;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    };
+
+    let start = null, last = null, snap = null, color = fg, timer = 0;
+    cv.addEventListener("contextmenu", e => e.preventDefault());
+    cv.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      cv.setPointerCapture(e.pointerId);
+      color = tool === "eraser" ? bg : (e.button === 2 ? bg : fg);
+      start = last = pos(e);
+      if (tool === "fill") { fill(start, color); start = null; return; }
+      if (["line", "rect", "ellipse"].includes(tool)) snap = ctx.getImageData(0, 0, cv.width, cv.height);
+      else if (tool === "spray") { spray(start, color); timer = setInterval(() => last && spray(last, color), 30); }
+      else stroke(start, start, color);
+    });
+    cv.addEventListener("pointermove", e => {
+      const p = pos(e);
+      if (status[1]) status[1].textContent = `${Math.max(0, p.x)}, ${Math.max(0, p.y)}`;
+      if (!start) return;
+      if (snap) { ctx.putImageData(snap, 0, 0); shape(start, p, color); }
+      else if (tool !== "spray") stroke(last, p, color);
+      last = p;
+    });
+    const end = () => { start = null; last = null; snap = null; clearInterval(timer); };
+    cv.addEventListener("pointerup", end);
+    cv.addEventListener("pointercancel", end);
   }
 
   // Trascina dalla barra del titolo.
