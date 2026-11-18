@@ -2,10 +2,10 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/rullino", "destination": "/index.html" },
-    { "source": "/privacy", "destination": "/index.html" },
-    { "source": "/elimina-account", "destination": "/index.html" },
-    { "source": "/contatti", "destination": "/index.html" }
+    { "source": "/rullino", "destination": "/" },
+    { "source": "/privacy", "destination": "/" },
+    { "source": "/elimina-account", "destination": "/" },
+    { "source": "/contatti", "destination": "/" }
   ],
   "redirects": [
     { "source": "/delete-account", "destination": "/elimina-account", "permanent": true }
