@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
@@ -19,7 +20,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Barre di sistema sempre scure con icone chiare: con lo stile automatico, sui telefoni in tema
+        // chiaro (es. RAZR) la barra di navigazione diventava una striscia chiara con i tasti invisibili.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.argb(0xF2, 0x0D, 0x0C, 0x0C)),
+        )
         // Si nasconde solo la barra di stato; la barra di navigazione resta, così da ogni telefono
         // (anche i pieghevoli come il RAZR, o con i tre tasti) si può sempre tornare indietro o uscire.
         WindowCompat.getInsetsController(window, window.decorView).apply {
