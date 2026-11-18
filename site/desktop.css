@@ -1,0 +1,143 @@
+/* Slow-Fi 95 — un desktop di fine anni '90, con le finestre che funzionano. */
+@font-face{font-family:Plex;src:url(/fonts/mono-400.woff) format("woff");font-weight:400;font-display:swap}
+@font-face{font-family:Barlow;src:url(/fonts/barlow-600.woff) format("woff");font-weight:600;font-display:swap}
+
+:root{
+  --face:#c0c0c0; --hi:#ffffff; --lite:#dfdfdf; --shadow:#808080; --dark:#000000;
+  --title1:#000080; --title2:#1084d0; --title-off1:#808080; --title-off2:#b5b5b5;
+  --desk:#007a78; --safe:#ff6a3d; --ink:#000;
+  --ui:"Tahoma","Verdana","Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{font:12px/1.35 var(--ui);color:var(--ink);background:var(--desk);
+  -webkit-font-smoothing:none;user-select:none;-webkit-user-select:none;
+  /* Carta da parati: trama di pellicola, fatta solo di gradienti. */
+  background-image:
+    radial-gradient(circle at 12px 12px,rgba(0,0,0,.18) 3px,transparent 3.5px),
+    radial-gradient(circle at 12px 52px,rgba(0,0,0,.18) 3px,transparent 3.5px),
+    linear-gradient(90deg,rgba(0,0,0,.10) 0 24px,transparent 24px);
+  background-size:100% 80px,100% 80px,100% 100%;
+  background-repeat:repeat-y;background-color:var(--desk)}
+a{color:#0000ee}
+a:visited{color:#551a8b}
+
+/* ---------- Bordi in rilievo, il cuore dello stile ---------- */
+.raised{background:var(--face);box-shadow:inset -1px -1px var(--dark),inset 1px 1px var(--lite),inset -2px -2px var(--shadow),inset 2px 2px var(--hi)}
+.sunken{box-shadow:inset -1px -1px var(--hi),inset 1px 1px var(--shadow),inset -2px -2px var(--lite),inset 2px 2px var(--dark)}
+.btn{font:12px var(--ui);color:#000;background:var(--face);border:0;padding:5px 14px;min-width:75px;cursor:pointer;
+  box-shadow:inset -1px -1px var(--dark),inset 1px 1px var(--hi),inset -2px -2px var(--shadow),inset 2px 2px var(--lite)}
+.btn:active,.btn.on{box-shadow:inset -1px -1px var(--hi),inset 1px 1px var(--dark),inset -2px -2px var(--lite),inset 2px 2px var(--shadow);padding:6px 13px 4px 15px}
+.btn:focus-visible{outline:1px dotted #000;outline-offset:-5px}
+
+/* ---------- Icone del desktop ---------- */
+#icons{position:absolute;inset:8px auto 40px 8px;display:flex;flex-direction:column;flex-wrap:wrap;gap:6px;align-content:flex-start;z-index:1}
+.icon{width:84px;padding:4px 2px;background:none;border:0;color:#fff;font:12px var(--ui);text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.icon svg{width:36px;height:36px;image-rendering:pixelated;filter:drop-shadow(1px 1px 0 rgba(0,0,0,.35))}
+.icon span{padding:1px 3px;line-height:1.2}
+.icon:focus{outline:none}
+.icon.sel span,.icon:focus-visible span{background:var(--title1);outline:1px dotted #fff}
+.icon.sel svg{filter:drop-shadow(1px 1px 0 rgba(0,0,0,.35)) sepia(1) hue-rotate(190deg) saturate(3)}
+
+/* ---------- Finestre ---------- */
+.win{position:absolute;display:flex;flex-direction:column;padding:3px;min-width:240px;min-height:140px;z-index:10}
+.win[hidden]{display:none}
+.win .bar{display:flex;align-items:center;gap:4px;height:20px;padding:0 2px 0 4px;color:#fff;font-weight:bold;
+  background:linear-gradient(90deg,var(--title-off1),var(--title-off2));cursor:default;touch-action:none}
+.win.active .bar{background:linear-gradient(90deg,var(--title1),var(--title2))}
+.win .bar svg{width:16px;height:16px;flex:none}
+.win .bar .t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.win .ctl{width:16px;height:14px;padding:0;min-width:0;display:grid;place-items:center;font:bold 10px/1 var(--ui)}
+.win .ctl:active{padding:1px 0 0 1px}
+.win .ctl+.ctl.x{margin-left:2px}
+.win .menu{display:flex;gap:2px;padding:2px 0}
+.win .menu span{padding:2px 6px}
+.win .menu span:hover{box-shadow:inset -1px -1px var(--shadow),inset 1px 1px var(--hi)}
+.win .body{flex:1;overflow:auto;margin-top:2px;background:#fff;padding:14px 16px;user-select:text;-webkit-user-select:text;font-size:13px}
+.win .status{display:flex;gap:2px;margin-top:2px}
+.win .status span{flex:1;padding:2px 6px;box-shadow:inset -1px -1px var(--hi),inset 1px 1px var(--shadow)}
+.win .grip{position:absolute;right:3px;bottom:3px;width:14px;height:14px;cursor:nwse-resize;touch-action:none;
+  background:linear-gradient(135deg,transparent 0 50%,var(--shadow) 50% 56%,var(--hi) 56% 62%,transparent 62% 70%,var(--shadow) 70% 76%,var(--hi) 76% 82%,transparent 82%)}
+.win.max{inset:0 0 30px 0!important;width:auto!important;height:auto!important}
+.win.max .grip{display:none}
+
+/* Contenuti nelle finestre */
+.body h1{font:600 30px/1.05 Barlow,"Arial Narrow",sans-serif;margin:0 0 6px;letter-spacing:.5px}
+.body h2{font:bold 15px var(--ui);margin:20px 0 6px;padding-bottom:3px;border-bottom:1px solid #c0c0c0}
+.body h3{font:bold 13px var(--ui);margin:0 0 4px}
+.body p{margin:6px 0}
+.body .kicker{font:11px Plex,monospace;letter-spacing:1px;text-transform:uppercase;color:#a33a14;margin:0 0 2px}
+.body .lead{font-size:14px;color:#222;max-width:62ch}
+.body .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:8px 0}
+.body .card{padding:10px;background:#f4f1ea;border:1px solid #c9c3b8}
+.body .card p{color:#333;margin:4px 0 0}
+.body table{border-collapse:collapse;width:100%;margin:8px 0;font-size:12px}
+.body th,.body td{border:1px solid #a0a0a0;padding:5px 7px;text-align:left;vertical-align:top}
+.body th{background:var(--face);font-weight:bold}
+.body .note{background:#ffffe1;border:1px solid #000;padding:6px 8px;font-size:12px}
+.body ol.steps{padding-left:20px}
+.body code{font-family:Plex,monospace;font-size:12px;background:#eee;padding:0 3px}
+.body.notepad{font:13px/1.5 Plex,"Courier New",monospace;white-space:pre-wrap;padding:8px 10px}
+.body.dark{background:#141312;color:#ebe6e0}
+.body.dark h2{border-color:#3a3533}
+.body.dark .card{background:#24211f;border-color:#3a3533}
+.body.dark .card p{color:#9c958d}
+.body.dark .kicker{color:#ff6a3d}
+.body.dark .lead{color:#c9c2ba}
+.body.dark a{color:#ff8a66}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.cart{float:right;margin:0 0 10px 16px}
+
+/* Finestra di dialogo */
+.dialog .body{display:flex;gap:14px;align-items:flex-start;background:var(--face);padding:16px}
+.dialog .body svg{width:32px;height:32px;flex:none}
+.dialog .actions{display:flex;justify-content:center;gap:8px;padding:8px 0 4px;background:var(--face)}
+
+/* Cestino */
+.files{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.files div{text-align:center;font-size:11px;word-break:break-word}
+.files svg{width:32px;height:32px;display:block;margin:0 auto 4px}
+
+/* ---------- Barra delle applicazioni ---------- */
+#taskbar{position:absolute;left:0;right:0;bottom:0;height:30px;display:flex;align-items:center;gap:4px;padding:2px 3px;z-index:5000;
+  background:var(--face);box-shadow:inset 0 1px var(--lite),inset 0 2px var(--hi)}
+#start{display:flex;align-items:center;gap:5px;font-weight:bold;min-width:0;padding:3px 8px;height:24px}
+#start .sf{font:600 13px/1 Barlow,sans-serif;letter-spacing:.5px;background:#000;color:var(--safe);padding:2px 4px}
+#tasks{flex:1;display:flex;gap:3px;overflow:hidden;height:24px}
+#tasks .btn{flex:0 1 160px;min-width:40px;display:flex;align-items:center;gap:4px;height:24px;padding:2px 6px;text-align:left;white-space:nowrap;overflow:hidden}
+#tasks .btn svg{width:16px;height:16px;flex:none}
+#tasks .btn span{overflow:hidden;text-overflow:ellipsis}
+#tasks .btn.on{background:repeating-conic-gradient(var(--face) 0 25%,#fff 0 50%) 0 0/2px 2px;font-weight:bold}
+#tray{height:24px;display:flex;align-items:center;gap:8px;padding:0 10px;box-shadow:inset -1px -1px var(--hi),inset 1px 1px var(--shadow)}
+#tray svg{width:16px;height:16px}
+
+/* Menu Start */
+#startmenu{position:absolute;left:2px;bottom:28px;width:230px;display:flex;padding:3px;z-index:6000}
+#startmenu[hidden]{display:none}
+#startmenu .side{width:26px;background:linear-gradient(0deg,#000,#3a3533);color:#fff;writing-mode:vertical-rl;transform:rotate(180deg);
+  font:600 18px/26px Barlow,sans-serif;letter-spacing:2px;padding:8px 0;white-space:nowrap}
+#startmenu .side b{color:var(--safe)}
+#startmenu ul{list-style:none;margin:0;padding:0;flex:1}
+#startmenu li button{width:100%;display:flex;align-items:center;gap:10px;padding:6px 8px;background:none;border:0;font:12px var(--ui);text-align:left;cursor:pointer}
+#startmenu li button svg{width:24px;height:24px}
+#startmenu li button:hover,#startmenu li button:focus-visible{background:var(--title1);color:#fff;outline:none}
+#startmenu hr{border:0;border-top:1px solid var(--shadow);border-bottom:1px solid var(--hi);margin:3px 2px}
+
+/* ---------- Avvio ---------- */
+#boot{position:fixed;inset:0;z-index:9000;background:#000;color:#c0c0c0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font:14px Plex,monospace}
+#boot[hidden]{display:none}
+#boot .logo{font:600 64px/1 Barlow,sans-serif;color:var(--safe);letter-spacing:4px}
+#boot .logo small{display:block;font-size:20px;color:#c0c0c0;letter-spacing:8px;text-align:center;margin-top:6px}
+#boot .bar{width:220px;height:14px;border:1px solid #c0c0c0;padding:2px}
+#boot .bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--safe) 0 10px,transparent 10px 13px);animation:load 1.1s steps(17) forwards}
+@keyframes load{to{width:100%}}
+
+/* ---------- Telefono: una finestra alla volta, a tutto schermo ---------- */
+@media (max-width:700px){
+  .win{inset:0 0 30px 0!important;width:auto!important;height:auto!important}
+  .win .grip{display:none}
+  .win .ctl.mx{display:none}
+  #icons{flex-direction:row;flex-wrap:wrap;inset:10px 6px auto 6px}
+  .icon{width:76px}
+}
+@media (prefers-reduced-motion:reduce){#boot .bar i{animation-duration:.01s}}

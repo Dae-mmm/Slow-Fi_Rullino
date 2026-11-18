@@ -5,40 +5,214 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Slow-Fi</title>
 <meta name="description" content="Slow-Fi: app che rallentano il digitale. La prima è Rullino, una fotocamera a pellicola simulata.">
-<meta name="theme-color" content="#0d0c0c">
+<meta name="theme-color" content="#007a78">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/desktop.css">
+<noscript><link rel="stylesheet" href="/noscript.css"></noscript>
+<script src="/desktop.js" defer></script>
 </head>
 <body>
-<header><div class="wrap"><a class="mark" href="/">S—F</a><nav><a href="/" aria-current=page>Slow-Fi</a><a href="/rullino">Rullino</a><a href="/privacy">Privacy</a><a href="/contatti">Contatti</a></nav></div></header>
-<main>
+<div id="boot" aria-hidden="true"><div class="logo">S—F<small>SLOW-FI 95</small></div><div class="bar"><i></i></div><div>Avvio in corso… con calma.</div></div>
 
-<section class="wrap hero">
-  <p class="kicker">Slow-Fi · strumenti digitali lenti</p>
-  <h1>Meno scatti.<br>Più attesa.</h1>
-  <p class="lead">Slow-Fi è una famiglia di app che rimettono nel digitale i limiti buoni dell'analogico: poche pose, niente anteprima, il tempo dello sviluppo.</p>
-</section>
-<section class="wrap">
-  <p class="kicker">La prima app</p>
-  <a class="card app" href="/rullino">
-    <div class="cart" aria-hidden="true"><div class="cap"></div><div class="body"></div><div class="lab">RULLINO</div></div>
-    <div>
-      <h2 class="m0">Rullino</h2>
-      <p>Una fotocamera a pellicola simulata. Carichi un rullino da 24 o 36 pose, scatti alla cieca, porti i negativi al laboratorio e aspetti.</p>
-      <span class="chip on">Android</span><span class="chip on">iPhone</span><span class="chip">In arrivo sugli store</span>
-    </div>
-  </a>
-</section>
-<section class="wrap" class="pb">
-  <h2>Come la pensiamo</h2>
-  <div class="grid">
-    <div class="card"><h3>Il limite è il punto</h3><p>Ventiquattro pose ti fanno scegliere. Senza anteprima guardi la scena, non lo schermo.</p></div>
-    <div class="card"><h3>Le tue foto restano tue</h3><p>Niente pubblicità, niente tracciamento. Foto e negativi stanno sul tuo telefono.</p></div>
-    <div class="card"><h3>Pellicole da collezionare</h3><p>Il catalogo delle emulsioni cresce nel tempo; alcune si vincono solo nei concorsi.</p></div>
-  </div>
-</section>
-
+<main id="desk">
+<nav id="icons" aria-label="Desktop">
+<button class="icon" data-open="rullino"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="3" width="6" height="4" fill="#3a3533"/><rect x="4" y="6" width="20" height="23" fill="#1b1918"/><rect x="5" y="7" width="18" height="21" fill="#4a4542"/><rect x="7" y="10" width="14" height="14" fill="#ff6a3d"/><rect x="7" y="13" width="14" height="2" fill="#1b0e09"/><rect x="9" y="17" width="10" height="2" fill="#fff3ea"/><rect x="24" y="12" width="5" height="10" fill="#c9a27a"/><rect x="25" y="13" width="1" height="1" fill="#000"/><rect x="25" y="16" width="1" height="1" fill="#000"/><rect x="25" y="19" width="1" height="1" fill="#000"/><rect x="5" y="7" width="1" height="21" fill="#7a736e"/></svg><span>Rullino.exe</span></button>
+<button class="icon" data-open="leggimi"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="2" width="20" height="28" fill="#000"/><rect x="7" y="3" width="18" height="26" fill="#fff"/><rect x="7" y="3" width="18" height="4" fill="#ffff80"/><rect x="9" y="1" width="2" height="4" fill="#808080"/><rect x="15" y="1" width="2" height="4" fill="#808080"/><rect x="21" y="1" width="2" height="4" fill="#808080"/><rect x="9" y="10" width="14" height="1" fill="#000080"/><rect x="9" y="14" width="12" height="1" fill="#000080"/><rect x="9" y="18" width="14" height="1" fill="#000080"/><rect x="9" y="22" width="9" height="1" fill="#000080"/></svg><span>LEGGIMI.txt</span></button>
+<button class="icon" data-open="privacy"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><polygon points="6,2 20,2 26,8 26,30 6,30" fill="#000"/><polygon points="7,3 19,3 25,9 25,29 7,29" fill="#fff"/><polygon points="19,3 19,9 25,9" fill="#c0c0c0"/><rect x="9" y="8" width="8" height="1" fill="#808080"/><rect x="9" y="11" width="13" height="1" fill="#808080"/><rect x="9" y="14" width="13" height="1" fill="#808080"/><rect x="15" y="19" width="10" height="9" fill="#e0a000"/><rect x="17" y="16" width="6" height="1" fill="#555"/><rect x="16" y="17" width="1" height="3" fill="#555"/><rect x="23" y="17" width="1" height="3" fill="#555"/><rect x="19" y="22" width="2" height="3" fill="#000"/></svg><span>Privacy.doc</span></button>
+<button class="icon" data-open="contatti"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="7" width="28" height="19" fill="#000"/><rect x="3" y="8" width="26" height="17" fill="#fffbe6"/><polygon points="3,8 16,18 29,8 29,10 16,20 3,10" fill="#808080"/><rect x="22" y="10" width="5" height="6" fill="#ff6a3d"/><rect x="23" y="11" width="3" height="4" fill="#fff"/></svg><span>Posta</span></button>
+<button class="icon" data-open="account"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="11" y="4" width="10" height="10" fill="#000"/><rect x="12" y="5" width="8" height="8" fill="#e8c39e"/><rect x="6" y="15" width="20" height="13" fill="#000"/><rect x="7" y="16" width="18" height="12" fill="#3060c0"/><circle cx="23" cy="23" r="7" fill="#c00000"/><circle cx="23" cy="23" r="5" fill="#fff"/><polygon points="19.5,21 26.5,21 26.5,25 19.5,25" fill="#c00000"/></svg><span>Elimina account</span></button>
+<button class="icon" data-open="cestino"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="7" y="6" width="18" height="3" fill="#808080"/><rect x="13" y="4" width="6" height="2" fill="#808080"/><polygon points="8,9 24,9 22,30 10,30" fill="#000"/><polygon points="9,10 23,10 21,29 11,29" fill="#c0c0c0"/><rect x="12" y="12" width="1" height="15" fill="#808080"/><rect x="16" y="12" width="1" height="15" fill="#808080"/><rect x="20" y="12" width="1" height="15" fill="#808080"/><rect x="12" y="7" width="9" height="3" fill="#ff6a3d"/></svg><span>Cestino</span></button>
+</nav>
 </main>
-<footer><div class="wrap"><span>SLOW-FI · slow-fi.app</span><a href="/privacy">Privacy</a><a href="/elimina-account">Eliminare l'account</a><a href="/contatti">Contatti</a></div></footer>
+
+<div id="startmenu" class="raised" hidden>
+  <div class="side"><b>Slow</b>-Fi 95</div>
+  <ul>
+<li><button data-open="rullino"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="3" width="6" height="4" fill="#3a3533"/><rect x="4" y="6" width="20" height="23" fill="#1b1918"/><rect x="5" y="7" width="18" height="21" fill="#4a4542"/><rect x="7" y="10" width="14" height="14" fill="#ff6a3d"/><rect x="7" y="13" width="14" height="2" fill="#1b0e09"/><rect x="9" y="17" width="10" height="2" fill="#fff3ea"/><rect x="24" y="12" width="5" height="10" fill="#c9a27a"/><rect x="25" y="13" width="1" height="1" fill="#000"/><rect x="25" y="16" width="1" height="1" fill="#000"/><rect x="25" y="19" width="1" height="1" fill="#000"/><rect x="5" y="7" width="1" height="21" fill="#7a736e"/></svg><span>Rullino</span></button></li>
+<li><button data-open="leggimi"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="2" width="20" height="28" fill="#000"/><rect x="7" y="3" width="18" height="26" fill="#fff"/><rect x="7" y="3" width="18" height="4" fill="#ffff80"/><rect x="9" y="1" width="2" height="4" fill="#808080"/><rect x="15" y="1" width="2" height="4" fill="#808080"/><rect x="21" y="1" width="2" height="4" fill="#808080"/><rect x="9" y="10" width="14" height="1" fill="#000080"/><rect x="9" y="14" width="12" height="1" fill="#000080"/><rect x="9" y="18" width="14" height="1" fill="#000080"/><rect x="9" y="22" width="9" height="1" fill="#000080"/></svg><span>Leggimi</span></button></li>
+<li><button data-open="privacy"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><polygon points="6,2 20,2 26,8 26,30 6,30" fill="#000"/><polygon points="7,3 19,3 25,9 25,29 7,29" fill="#fff"/><polygon points="19,3 19,9 25,9" fill="#c0c0c0"/><rect x="9" y="8" width="8" height="1" fill="#808080"/><rect x="9" y="11" width="13" height="1" fill="#808080"/><rect x="9" y="14" width="13" height="1" fill="#808080"/><rect x="15" y="19" width="10" height="9" fill="#e0a000"/><rect x="17" y="16" width="6" height="1" fill="#555"/><rect x="16" y="17" width="1" height="3" fill="#555"/><rect x="23" y="17" width="1" height="3" fill="#555"/><rect x="19" y="22" width="2" height="3" fill="#000"/></svg><span>Privacy</span></button></li>
+<li><button data-open="account"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="11" y="4" width="10" height="10" fill="#000"/><rect x="12" y="5" width="8" height="8" fill="#e8c39e"/><rect x="6" y="15" width="20" height="13" fill="#000"/><rect x="7" y="16" width="18" height="12" fill="#3060c0"/><circle cx="23" cy="23" r="7" fill="#c00000"/><circle cx="23" cy="23" r="5" fill="#fff"/><polygon points="19.5,21 26.5,21 26.5,25 19.5,25" fill="#c00000"/></svg><span>Eliminare l&#x27;account</span></button></li>
+<li><button data-open="contatti"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="7" width="28" height="19" fill="#000"/><rect x="3" y="8" width="26" height="17" fill="#fffbe6"/><polygon points="3,8 16,18 29,8 29,10 16,20 3,10" fill="#808080"/><rect x="22" y="10" width="5" height="6" fill="#ff6a3d"/><rect x="23" y="11" width="3" height="4" fill="#fff"/></svg><span>Contatti</span></button></li>
+<li><hr></li>
+<li><button data-open="spegni"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><circle cx="16" cy="17" r="11" fill="none" stroke="#000" stroke-width="3"/><rect x="12" y="2" width="8" height="8" fill="#c0c0c0"/><rect x="14" y="3" width="4" height="13" fill="#c00000"/></svg><span>Chiudi Slow-Fi…</span></button></li>
+  </ul>
+</div>
+
+<footer id="taskbar">
+  <button id="start" class="btn" aria-haspopup="menu"><span class="sf">S—F</span>Start</button>
+  <div id="tasks"></div>
+  <div id="tray"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="3" width="6" height="4" fill="#3a3533"/><rect x="4" y="6" width="20" height="23" fill="#1b1918"/><rect x="5" y="7" width="18" height="21" fill="#4a4542"/><rect x="7" y="10" width="14" height="14" fill="#ff6a3d"/><rect x="7" y="13" width="14" height="2" fill="#1b0e09"/><rect x="9" y="17" width="10" height="2" fill="#fff3ea"/><rect x="24" y="12" width="5" height="10" fill="#c9a27a"/><rect x="25" y="13" width="1" height="1" fill="#000"/><rect x="25" y="16" width="1" height="1" fill="#000"/><rect x="25" y="19" width="1" height="1" fill="#000"/><rect x="5" y="7" width="1" height="21" fill="#7a736e"/></svg><span id="clock"></span></div>
+</footer>
+
+<!-- Contenuti delle finestre (leggibili anche senza JavaScript) -->
+<div id="tpl-benvenuto" class="src" data-title="Benvenuto in Slow-Fi 95" data-icon="info" data-w="500" data-h="330" data-status="Pronto|Slow-Fi 95" hidden>
+<h1>Meno scatti. Più attesa.</h1>
+<p class="lead">Slow-Fi è una famiglia di app che rimettono nel digitale i limiti buoni dell'analogico: poche pose, niente anteprima, il tempo dello sviluppo.</p>
+<p>Fai doppio clic sulle icone del desktop, oppure apri il menu <b>Start</b> in basso a sinistra.</p>
+<div class="row">
+  <button class="btn" data-open="rullino">Apri Rullino.exe</button>
+  <button class="btn" data-open="leggimi">LEGGIMI.txt</button>
+</div></div>
+<div id="tpl-leggimi" class="src" data-title="LEGGIMI.txt - Blocco note" data-icon="txt" data-w="520" data-h="380" data-body="notepad" hidden>SLOW-FI — LEGGIMI
+=================
+
+Slow-Fi fa app lente, apposta.
+
+1. Il limite è il punto.
+   Ventiquattro pose ti fanno scegliere.
+   Senza anteprima guardi la scena, non lo schermo.
+
+2. Le tue foto restano tue.
+   Niente pubblicità, niente tracciamento.
+   Foto e negativi stanno sul tuo telefono.
+
+3. Pellicole da collezionare.
+   Il catalogo delle emulsioni cresce nel tempo;
+   alcune si vincono solo nei concorsi.
+
+App n° 01: Rullino (doppio clic su Rullino.exe)
+Altre app: in sviluppo. Abbi pazienza, è lo spirito.
+
+slow-fi.app
+</div>
+<div id="tpl-rullino" class="src" data-title="Rullino.exe" data-icon="film" data-w="640" data-h="470" data-body="dark" data-status="App n° 01|Android · iPhone" hidden>
+<p class="kicker">Slow-Fi · app n° 01</p>
+<h1>Rullino</h1>
+<p class="lead">La fotocamera a pellicola nel telefono, con tutti i suoi difetti preferiti: la grana, l'esposizione da azzeccare, la doppia esposizione per sbaglio (o apposta).</p>
+<div class="row"><span class="btn">Presto su Google Play</span><span class="btn">Presto su App Store</span></div>
+<h2>Come funziona</h2>
+<div class="grid">
+  <div class="card"><p class="kicker">01 · Carica</p><h3>Scegli l'emulsione</h3><p>Ogni pellicola ha la sua sensibilità, i suoi colori e la sua grana. Rullini da 24 o 36 pose.</p></div>
+  <div class="card"><p class="kicker">02 · Scatta</p><h3>Leva e otturatore</h3><p>Tira la leva, scegli il tempo sulla ghiera e scatta. Non vedi il risultato: lo scoprirai dopo.</p></div>
+  <div class="card"><p class="kicker">03 · Riavvolgi</p><h3>Doppie esposizioni</h3><p>Premi R, gira la manovella di una posa e scatta di nuovo sopra la stessa foto.</p></div>
+  <div class="card"><p class="kicker">04 · Sviluppa</p><h3>Il laboratorio</h3><p>Porta il rullino al negozio, chiedi push o pull e aspetta i negativi. Poi il tavolo luminoso e le stampe.</p></div>
+</div>
+<h2>Pellicola vera, nei limiti del digitale</h2>
+<div class="grid">
+  <div class="card"><h3>Esposimetro</h3><p>Una barretta come nei mirini reflex ti dice se sei sotto o sovra, e su che tempo girare la ghiera.</p></div>
+  <div class="card"><h3>Emulsioni</h3><p>Il catalogo cresce nel tempo: nuove pellicole si scaricano dal negozio dell'app.</p></div>
+  <div class="card"><h3>Rullini condivisi</h3><p>Passa un rullino a metà a qualcuno: lo finisce lui, anche sopra le tue pose.</p></div>
+  <div class="card"><h3>Concorsi</h3><p>Temi, emulsioni imposte, a volte un rullino in regalo. Una sola foto a testa, una giuria che vota da 1 a 10.</p></div>
+</div></div>
+<div id="tpl-privacy" class="src" data-title="Privacy.doc - Rullino" data-icon="doc" data-w="680" data-h="500" data-status="Informativa privacy|Bozza in revisione" hidden><p class="kicker">Rullino · informativa privacy · aggiornata al 17 novembre 2026</p>
+  <h1>Privacy</h1>
+  <p class="note">Bozza in revisione: i dati del titolare e alcuni tempi di conservazione dei fornitori sono in fase di verifica.</p>
+  <p><b>In breve:</b> Rullino tiene foto, rullini e liberatorie sul tuo telefono. Sui nostri server finiscono i dati dell'account (email, nome utente, ruolo) e, solo se partecipi a un concorso, la foto che mandi e la sua eventuale liberatoria. Niente pubblicità, niente tracciamento, nessuna vendita di dati.</p>
+
+  <h2>1. Chi siamo</h2>
+  <p>Rullino fa parte del progetto Slow-Fi (slow-fi.app). Per qualsiasi domanda sulla privacy scrivi a <a href="mailto:privacy@slow-fi.app">privacy@slow-fi.app</a>: rispondiamo entro 30 giorni.</p>
+
+  <h2>2. Quali dati trattiamo</h2>
+  <p>Rullino si usa anche senza account: in quel caso nessun dato personale lascia il telefono.</p>
+  <table>
+    <tr><th>Dato</th><th>Dove resta</th><th>Chi lo vede</th></tr>
+    <tr><td>Foto scattate, rullini, negativi e stampe</td><td>Sul tuo telefono (le stampe nella galleria)</td><td>Solo tu</td></tr>
+    <tr><td>Liberatorie: nome, cognome, contatto, luogo, firma della persona ritratta</td><td>Sul tuo telefono; il PDF in Download/Rullino</td><td>Tu e chi decidi tu</td></tr>
+    <tr><td>Gettoni, magazzino, impostazioni</td><td>Sul tuo telefono</td><td>Solo tu</td></tr>
+    <tr><td>Account: email, nome utente, nome visualizzato, lingua del telefono, ruolo (utente, giudice, OP)</td><td>Server Supabase nell'UE</td><td>Noi; nome utente e nome visualizzato anche agli altri utenti registrati</td></tr>
+    <tr><td>Concorsi: la foto inviata, il numero della posa, l'emulsione, la data di caricamento del rullino, la liberatoria se ci sono persone</td><td>Server Supabase nell'UE, in uno spazio privato</td><td>Tu, la giuria e gli OP; se arrivi sul podio, la foto e il tuo nome utente agli utenti registrati per una settimana</td></tr>
+    <tr><td>Voti e note della giuria</td><td>Server Supabase nell'UE</td><td>La giuria; l'autore della foto a concorso chiuso</td></tr>
+    <tr><td>Dati tecnici di accesso: indirizzo IP, data e ora delle richieste</td><td>Registri dei fornitori</td><td>I fornitori e noi, per sicurezza</td></tr>
+  </table>
+  <p>Non raccogliamo posizione, contatti, identificativi pubblicitari né statistiche d'uso. Le foto lasciano il telefono solo quando scegli tu di mandarne una a un concorso.</p>
+  <p>Quando scarichi un'emulsione dal catalogo, il telefono la chiede ai server di Supabase: la richiesta lascia nei registri l'indirizzo IP, ma non è legata al tuo account.</p>
+
+  <h2>3. Perché li usiamo e su quale base</h2>
+  <table>
+    <tr><th>Scopo</th><th>Dati</th><th>Base giuridica (GDPR)</th></tr>
+    <tr><td>Creare e gestire l'account, l'accesso con il codice via email</td><td>Email, nome utente, nome visualizzato, lingua</td><td>Esecuzione del servizio richiesto (art. 6.1.b)</td></tr>
+    <tr><td>Concorsi: partecipazione, giuria, classifica, premi e bacheca</td><td>Foto inviata, liberatoria, nome utente, voti</td><td>Esecuzione del servizio richiesto (art. 6.1.b)</td></tr>
+    <tr><td>Sicurezza e prevenzione degli abusi</td><td>Dati tecnici di accesso</td><td>Legittimo interesse (art. 6.1.f)</td></tr>
+    <tr><td>Obblighi di legge</td><td>I dati necessari caso per caso</td><td>Obbligo legale (art. 6.1.c)</td></tr>
+  </table>
+  <p>Non usiamo i dati per pubblicità, profilazione o decisioni automatizzate, e non li vendiamo. La classifica dei concorsi nasce dalla media dei voti dati da persone.</p>
+
+  <h2>4. Chi ci aiuta a fornire il servizio</h2>
+  <table>
+    <tr><th>Fornitore</th><th>Cosa fa</th><th>Dove</th></tr>
+    <tr><td>Supabase Inc.</td><td>Account, accesso, catalogo delle emulsioni, concorsi</td><td>Server in Irlanda (UE)</td></tr>
+    <tr><td>Resend Inc.</td><td>Spedisce l'email con il codice di accesso</td><td>Società con sede negli USA</td></tr>
+    <tr><td>Cloudflare Inc., Vercel Inc.</td><td>Dominio slow-fi.app e questo sito</td><td>Rete globale</td></tr>
+    <tr><td>Google (Play Store), Apple (App Store)</td><td>Distribuzione dell'app</td><td>Secondo le loro informative</td></tr>
+  </table>
+  <p>I fornitori trattano i dati solo per conto nostro. Se un trasferimento avviene fuori dall'UE, si appoggia alle garanzie previste dal GDPR (decisione di adeguatezza UE-USA o clausole contrattuali standard). Questo sito non usa cookie né script.</p>
+
+  <h2>5. Permessi del telefono</h2>
+  <ul>
+    <li><b>Fotocamera:</b> per scattare. Le immagini restano nell'app finché non le stampi.</li>
+    <li><b>Foto / galleria:</b> solo per salvare le stampe che scegli. Su iPhone il permesso è di sola aggiunta.</li>
+    <li><b>File:</b> solo quando apri un file <code>.emulsion</code> o salvi il PDF di una liberatoria.</li>
+    <li><b>Internet:</b> per l'account, il catalogo e i concorsi.</li>
+  </ul>
+
+  <h2>6. Per quanto tempo</h2>
+  <table>
+    <tr><th>Dato</th><th>Quanto resta</th></tr>
+    <tr><td>Account e profilo</td><td>Finché non lo elimini; poi viene cancellato subito</td></tr>
+    <tr><td>Foto e liberatoria mandate a un concorso</td><td>Finché non ritiri la foto (a concorso aperto) o elimini l'account</td></tr>
+    <tr><td>Codici di accesso</td><td>Scadono dopo un'ora</td></tr>
+    <tr><td>Dati sul telefono</td><td>Finché non li cancelli o disinstalli l'app</td></tr>
+  </table>
+
+  <h2>7. Liberatorie e persone fotografate</h2>
+  <p>Le liberatorie si compilano e si firmano sul telefono. Per i dati delle persone che fotografi il titolare sei tu: Rullino ti dà lo strumento per raccogliere il loro consenso. Se mandi a un concorso una foto con persone, la liberatoria viaggia con la foto ed è visibile solo alla giuria e agli OP, per verificare il consenso.</p>
+
+  <h2>8. Minori</h2>
+  <p>L'account è riservato a chi ha almeno 14 anni; sotto quell'età serve il consenso di un genitore. Scattare e sviluppare senza account resta possibile a qualsiasi età, perché i dati non lasciano il telefono.</p>
+
+  <h2>9. I tuoi diritti</h2>
+  <p>Puoi chiederci di accedere ai tuoi dati, correggerli, cancellarli, limitarne l'uso, opporti al trattamento basato sul legittimo interesse o riceverli in un formato leggibile (artt. 15–21 GDPR).</p>
+  <p><b>Eliminare l'account:</b> nell'app, Opzioni › Account › Elimina l'account. Trovi tutti i dettagli nella pagina <a href="/elimina-account" data-open="account">Eliminare l'account</a>.</p>
+  <p>Puoi anche reclamare al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it">garanteprivacy.it</a>) o all'autorità del Paese in cui vivi.</p>
+
+  <h2>10. Sicurezza e modifiche</h2>
+  <p>Le comunicazioni con i server sono cifrate (HTTPS). Sul server ognuno legge e modifica solo i propri dati; le foto dei concorsi stanno in uno spazio privato. Se cambiamo questa informativa aggiorniamo la data in alto e lo segnaliamo nell'app.</p>
+</div>
+<div id="tpl-account" class="src" data-title="Eliminare l&#x27;account" data-icon="user" data-w="520" data-h="400" hidden>
+<p class="kicker">Rullino · account</p>
+<h1>Eliminare l'account</h1>
+<p>Puoi eliminare il tuo account Rullino quando vuoi, direttamente dall'app:</p>
+<ol class="steps">
+  <li>Apri Rullino e vai in <b>Opzioni</b>.</li>
+  <li>Nella scheda <b>Account</b> tocca <b>Elimina l'account</b>.</li>
+  <li>Conferma. L'account si cancella subito.</li>
+</ol>
+<h2>Cosa viene cancellato</h2>
+<p>Dai nostri server: email, nome utente, nome visualizzato, ruolo, eventuale abbonamento, le partecipazioni ai concorsi con le foto e le liberatorie inviate, i voti dati se eri in giuria.</p>
+<p>Foto, rullini, negativi e liberatorie che stanno solo sul telefono non passano dai nostri server: restano sul telefono finché non li cancelli o disinstalli l'app.</p>
+<h2>Non hai più l'app?</h2>
+<p>Scrivi a <a href="mailto:privacy@slow-fi.app?subject=Eliminare%20l%27account%20Rullino">privacy@slow-fi.app</a> dall'indirizzo email con cui ti sei registrato e chiedi la cancellazione. Rispondiamo entro 30 giorni, di solito molto prima.</p></div>
+<div id="tpl-contatti" class="src" data-title="Posta in uscita" data-icon="mail" data-w="460" data-h="320" hidden>
+<table>
+  <tr><th>A</th><td><a href="mailto:ciao@slow-fi.app">ciao@slow-fi.app</a></td></tr>
+  <tr><th>Per</th><td>Idee, problemi con l'app, collaborazioni</td></tr>
+</table>
+<table>
+  <tr><th>A</th><td><a href="mailto:privacy@slow-fi.app">privacy@slow-fi.app</a></td></tr>
+  <tr><th>Per</th><td>Domande sui dati, richieste di accesso o cancellazione</td></tr>
+</table>
+<p>Rispondiamo con calma, ma rispondiamo.</p>
+<div class="row"><a class="btn" href="mailto:ciao@slow-fi.app">Scrivi un messaggio</a></div></div>
+<div id="tpl-cestino" class="src" data-title="Cestino" data-icon="trash" data-w="480" data-h="300" data-status="4 oggetti|Svuotato mai" hidden>
+<div class="files">
+  <div><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="6" width="26" height="20" fill="#000"/><rect x="4" y="7" width="24" height="18" fill="#7ec8f0"/><polygon points="4,25 12,14 18,21 21,18 28,25" fill="#2e7d32"/><rect x="21" y="9" width="4" height="4" fill="#ffd700"/></svg>anteprima_istantanea.jpg</div>
+  <div><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="6" width="26" height="20" fill="#000"/><rect x="4" y="7" width="24" height="18" fill="#7ec8f0"/><polygon points="4,25 12,14 18,21 21,18 28,25" fill="#2e7d32"/><rect x="21" y="9" width="4" height="4" fill="#ffd700"/></svg>scatto_0847_di_0847.jpg</div>
+  <div><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="5" width="26" height="22" fill="#000"/><rect x="4" y="6" width="24" height="20" fill="#c0c0c0"/><rect x="4" y="6" width="24" height="4" fill="#000080"/><rect x="7" y="13" width="18" height="2" fill="#808080"/><rect x="7" y="17" width="12" height="2" fill="#808080"/><rect x="7" y="21" width="15" height="2" fill="#808080"/></svg>ansia_da_like.exe</div>
+  <div><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="2" width="20" height="28" fill="#000"/><rect x="7" y="3" width="18" height="26" fill="#fff"/><rect x="7" y="3" width="18" height="4" fill="#ffff80"/><rect x="9" y="1" width="2" height="4" fill="#808080"/><rect x="15" y="1" width="2" height="4" fill="#808080"/><rect x="21" y="1" width="2" height="4" fill="#808080"/><rect x="9" y="10" width="14" height="1" fill="#000080"/><rect x="9" y="14" width="12" height="1" fill="#000080"/><rect x="9" y="18" width="14" height="1" fill="#000080"/><rect x="9" y="22" width="9" height="1" fill="#000080"/></svg>filtro_vintage_finto.preset</div>
+</div></div>
+<div id="tpl-spegni" class="src" data-title="Chiudi Slow-Fi" data-icon="power" data-w="380" data-h="170" data-dialog="1" hidden>
+<svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="#000"/><circle cx="16" cy="16" r="12" fill="#fff"/><rect x="14" y="13" width="4" height="11" fill="#000080"/><rect x="14" y="7" width="4" height="4" fill="#000080"/></svg><div><p><b>È ora di spegnere.</b></p><p>Prendi la macchina e vai fuori a scattare: la luce di adesso non torna.</p>
+<div class="row"><button class="btn" data-close>OK</button></div></div></div>
+
+<template id="ico-film"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="3" width="6" height="4" fill="#3a3533"/><rect x="4" y="6" width="20" height="23" fill="#1b1918"/><rect x="5" y="7" width="18" height="21" fill="#4a4542"/><rect x="7" y="10" width="14" height="14" fill="#ff6a3d"/><rect x="7" y="13" width="14" height="2" fill="#1b0e09"/><rect x="9" y="17" width="10" height="2" fill="#fff3ea"/><rect x="24" y="12" width="5" height="10" fill="#c9a27a"/><rect x="25" y="13" width="1" height="1" fill="#000"/><rect x="25" y="16" width="1" height="1" fill="#000"/><rect x="25" y="19" width="1" height="1" fill="#000"/><rect x="5" y="7" width="1" height="21" fill="#7a736e"/></svg></template>
+<template id="ico-txt"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="2" width="20" height="28" fill="#000"/><rect x="7" y="3" width="18" height="26" fill="#fff"/><rect x="7" y="3" width="18" height="4" fill="#ffff80"/><rect x="9" y="1" width="2" height="4" fill="#808080"/><rect x="15" y="1" width="2" height="4" fill="#808080"/><rect x="21" y="1" width="2" height="4" fill="#808080"/><rect x="9" y="10" width="14" height="1" fill="#000080"/><rect x="9" y="14" width="12" height="1" fill="#000080"/><rect x="9" y="18" width="14" height="1" fill="#000080"/><rect x="9" y="22" width="9" height="1" fill="#000080"/></svg></template>
+<template id="ico-doc"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><polygon points="6,2 20,2 26,8 26,30 6,30" fill="#000"/><polygon points="7,3 19,3 25,9 25,29 7,29" fill="#fff"/><polygon points="19,3 19,9 25,9" fill="#c0c0c0"/><rect x="9" y="8" width="8" height="1" fill="#808080"/><rect x="9" y="11" width="13" height="1" fill="#808080"/><rect x="9" y="14" width="13" height="1" fill="#808080"/><rect x="15" y="19" width="10" height="9" fill="#e0a000"/><rect x="17" y="16" width="6" height="1" fill="#555"/><rect x="16" y="17" width="1" height="3" fill="#555"/><rect x="23" y="17" width="1" height="3" fill="#555"/><rect x="19" y="22" width="2" height="3" fill="#000"/></svg></template>
+<template id="ico-mail"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="7" width="28" height="19" fill="#000"/><rect x="3" y="8" width="26" height="17" fill="#fffbe6"/><polygon points="3,8 16,18 29,8 29,10 16,20 3,10" fill="#808080"/><rect x="22" y="10" width="5" height="6" fill="#ff6a3d"/><rect x="23" y="11" width="3" height="4" fill="#fff"/></svg></template>
+<template id="ico-trash"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="7" y="6" width="18" height="3" fill="#808080"/><rect x="13" y="4" width="6" height="2" fill="#808080"/><polygon points="8,9 24,9 22,30 10,30" fill="#000"/><polygon points="9,10 23,10 21,29 11,29" fill="#c0c0c0"/><rect x="12" y="12" width="1" height="15" fill="#808080"/><rect x="16" y="12" width="1" height="15" fill="#808080"/><rect x="20" y="12" width="1" height="15" fill="#808080"/><rect x="12" y="7" width="9" height="3" fill="#ff6a3d"/></svg></template>
+<template id="ico-user"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="11" y="4" width="10" height="10" fill="#000"/><rect x="12" y="5" width="8" height="8" fill="#e8c39e"/><rect x="6" y="15" width="20" height="13" fill="#000"/><rect x="7" y="16" width="18" height="12" fill="#3060c0"/><circle cx="23" cy="23" r="7" fill="#c00000"/><circle cx="23" cy="23" r="5" fill="#fff"/><polygon points="19.5,21 26.5,21 26.5,25 19.5,25" fill="#c00000"/></svg></template>
+<template id="ico-info"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="#000"/><circle cx="16" cy="16" r="12" fill="#fff"/><rect x="14" y="13" width="4" height="11" fill="#000080"/><rect x="14" y="7" width="4" height="4" fill="#000080"/></svg></template>
+<template id="ico-power"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><circle cx="16" cy="17" r="11" fill="none" stroke="#000" stroke-width="3"/><rect x="12" y="2" width="8" height="8" fill="#c0c0c0"/><rect x="14" y="3" width="4" height="13" fill="#c00000"/></svg></template>
+<template id="ico-photo"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="6" width="26" height="20" fill="#000"/><rect x="4" y="7" width="24" height="18" fill="#7ec8f0"/><polygon points="4,25 12,14 18,21 21,18 28,25" fill="#2e7d32"/><rect x="21" y="9" width="4" height="4" fill="#ffd700"/></svg></template>
+<template id="ico-exe"><svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="5" width="26" height="22" fill="#000"/><rect x="4" y="6" width="24" height="20" fill="#c0c0c0"/><rect x="4" y="6" width="24" height="4" fill="#000080"/><rect x="7" y="13" width="18" height="2" fill="#808080"/><rect x="7" y="17" width="12" height="2" fill="#808080"/><rect x="7" y="21" width="15" height="2" fill="#808080"/></svg></template>
 </body>
 </html>

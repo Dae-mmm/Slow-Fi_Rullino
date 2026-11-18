@@ -1,0 +1,4 @@
+/* Senza JavaScript: niente desktop, i contenuti si leggono come una pagina normale. */
+html,body{overflow:auto;height:auto}
+#boot,#icons,#taskbar,#startmenu{display:none!important}
+.src{display:block!important;background:#fff;max-width:760px;margin:16px auto;padding:20px;border:2px solid #000;font-size:14px}

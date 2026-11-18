@@ -1,0 +1,7 @@
+@font-face{font-family:Plex;src:url(/fonts/mono-400.woff) format("woff");font-display:swap}
+html,body{margin:0;height:100%}
+body{background:#0000aa;color:#fff;font:16px/1.6 Plex,"Courier New",monospace;display:grid;place-items:center;padding:24px;box-sizing:border-box}
+main{max-width:640px}
+.tag{display:table;margin:0 auto 24px;background:#aaa;color:#0000aa;padding:0 10px;font-weight:bold}
+a{color:#fff}
+.go{text-align:center;margin-top:28px}
