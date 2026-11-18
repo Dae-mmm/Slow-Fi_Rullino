@@ -5,6 +5,14 @@ name: Build APK
 on:
   push:
     branches: [main]
+    # Solo quando cambia l'app Android: sito, iOS, Supabase e strumenti non rifanno l'APK.
+    paths:
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - ".github/workflows/build.yml"
   workflow_dispatch:
 
 permissions:
