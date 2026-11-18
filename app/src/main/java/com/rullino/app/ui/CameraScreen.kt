@@ -167,13 +167,17 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
         scope.launch {
             blackout.snapTo(1f)
             val manual = cam != null && applyRealShutter(cam, ae, realT)
+            // Il mirino resta buio quanto dura la posa (specchio alzato), non quanto il telefono salva il file.
+            scope.launch {
+                delay(((realT ?: 0.0) * 1000).toLong().coerceIn(60, 2000) + 80)
+                blackout.animateTo(0f, tween(180))
+            }
             fun done() {
                 if (manual && cam != null) {
                     clearRealShutter(cam)
                     // L'automatico ci mette qualche fotogramma a tornare: l'esposimetro aspetta.
-                    scope.launch { delay(400); ae.manual = false }
+                    scope.launch { delay(300); ae.manual = false }
                 }
-                scope.launch { blackout.animateTo(0f, tween(220)) }
                 busy = false
             }
             cap.takePicture(options, ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageSavedCallback {
@@ -580,7 +584,6 @@ private fun BackWindow(emulsion: EmulsionEntity?, roll: RollEntity?) {
 @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
 private fun Viewfinder(onReady: (ImageCapture, Camera) -> Unit, onMeter: (Double) -> Unit, ae: AeState) {
     val meterCallback = androidx.compose.runtime.rememberUpdatedState(onMeter)
-    val lastEv = remember { java.util.concurrent.atomic.AtomicReference<Double?>(null) }
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember {
@@ -591,7 +594,9 @@ private fun Viewfinder(onReady: (ImageCapture, Camera) -> Unit, onMeter: (Double
     }
     val imageCapture = remember {
         ImageCapture.Builder()
-            .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+            // Latenza minima: niente attesa dell'esposizione automatica prima dello scatto (con il tempo
+            // manuale il telefono la aspetterebbe per secondi) e otturatore pronto come su una macchina vera.
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
             .build()
     }
 
@@ -638,7 +643,9 @@ private fun Viewfinder(onReady: (ImageCapture, Camera) -> Unit, onMeter: (Double
                         // Durante uno scatto a tempo vero l'esposizione è manuale: non è una lettura.
                         if (ae.manual) return
                         ae.t = ns / 1e9; ae.iso = iso
-                        lastEv.set(com.rullino.app.develop.VirtualCamera.ev100(ns / 1e9, n.toDouble(), iso))
+                        val ev = com.rullino.app.develop.VirtualCamera.ev100(ns / 1e9, n.toDouble(), iso)
+                        // Solo un numero passa al thread dell'interfaccia: nessuna copia dell'immagine.
+                        ContextCompat.getMainExecutor(context).execute { meterCallback.value(ev) }
                     }
                 }
             )
@@ -648,21 +655,6 @@ private fun Viewfinder(onReady: (ImageCapture, Camera) -> Unit, onMeter: (Double
             onReady(imageCapture, cam)
         }, ContextCompat.getMainExecutor(context))
         onDispose { provider?.unbindAll() }
-    }
-
-    // I dati del telefono dicono come ha esposto, non quanto è venuta chiara l'immagine: di notte arriva
-    // al limite e l'anteprima resta scura. Si corregge con la luminosità vera dell'anteprima.
-    LaunchedEffect(previewView) {
-        while (true) {
-            kotlinx.coroutines.delay(400)
-            val ev = lastEv.get() ?: continue
-            val bmp = previewView.bitmap
-            if (ae.manual) { bmp?.recycle(); continue }
-            val offset = bmp?.let { com.rullino.app.develop.VirtualCamera.lumaOffset(com.rullino.app.develop.VirtualCamera.meanLinear(it)) } ?: 0f
-            bmp?.recycle()
-            ae.offset = offset
-            meterCallback.value(ev + offset)
-        }
     }
 
     AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
@@ -710,7 +702,7 @@ private suspend fun applyRealShutter(cam: Camera, ae: AeState, seconds: Double?)
     ae.manual = true
     androidx.camera.camera2.interop.Camera2CameraControl.from(cam.cameraControl).setCaptureRequestOptions(opts).awaitDone()
     // Lascia passare un paio di fotogrammi con la nuova esposizione.
-    kotlinx.coroutines.delay((ns / 1_000_000L * 2 + 120).coerceIn(150, 4000))
+    kotlinx.coroutines.delay((ns / 1_000_000L * 3 / 2 + 40).coerceIn(60, 2000))
     true
 }.getOrElse { ae.manual = false; false }
 

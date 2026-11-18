@@ -137,7 +137,8 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
                 c.videoRotationAngle = a
             }
             let settings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg])
-            settings.photoQualityPrioritization = .quality
+            // Bilanciata: lo scatto parte subito invece di aspettare l'elaborazione pesante.
+            settings.photoQualityPrioritization = .balanced
             self.pending[settings.uniqueID] = (url, done)
             self.output.capturePhoto(with: settings, delegate: self)
         }
