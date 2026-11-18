@@ -246,18 +246,16 @@ struct CameraScreen: View {
     private func shoot() {
         guard let current = r, current.wound, !busy, camera.authorized == true else { Haptics.reject(); return }
         busy = true
-        // Il mirino resta buio per tutta la posa (specchio alzato), non per il salvataggio del file.
         blackout = true
         let (url, rel) = store.rawFile(for: current)
         let shutter = shutterSpeeds[min(max(store.data.shutterIndex, 0), shutterSpeeds.count - 1)]
         // Quello che legge l'esposimetro adesso: lo sviluppo partirà da qui.
         let meterEv = camera.ev100
-        // Il tempo è vero; in automatico è quello che sceglierebbe la compatta.
-        let realT = shutter ?? meterEv.map { VirtualCamera.autoShutter(ev100: $0, filmIso: current.iso) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + min(max(realT ?? 0, 0.06), 2) + 0.08) {
+        // Breve buio dello specchio: il tempo agisce sull'esposizione della pellicola, il mirino resta in automatico.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             withAnimation(.easeOut(duration: 0.18)) { blackout = false }
         }
-        camera.capture(to: url, seconds: realT) { ok in
+        camera.capture(to: url) { ok in
             if ok { store.recordShot(current.id, file: rel, shutter: shutter, meterEv: meterEv) } else { store.say("shot_failed") }
 
             releaseOn = false
