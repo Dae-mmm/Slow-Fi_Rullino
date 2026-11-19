@@ -15,16 +15,18 @@ val localProps = Properties().apply {
 
 android {
     namespace = "com.rullino.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         // Catalogo Slow-Fi su Supabase: la chiave pubblicabile è fatta per stare nelle app
         // (le regole RLS danno solo lettura delle emulsioni pubblicate). local.properties la sovrascrive.
         applicationId = "com.rullino.app"
         minSdk = 29
-        targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        targetSdk = 36
+        // Il numero di versione sale da solo a ogni build di GitHub (il Play Store vuole sempre un numero più alto).
+        val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = run
+        versionName = "0.1.$run"
         buildConfigField("String", "SUPABASE_URL", "\"${localProps.getProperty("supabase.url", "https://voxkoarjawgabrljvvon.supabase.co")}\"")
         buildConfigField("String", "SUPABASE_KEY", "\"${localProps.getProperty("supabase.key", "sb_publishable_sl-yaeRs7zND4Ldw5Fbo7w_pcMrdqbH")}\"")
     }
@@ -32,6 +34,16 @@ android {
     // Stessa chiave per Android Studio e per GitHub: così l'APK scaricato da Releases
     // si installa sopra quella compilata dal PC e viceversa. È solo una chiave di prova.
     signingConfigs {
+        // Chiave di caricamento per il Play Store: arriva dai segreti di GitHub, mai dal codice.
+        val uploadStore = System.getenv("RULLINO_UPLOAD_STORE_FILE")
+        if (uploadStore != null && file(uploadStore).exists()) {
+            create("upload") {
+                storeFile = file(uploadStore)
+                storePassword = System.getenv("RULLINO_UPLOAD_PASSWORD")
+                keyAlias = "upload"
+                keyPassword = System.getenv("RULLINO_UPLOAD_PASSWORD")
+            }
+        }
         getByName("debug") {
             storeFile = rootProject.file("keystore/debug.keystore")
             storePassword = "android"
@@ -42,6 +54,7 @@ android {
 
     buildTypes {
         release {
+            signingConfigs.findByName("upload")?.let { signingConfig = it }
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }

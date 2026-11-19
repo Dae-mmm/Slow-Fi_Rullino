@@ -40,6 +40,31 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug
 
+      # Il pacchetto per il Play Store (AAB), firmato con la chiave di caricamento se i segreti ci sono.
+      - name: Compila l'AAB per il Play Store
+        env:
+          UPLOAD_KEYSTORE: ${{ secrets.RULLINO_UPLOAD_KEYSTORE }}
+          RULLINO_UPLOAD_PASSWORD: ${{ secrets.RULLINO_UPLOAD_PASSWORD }}
+        run: |
+          if [ -n "$UPLOAD_KEYSTORE" ]; then
+            echo "$UPLOAD_KEYSTORE" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            export RULLINO_UPLOAD_STORE_FILE="$RUNNER_TEMP/upload.jks"
+            ./gradlew --no-daemon bundleRelease
+            mkdir -p aab
+            cp app/build/outputs/bundle/release/app-release.aab "aab/Rullino-${{ github.run_number }}.aab"
+            rm -f "$RUNNER_TEMP/upload.jks"
+          else
+            echo "::notice::Segreti della chiave di caricamento assenti: niente AAB per il Play Store."
+          fi
+
+      - name: Carica l'AAB
+        if: hashFiles('aab/*.aab') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rullino-playstore-${{ github.run_number }}
+          path: aab/*.aab
+          retention-days: 30
+
       - name: Rinomina l'APK
         run: |
           mkdir -p out
