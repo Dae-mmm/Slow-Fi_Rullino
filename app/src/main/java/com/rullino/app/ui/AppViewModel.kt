@@ -99,6 +99,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             "daily_taken" -> str(R.string.sk_daily_taken)
             "no_rolls" -> str(R.string.err_no_rolls_of, emulsionName)
             "not_signed_in" -> str(R.string.eco_sign_in)
+            "unknown_emulsion" -> str(R.string.eco_not_for_sale, emulsionName)
             else -> str(R.string.eco_error)
         }
         x is com.rullino.app.data.ContestException && x.kind == com.rullino.app.data.ContestException.Kind.NETWORK -> str(R.string.eco_offline)

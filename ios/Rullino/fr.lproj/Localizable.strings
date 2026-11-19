@@ -445,3 +445,5 @@
 "crop_saved" = "Tirage %1$@ prêt dans la galerie";
 "crop_done_title" = "Coupée %1$@";
 "crop_done_where" = "Le tirage coupé est dans la galerie, dans Rullino";
+"shelf_local_only" = "Seulement sur ce téléphone · pas en vente";
+"eco_not_for_sale" = "La boutique ne vend pas «%1$@» : elle n'est que sur ton téléphone. Pour la vendre, elle doit être au catalogue avec le même fichier.";

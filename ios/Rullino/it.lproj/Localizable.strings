@@ -445,3 +445,5 @@
 "crop_saved" = "Stampa %1$@ pronta in galleria";
 "crop_done_title" = "Tagliata %1$@";
 "crop_done_where" = "La stampa tagliata è in galleria, in Rullino";
+"shelf_local_only" = "Solo su questo telefono · non in vendita";
+"eco_not_for_sale" = "Il negozio non vende «%1$@»: c'è solo sul tuo telefono. Per venderla deve stare a catalogo, con lo stesso file.";

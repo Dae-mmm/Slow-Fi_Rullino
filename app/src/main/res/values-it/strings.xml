@@ -446,4 +446,6 @@
     <string name="crop_saved">Stampa %1$s pronta in galleria</string>
     <string name="crop_done_title">Tagliata %1$s</string>
     <string name="crop_done_where">La stampa tagliata è in galleria, in Rullino</string>
+    <string name="shelf_local_only">Solo su questo telefono · non in vendita</string>
+    <string name="eco_not_for_sale">Il negozio non vende «%1$s»: c\'è solo sul tuo telefono. Per venderla deve stare a catalogo, con lo stesso file.</string>
 </resources>

@@ -447,4 +447,6 @@
     <string name="crop_saved">%1$s print ready in the gallery</string>
     <string name="crop_done_title">Cut %1$s</string>
     <string name="crop_done_where">The cut print is in the gallery, in Rullino</string>
+    <string name="shelf_local_only">Only on this phone · not sold in the shop</string>
+    <string name="eco_not_for_sale">The shop doesn\'t sell «%1$s»: it\'s only on your phone. To sell it, it has to be in the catalog with the same file.</string>
 </resources>

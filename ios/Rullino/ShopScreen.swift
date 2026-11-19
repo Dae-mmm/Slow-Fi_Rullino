@@ -5,7 +5,10 @@ struct ShopScreen: View {
     @EnvironmentObject var store: Store
 
     var body: some View {
-        content.task { await store.refreshEconomy() }
+        content.task {
+            await store.refreshEconomy()
+            if store.catalog == nil { await store.loadCatalog() }
+        }
     }
 
     private var content: some View {
@@ -165,13 +168,15 @@ struct ShopScreen: View {
             let n = store.owned(e)
             Text(n == 1 ? L("in_stock_one") : (n > 1 ? L("in_stock_many", n) : L("none_in_stock")))
                 .font(.caption2).foregroundStyle(Palette.muted)
-            HStack {
+            if !store.sellable(e) {
+                Text(L("shelf_local_only")).font(.caption).foregroundStyle(Palette.muted)
+            } else { HStack {
                 if store.dailyAvailable {
                     Button(L("free_today")) { Task { await store.takeFree(e) } }.buttonStyle(.primary)
                 }
                 Button(L("buy") + " · \(Store.rollPrice)") { Task { await store.buy(e) } }.buttonStyle(.secondary)
                     .disabled(store.data.coins < Store.rollPrice)
-            }
+            } }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)

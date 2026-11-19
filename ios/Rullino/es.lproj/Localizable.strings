@@ -445,3 +445,5 @@
 "crop_saved" = "Copia %1$@ lista en la galería";
 "crop_done_title" = "Recortada %1$@";
 "crop_done_where" = "La copia recortada está en la galería, en Rullino";
+"shelf_local_only" = "Solo en este teléfono · no está a la venta";
+"eco_not_for_sale" = "La tienda no vende «%1$@»: solo está en tu teléfono. Para venderla tiene que estar en el catálogo con el mismo archivo.";

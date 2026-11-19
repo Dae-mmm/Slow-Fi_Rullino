@@ -445,3 +445,5 @@
 "crop_saved" = "%1$@ print ready in the gallery";
 "crop_done_title" = "Cut %1$@";
 "crop_done_where" = "The cut print is in the gallery, in Rullino";
+"shelf_local_only" = "Only on this phone · not sold in the shop";
+"eco_not_for_sale" = "The shop doesn't sell «%1$@»: it's only on your phone. To sell it, it has to be in the catalog with the same file.";

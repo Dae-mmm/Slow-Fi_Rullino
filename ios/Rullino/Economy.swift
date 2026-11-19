@@ -187,6 +187,14 @@ extension Store {
     }
 
     /// Uscendo dall'account: saldo, magazzino e tasca restano sul server, qui si azzerano.
+    /// Il negozio vende solo ciò che è a catalogo (più le emulsioni di serie e i premi):
+    /// un file importato a mano resta solo tuo.
+    func sellable(_ e: Emulsion) -> Bool {
+        if e.id.hasPrefix("bundled-") || data.prizeEmulsions.contains(e.id) { return true }
+        guard let catalog else { return true }
+        return catalog.contains { $0.id == e.id }
+    }
+
     func forgetEconomy() {
         data.coins = 0; data.dailyOpen = false; data.serverInventory = [:]; data.pocket = []; data.econQueue = []
         mirror()
@@ -197,6 +205,7 @@ extension Store {
         case .code("not_enough_coins"): "sk_no_coins"
         case .code("daily_taken"): "sk_daily_taken"
         case .code("no_rolls"): "err_no_rolls_of"
+        case .code("unknown_emulsion"): "eco_not_for_sale"
         case .signedOut, .code("not_signed_in"): "eco_sign_in"
         case .network: "eco_offline"
         default: "eco_error"

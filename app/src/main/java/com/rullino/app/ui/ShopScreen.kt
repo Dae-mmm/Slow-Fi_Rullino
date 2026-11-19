@@ -65,7 +65,11 @@ fun ShopScreen(vm: AppViewModel) {
     val inventory by vm.inventory.collectAsState()
     val coins by vm.shop.coins.collectAsState()
     val dailyOpen by vm.shop.dailyAvailable.collectAsState()
-    LaunchedEffect(Unit) { vm.refreshShop() }
+    LaunchedEffect(Unit) { vm.refreshShop(); if (vm.store.value !is StoreState.Ready) vm.refreshStore() }
+    val catalog by vm.store.collectAsState()
+    // Il negozio vende solo ciò che è a catalogo (più i premi): un file importato a mano resta solo tuo.
+    val catalogIds = (catalog as? StoreState.Ready)?.items?.map { it.id }?.toSet()
+    fun sellable(e: EmulsionEntity) = e.source == "prize" || (catalogIds?.contains(e.id) ?: (e.source == "bundled" || e.source == "store"))
     val line by vm.shopkeeperLine.collectAsState()
     val skip by vm.settings.skipLabWait.collectAsState()
     val dev by vm.settings.developerMode.collectAsState()
@@ -170,7 +174,7 @@ fun ShopScreen(vm: AppViewModel) {
                     if (emulsions.isEmpty()) Text(stringResource(R.string.shelf_empty), color = Palette.Muted)
                     emulsions.forEach { e ->
                         ShelfRow(
-                            e, inventory[e.id] ?: 0,
+                            e, inventory[e.id] ?: 0, sellable(e),
                             canAfford = coins >= Shop.ROLL_PRICE,
                             freeToday = dailyAvailable,
                             onFree = { vm.claimDaily(e) },
@@ -246,12 +250,16 @@ private fun LabRow(r: RollEntity, status: String, action: @Composable () -> Unit
 }
 
 @Composable
-private fun ShelfRow(e: EmulsionEntity, owned: Int, canAfford: Boolean, freeToday: Boolean, onFree: () -> Unit, onBuy: () -> Unit) {
+private fun ShelfRow(e: EmulsionEntity, owned: Int, sellable: Boolean, canAfford: Boolean, freeToday: Boolean, onFree: () -> Unit, onBuy: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         FilmBox(e.name, e.iso, toneFor(e.isBw, VirtualCameraSlide(e)), compact = true)
         Column(Modifier.weight(1f)) {
             Text(e.name, color = Palette.Ink, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
             Text(stringResource(R.string.iso_owned, e.iso, owned), color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
+        }
+        if (!sellable) {
+            Text(stringResource(R.string.shelf_local_only), color = Palette.Muted, fontSize = 12.sp, modifier = Modifier.width(130.dp))
+            return@Row
         }
         if (freeToday) PrimaryButton(onClick = onFree) { Text(stringResource(R.string.free_today)) }
         SecondaryButton(enabled = canAfford, onClick = onBuy) { Text(stringResource(R.string.buy)) }

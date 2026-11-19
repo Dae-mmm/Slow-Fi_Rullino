@@ -446,4 +446,6 @@
     <string name="crop_saved">Abzug %1$s in der Galerie bereit</string>
     <string name="crop_done_title">Zugeschnitten %1$s</string>
     <string name="crop_done_where">Der zugeschnittene Abzug ist in der Galerie, in Rullino</string>
+    <string name="shelf_local_only">Nur auf diesem Handy · nicht im Laden</string>
+    <string name="eco_not_for_sale">Der Laden verkauft «%1$s» nicht: Sie ist nur auf deinem Handy. Zum Verkauf muss sie mit derselben Datei im Katalog sein.</string>
 </resources>
