@@ -305,6 +305,7 @@ struct Loupe: View {
     let close: () -> Void
     @State private var image: UIImage?
     @State private var sending = false
+    @State private var cropping = false
 
     var body: some View {
         ZStack {
@@ -318,6 +319,7 @@ struct Loupe: View {
                     let printed = store.data.frames.first { $0.file == frame.file }?.printed ?? false
                     Button(printed ? L("already_printed") : L("print")) { store.printFrames([frame]) }
                         .buttonStyle(.primary).disabled(printed)
+                    Button(L("crop")) { cropping = true }.buttonStyle(.secondary)
                     if !contests.eligible(roll).isEmpty {
                         Button(L("ct_send_short")) { sending = true }.buttonStyle(.primary)
                     }
@@ -331,6 +333,13 @@ struct Loupe: View {
             let u = url
             image = await Task.detached { Developer.thumbnail(u, maxPixel: 2400).map { UIImage(cgImage: $0) } }.value
             if contests.contests.isEmpty { await contests.refresh() }
+        }
+        .overlay {
+            if cropping {
+                CropEditor(url: url, cancel: { cropping = false }) { rect, tag in
+                    store.printCrop(frame, rect, tag: tag); cropping = false
+                }
+            }
         }
         .sheet(isPresented: $sending) {
             SendToContestView(roll: roll, frame: frame, url: url, contests: contests.eligible(roll)) { sending = false }

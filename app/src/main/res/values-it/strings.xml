@@ -437,4 +437,11 @@
     <string name="eco_sign_in">Accedi (Opzioni › Account) per avere altri rullini</string>
     <string name="eco_offline">Niente rete: puoi caricare solo i rullini che hai in tasca</string>
     <string name="eco_error">Il negozio non risponde, riprova tra poco</string>
+    <string name="crop">Ritaglia</string>
+    <string name="crop_title">Taglia la stampa</string>
+    <string name="crop_cut">Taglia e salva</string>
+    <string name="crop_portrait">Verticale</string>
+    <string name="crop_landscape">Orizzontale</string>
+    <string name="crop_hint">Sposta la cornice, allarga con due dita o tirando gli angoli</string>
+    <string name="crop_saved">Stampa %1$s pronta in galleria</string>
 </resources>

@@ -436,3 +436,10 @@
 "eco_sign_in" = "Melde dich an (Optionen › Konto), um weitere Filme zu bekommen";
 "eco_offline" = "Kein Netz: Du kannst nur die Filme in deiner Tasche einlegen";
 "eco_error" = "Der Laden antwortet gerade nicht, versuch es gleich noch mal";
+"crop" = "Zuschneiden";
+"crop_title" = "Abzug zuschneiden";
+"crop_cut" = "Schneiden und speichern";
+"crop_portrait" = "Hochformat";
+"crop_landscape" = "Querformat";
+"crop_hint" = "Rahmen verschieben, mit zwei Fingern oder an den Ecken die Größe ändern";
+"crop_saved" = "Abzug %1$@ in der Galerie bereit";

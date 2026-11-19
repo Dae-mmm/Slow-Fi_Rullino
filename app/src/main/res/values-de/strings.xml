@@ -437,4 +437,11 @@
     <string name="eco_sign_in">Melde dich an (Optionen › Konto), um weitere Filme zu bekommen</string>
     <string name="eco_offline">Kein Netz: Du kannst nur die Filme in deiner Tasche einlegen</string>
     <string name="eco_error">Der Laden antwortet gerade nicht, versuch es gleich noch mal</string>
+    <string name="crop">Zuschneiden</string>
+    <string name="crop_title">Abzug zuschneiden</string>
+    <string name="crop_cut">Schneiden und speichern</string>
+    <string name="crop_portrait">Hochformat</string>
+    <string name="crop_landscape">Querformat</string>
+    <string name="crop_hint">Rahmen verschieben, mit zwei Fingern oder an den Ecken die Größe ändern</string>
+    <string name="crop_saved">Abzug %1$s in der Galerie bereit</string>
 </resources>

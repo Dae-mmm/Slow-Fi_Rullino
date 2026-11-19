@@ -209,6 +209,51 @@ class Repository(private val context: Context, val db: AppDb) {
     }
 
     /**
+     * Stampa ritagliata: il pezzo scelto del positivo va in galleria come stampa a sé
+     * (nome con il formato, es. _4x5). Il positivo originale resta intero.
+     */
+    suspend fun printCrop(roll: RollEntity, frame: FrameEntity, l: Int, t: Int, w: Int, h: Int, tag: String): Uri = withContext(Dispatchers.IO) {
+        val src = File(frame.developedPath)
+        @Suppress("DEPRECATION")
+        val decoder = android.graphics.BitmapRegionDecoder.newInstance(src.absolutePath, false)
+            ?: throw IllegalStateException(context.getString(R.string.err_print_write))
+        val bmp = try { decoder.decodeRegion(android.graphics.Rect(l, t, l + w, t + h), null) } finally { decoder.recycle() }
+            ?: throw IllegalStateException(context.getString(R.string.err_print_write))
+        val tmp = File(context.cacheDir, "crop.jpg")
+        tmp.outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it) }
+        bmp.recycle()
+        // I dati dello scatto viaggiano anche sul ritaglio.
+        runCatching {
+            val a = androidx.exifinterface.media.ExifInterface(src.absolutePath)
+            val b = androidx.exifinterface.media.ExifInterface(tmp.absolutePath)
+            for (k in listOf(
+                androidx.exifinterface.media.ExifInterface.TAG_DATETIME_ORIGINAL, androidx.exifinterface.media.ExifInterface.TAG_DATETIME,
+                androidx.exifinterface.media.ExifInterface.TAG_MAKE, androidx.exifinterface.media.ExifInterface.TAG_MODEL,
+                androidx.exifinterface.media.ExifInterface.TAG_IMAGE_DESCRIPTION, androidx.exifinterface.media.ExifInterface.TAG_SOFTWARE,
+                androidx.exifinterface.media.ExifInterface.TAG_ISO_SPEED_RATINGS, androidx.exifinterface.media.ExifInterface.TAG_EXPOSURE_TIME,
+            )) a.getAttribute(k)?.let { b.setAttribute(k, it) }
+            b.saveAttributes()
+        }
+        val folder = folderName(roll)
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "${folder}_${"%02d".format(frame.frame)}_${tag}_${System.currentTimeMillis() % 100000}.jpg")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Rullino/$folder")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
+        }
+        val resolver = context.contentResolver
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            ?: throw IllegalStateException(context.getString(R.string.err_gallery_save))
+        resolver.openOutputStream(uri)?.use { out -> tmp.inputStream().use { it.copyTo(out) } }
+            ?: throw IllegalStateException(context.getString(R.string.err_print_write))
+        tmp.delete()
+        values.clear()
+        values.put(MediaStore.Images.Media.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+        uri
+    }
+
+    /**
      * Cancella un intero rullino: negativi, pose e stampe in galleria.
      * Restituisce le stampe che Android non ci lascia cancellare senza conferma.
      */

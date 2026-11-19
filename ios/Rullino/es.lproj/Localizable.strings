@@ -436,3 +436,10 @@
 "eco_sign_in" = "Inicia sesión (Opciones › Cuenta) para tener más carretes";
 "eco_offline" = "Sin conexión: solo puedes cargar los carretes que llevas en el bolsillo";
 "eco_error" = "La tienda no responde, inténtalo en un momento";
+"crop" = "Recortar";
+"crop_title" = "Corta la copia";
+"crop_cut" = "Cortar y guardar";
+"crop_portrait" = "Vertical";
+"crop_landscape" = "Horizontal";
+"crop_hint" = "Mueve el marco, pellizca o tira de las esquinas para cambiar el tamaño";
+"crop_saved" = "Copia %1$@ lista en la galería";

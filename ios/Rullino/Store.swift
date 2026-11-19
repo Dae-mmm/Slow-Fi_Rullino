@@ -352,6 +352,51 @@ final class Store: ObservableObject {
         }
     }
 
+    /// Stampa ritagliata: il pezzo scelto del positivo (rettangolo 0…1 sull'immagine dritta) va in Foto
+    /// come stampa a sé; il positivo resta intero. I dati dello scatto viaggiano anche sul ritaglio.
+    func printCrop(_ f: DevFrame, _ n: CGRect, tag: String) {
+        let src = url(f)
+        Task.detached(priority: .userInitiated) {
+            guard let s = CGImageSourceCreateWithURL(src as CFURL, nil),
+                  let props = CGImageSourceCopyPropertiesAtIndex(s, 0, nil) as? [CFString: Any],
+                  let pw = props[kCGImagePropertyPixelWidth] as? Int, let ph = props[kCGImagePropertyPixelHeight] as? Int,
+                  let full = CGImageSourceCreateThumbnailAtIndex(s, 0, [
+                      kCGImageSourceCreateThumbnailFromImageAlways: true,
+                      kCGImageSourceCreateThumbnailWithTransform: true,
+                      kCGImageSourceThumbnailMaxPixelSize: max(pw, ph),
+                  ] as CFDictionary) else { await MainActor.run { self.say("print_failed") }; return }
+            let W = CGFloat(full.width), H = CGFloat(full.height)
+            let rect = CGRect(x: n.minX * W, y: n.minY * H, width: n.width * W, height: n.height * H).integral
+                .intersection(CGRect(x: 0, y: 0, width: W, height: H))
+            guard let cut = full.cropping(to: rect) else { await MainActor.run { self.say("print_failed") }; return }
+            let out = FileManager.default.temporaryDirectory.appendingPathComponent("taglio-\(f.frame)-\(tag).jpg")
+            try? FileManager.default.removeItem(at: out)
+            guard let dst = CGImageDestinationCreateWithURL(out as CFURL, "public.jpeg" as CFString, 1, nil)
+            else { await MainActor.run { self.say("print_failed") }; return }
+            var meta = props
+            for k in [kCGImagePropertyPixelWidth, kCGImagePropertyPixelHeight, kCGImagePropertyOrientation] { meta.removeValue(forKey: k) }
+            if var tiff = meta[kCGImagePropertyTIFFDictionary] as? [CFString: Any] {
+                tiff.removeValue(forKey: kCGImagePropertyTIFFOrientation); meta[kCGImagePropertyTIFFDictionary] = tiff
+            }
+            meta[kCGImageDestinationLossyCompressionQuality] = 0.95
+            CGImageDestinationAddImage(dst, cut, meta as CFDictionary)
+            guard CGImageDestinationFinalize(dst) else { await MainActor.run { self.say("print_failed") }; return }
+            PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+                guard status == .authorized || status == .limited else {
+                    Task { @MainActor in self.say("err_gallery_save") }; return
+                }
+                PHPhotoLibrary.shared().performChanges({
+                    PHAssetChangeRequest.creationRequestForAssetFromImage(atFileURL: out)
+                }) { ok, _ in
+                    try? FileManager.default.removeItem(at: out)
+                    Task { @MainActor in
+                        if ok { self.say("crop_saved", tag.replacingOccurrences(of: "x", with: ":")) } else { self.say("print_failed") }
+                    }
+                }
+            }
+        }
+    }
+
     /* ---------------- Negozio ---------------- */
 
     // Gettoni, rullino del giorno e magazzino: decide il server (Economy.swift).

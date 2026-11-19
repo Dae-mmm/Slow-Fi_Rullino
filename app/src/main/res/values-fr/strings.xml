@@ -437,4 +437,11 @@
     <string name="eco_sign_in">Connecte-toi (Options › Compte) pour avoir d\'autres pellicules</string>
     <string name="eco_offline">Pas de réseau : tu ne peux charger que les pellicules dans ta poche</string>
     <string name="eco_error">La boutique ne répond pas, réessaie dans un instant</string>
+    <string name="crop">Recadrer</string>
+    <string name="crop_title">Couper le tirage</string>
+    <string name="crop_cut">Couper et enregistrer</string>
+    <string name="crop_portrait">Portrait</string>
+    <string name="crop_landscape">Paysage</string>
+    <string name="crop_hint">Déplace le cadre, pince ou tire les coins pour l\'agrandir</string>
+    <string name="crop_saved">Tirage %1$s prêt dans la galerie</string>
 </resources>

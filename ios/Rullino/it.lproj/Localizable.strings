@@ -436,3 +436,10 @@
 "eco_sign_in" = "Accedi (Opzioni › Account) per avere altri rullini";
 "eco_offline" = "Niente rete: puoi caricare solo i rullini che hai in tasca";
 "eco_error" = "Il negozio non risponde, riprova tra poco";
+"crop" = "Ritaglia";
+"crop_title" = "Taglia la stampa";
+"crop_cut" = "Taglia e salva";
+"crop_portrait" = "Verticale";
+"crop_landscape" = "Orizzontale";
+"crop_hint" = "Sposta la cornice, allarga con due dita o tirando gli angoli";
+"crop_saved" = "Stampa %1$@ pronta in galleria";

@@ -436,3 +436,10 @@
 "eco_sign_in" = "Sign in (Options › Account) to get more rolls";
 "eco_offline" = "No connection: you can only load the rolls in your pocket";
 "eco_error" = "The shop isn't answering right now, try again in a moment";
+"crop" = "Crop";
+"crop_title" = "Cut the print";
+"crop_cut" = "Cut and save";
+"crop_portrait" = "Portrait";
+"crop_landscape" = "Landscape";
+"crop_hint" = "Drag the frame, pinch or pull the corners to resize";
+"crop_saved" = "%1$@ print ready in the gallery";

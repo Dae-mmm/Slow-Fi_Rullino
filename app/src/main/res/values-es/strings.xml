@@ -437,4 +437,11 @@
     <string name="eco_sign_in">Inicia sesión (Opciones › Cuenta) para tener más carretes</string>
     <string name="eco_offline">Sin conexión: solo puedes cargar los carretes que llevas en el bolsillo</string>
     <string name="eco_error">La tienda no responde, inténtalo en un momento</string>
+    <string name="crop">Recortar</string>
+    <string name="crop_title">Corta la copia</string>
+    <string name="crop_cut">Cortar y guardar</string>
+    <string name="crop_portrait">Vertical</string>
+    <string name="crop_landscape">Horizontal</string>
+    <string name="crop_hint">Mueve el marco, pellizca o tira de las esquinas para cambiar el tamaño</string>
+    <string name="crop_saved">Copia %1$s lista en la galería</string>
 </resources>

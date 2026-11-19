@@ -436,3 +436,10 @@
 "eco_sign_in" = "Connecte-toi (Options › Compte) pour avoir d'autres pellicules";
 "eco_offline" = "Pas de réseau : tu ne peux charger que les pellicules dans ta poche";
 "eco_error" = "La boutique ne répond pas, réessaie dans un instant";
+"crop" = "Recadrer";
+"crop_title" = "Couper le tirage";
+"crop_cut" = "Couper et enregistrer";
+"crop_portrait" = "Portrait";
+"crop_landscape" = "Paysage";
+"crop_hint" = "Déplace le cadre, pince ou tire les coins pour l'agrandir";
+"crop_saved" = "Tirage %1$@ prêt dans la galerie";

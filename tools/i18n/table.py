@@ -437,4 +437,11 @@ T = [
 ('eco_sign_in', 'Sign in (Options › Account) to get more rolls', 'Accedi (Opzioni › Account) per avere altri rullini', "Connecte-toi (Options › Compte) pour avoir d'autres pellicules", 'Inicia sesión (Opciones › Cuenta) para tener más carretes', 'Melde dich an (Optionen › Konto), um weitere Filme zu bekommen'),
 ('eco_offline', 'No connection: you can only load the rolls in your pocket', 'Niente rete: puoi caricare solo i rullini che hai in tasca', 'Pas de réseau : tu ne peux charger que les pellicules dans ta poche', 'Sin conexión: solo puedes cargar los carretes que llevas en el bolsillo', 'Kein Netz: Du kannst nur die Filme in deiner Tasche einlegen'),
 ('eco_error', "The shop isn't answering right now, try again in a moment", 'Il negozio non risponde, riprova tra poco', 'La boutique ne répond pas, réessaie dans un instant', 'La tienda no responde, inténtalo en un momento', 'Der Laden antwortet gerade nicht, versuch es gleich noch mal'),
+("crop","Crop","Ritaglia","Recadrer","Recortar","Zuschneiden"),
+("crop_title","Cut the print","Taglia la stampa","Couper le tirage","Corta la copia","Abzug zuschneiden"),
+("crop_cut","Cut and save","Taglia e salva","Couper et enregistrer","Cortar y guardar","Schneiden und speichern"),
+("crop_portrait","Portrait","Verticale","Portrait","Vertical","Hochformat"),
+("crop_landscape","Landscape","Orizzontale","Paysage","Horizontal","Querformat"),
+("crop_hint","Drag the frame, pinch or pull the corners to resize","Sposta la cornice, allarga con due dita o tirando gli angoli","Déplace le cadre, pince ou tire les coins pour l'agrandir","Mueve el marco, pellizca o tira de las esquinas para cambiar el tamaño","Rahmen verschieben, mit zwei Fingern oder an den Ecken die Größe ändern"),
+("crop_saved","%1$s print ready in the gallery","Stampa %1$s pronta in galleria","Tirage %1$s prêt dans la galerie","Copia %1$s lista en la galería","Abzug %1$s in der Galerie bereit"),
 ]

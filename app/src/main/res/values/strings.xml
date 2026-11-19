@@ -438,4 +438,11 @@
     <string name="eco_sign_in">Sign in (Options › Account) to get more rolls</string>
     <string name="eco_offline">No connection: you can only load the rolls in your pocket</string>
     <string name="eco_error">The shop isn\'t answering right now, try again in a moment</string>
+    <string name="crop">Crop</string>
+    <string name="crop_title">Cut the print</string>
+    <string name="crop_cut">Cut and save</string>
+    <string name="crop_portrait">Portrait</string>
+    <string name="crop_landscape">Landscape</string>
+    <string name="crop_hint">Drag the frame, pinch or pull the corners to resize</string>
+    <string name="crop_saved">%1$s print ready in the gallery</string>
 </resources>

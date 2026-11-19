@@ -327,6 +327,7 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
             frame = f,
             onClose = { loupe = null },
             onPrint = { vm.print(roll, listOf(f)); loupe = null },
+            onCrop = { c -> vm.printCrop(roll, f, c) },
             onRelease = { loupe = null; releaseFrame = f.frame },
             onContest = if (eligible.isNotEmpty()) ({ loupe = null; sendFrame = f }) else null,
         )
@@ -435,8 +436,13 @@ private fun Sprockets(base: Color, label: String?, number: Int) {
 
 /** Il lentino: il fotogramma in positivo, grande, con la stampa. */
 @Composable
-private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, onRelease: () -> Unit, onContest: (() -> Unit)? = null) {
-    Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, onCrop: (CropRect) -> Unit, onRelease: () -> Unit, onContest: (() -> Unit)? = null) {
+    var cropping by remember { mutableStateOf(false) }
+    Dialog(onDismissRequest = { if (cropping) cropping = false else onClose() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        if (cropping) {
+            CropEditor(frame.developedPath, onCancel = { cropping = false }, onDone = { onCrop(it); cropping = false })
+            return@Dialog
+        }
         Column(
             Modifier.fillMaxSize().background(Color(0xEE0C0B0B)).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -455,6 +461,7 @@ private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, 
                 Spacer(Modifier.width(8.dp))
                 if (frame.printUri == null) PrimaryButton(onClick = onPrint) { Text(stringResource(R.string.print)) }
                 else Text(stringResource(R.string.already_printed), color = Palette.Ink)
+                SecondaryButton(onClick = { cropping = true }) { Text(stringResource(R.string.crop)) }
                 SecondaryButton(onClick = onRelease) { Text(stringResource(R.string.release)) }
                 if (onContest != null) PrimaryButton(onClick = onContest) { Text(stringResource(R.string.ct_send_short)) }
                 SecondaryButton(onClick = onClose) { Text(stringResource(R.string.back_on_table)) }
