@@ -264,9 +264,13 @@ struct NegativeFrame: View {
             ZStack(alignment: .topTrailing) {
                 Group {
                     if let image {
+                        // Sulla pellicola il fotogramma è sempre orizzontale: uno scatto in verticale ci finisce girato.
+                        let portrait = image.size.height > image.size.width
                         Image(uiImage: image).resizable().scaledToFill()
                             .colorInvert()
                             .colorMultiply(bw ? .white : Color(red: 1, green: 0.72, blue: 0.45))
+                            .frame(width: portrait ? 88 : 132, height: portrait ? 132 : 88).clipped()
+                            .rotationEffect(.degrees(portrait ? -90 : 0))
                     } else { Color(hex: 0x2B1D14) }
                 }
                 .frame(width: 132, height: 88).clipped()
@@ -288,9 +292,9 @@ struct NegativeFrame: View {
     }
 
     private var sprockets: some View {
-        // 6 perforazioni per fotogramma, distribuite in modo uniforme.
+        // 8 perforazioni per fotogramma, come sul 35 mm vero.
         HStack(spacing: 0) {
-            ForEach(0..<6, id: \.self) { _ in
+            ForEach(0..<8, id: \.self) { _ in
                 RoundedRectangle(cornerRadius: 1).fill(Color(hex: 0xF2EEE6)).frame(width: 8, height: 5).frame(maxWidth: .infinity)
             }
         }

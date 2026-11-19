@@ -34,6 +34,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -371,15 +374,25 @@ private fun NegativeFrame(frame: FrameEntity, roll: RollEntity, hasRelease: Bool
                 .padding(horizontal = 6.dp),
             contentAlignment = Alignment.Center,
         ) {
-            AsyncImage(
-                model = File(frame.developedPath),
-                contentDescription = stringResource(R.string.negative_n, frame.frame),
-                contentScale = ContentScale.Crop,
-                colorFilter = ColorFilter.colorMatrix(if (roll.isBw) bwNegative else colorNegative),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(if (isSelected) Modifier.border(3.dp, Palette.Safelight) else Modifier),
-            )
+            // Sulla pellicola il fotogramma è sempre orizzontale: uno scatto in verticale ci finisce girato.
+            val portrait = remember(frame.developedPath) {
+                val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                android.graphics.BitmapFactory.decodeFile(frame.developedPath, o)
+                o.outHeight > o.outWidth
+            }
+            BoxWithConstraints(
+                Modifier.fillMaxSize().clipToBounds().then(if (isSelected) Modifier.border(3.dp, Palette.Safelight) else Modifier),
+                contentAlignment = Alignment.Center,
+            ) {
+                AsyncImage(
+                    model = File(frame.developedPath),
+                    contentDescription = stringResource(R.string.negative_n, frame.frame),
+                    contentScale = ContentScale.Crop,
+                    colorFilter = ColorFilter.colorMatrix(if (roll.isBw) bwNegative else colorNegative),
+                    modifier = if (portrait) Modifier.requiredSize(maxHeight, maxWidth).graphicsLayer { rotationZ = -90f }
+                    else Modifier.fillMaxSize(),
+                )
+            }
             if (frame.printUri != null) {
                 Text(
                     stringResource(R.string.printed_badge),
@@ -409,7 +422,7 @@ private fun NegativeFrame(frame: FrameEntity, roll: RollEntity, hasRelease: Bool
     }
 }
 
-private const val HOLES_PER_FRAME = 6
+private const val HOLES_PER_FRAME = 8
 
 /** Banda con le perforazioni; quella superiore porta le scritte di bordo. */
 @Composable
@@ -419,7 +432,7 @@ private fun Sprockets(base: Color, label: String?, number: Int) {
             drawRect(base)
             val holeW = 7.dp.toPx()
             val holeH = 5.dp.toPx()
-            // 6 perforazioni per fotogramma, distribuite in modo uniforme.
+            // 8 perforazioni per fotogramma, come sul 35 mm vero, distribuite in modo uniforme.
             val step = size.width / HOLES_PER_FRAME
             val y = if (label != null) size.height - holeH - 3.dp.toPx() else 3.dp.toPx()
             repeat(HOLES_PER_FRAME) { i ->
