@@ -179,9 +179,9 @@ private fun EmulsionDetail(e: EmulsionEntity, vm: AppViewModel, onLoaded: () -> 
     val active by vm.activeRoll.collectAsState()
     val inventory by vm.inventory.collectAsState()
     val coins by vm.shop.coins.collectAsState()
-    val lastDaily by vm.shop.lastDaily.collectAsState()
+    val dailyOpen by vm.shop.dailyAvailable.collectAsState()
     val owned = inventory[e.id] ?: 0
-    val freeToday = lastDaily != vm.shop.today()
+    val freeToday = dailyOpen
     var exposures by remember(e.id) { mutableIntStateOf(if (e.exposures == 24) 24 else 36) }
     val busyRoll = active?.let { it.shotCount > 0 } == true
     var confirmDelete by remember { mutableStateOf(false) }

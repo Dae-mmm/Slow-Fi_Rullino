@@ -224,8 +224,9 @@ class ContestsViewModel(application: Application) : AndroidViewModel(application
             r.emulsionUrl?.let { addPendingPrize(it) }
             message.value = str(R.string.ct_prize_place, r.place)
         }
+        // I gettoni li ha già messi nel portafoglio il server: qui si aggiorna solo il saldo.
         if (coins > 0) {
-            app.shop.earn(coins)
+            app.shop.refresh()
             message.value = str(R.string.ct_prize_coins, coins)
         }
         installPendingPrizes()

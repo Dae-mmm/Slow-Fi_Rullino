@@ -434,4 +434,7 @@
     <string name="share_resend">Erneut senden</string>
     <string name="share_take_back">Zurücknehmen</string>
     <string name="state_shared">Unterwegs</string>
+    <string name="eco_sign_in">Melde dich an (Optionen › Konto), um weitere Filme zu bekommen</string>
+    <string name="eco_offline">Kein Netz: Du kannst nur die Filme in deiner Tasche einlegen</string>
+    <string name="eco_error">Der Laden antwortet gerade nicht, versuch es gleich noch mal</string>
 </resources>

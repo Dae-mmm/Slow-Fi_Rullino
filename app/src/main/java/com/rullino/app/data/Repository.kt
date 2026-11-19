@@ -45,62 +45,88 @@ class Repository(private val context: Context, val db: AppDb) {
         db.inventory().upsert(InventoryEntity(emulsionId, (have + n).coerceAtLeast(0)))
     }
 
-    /** In macchina c'è posto se non c'è un rullino, o se quello caricato è ancora vergine (torna in magazzino). */
-    private suspend fun makeRoomInCamera() {
+    /** Chi restituisce al magazzino (sul server) i rullini mai scattati: lo imposta l'app. */
+    var onReturn: suspend (RollEntity) -> Unit = {}
+
+    /**
+     * In macchina c'è posto se non c'è un rullino, o se quello caricato è ancora vergine.
+     * Restituisce i rullini vergini tolti, da rimandare in magazzino fuori dalla transazione.
+     */
+    private suspend fun makeRoomInCamera(): List<RollEntity> {
+        val back = mutableListOf<RollEntity>()
         for (current in db.rolls().activeNow()) {
             if (current.shotCount == 0 && current.contestId != null) {
                 // Il rullino del concorso non torna in magazzino: resta da parte, intatto.
                 db.rolls().update(current.copy(state = RollState.SHELVED, wound = false))
             } else if (current.shotCount == 0) {
                 db.rolls().delete(current)
-                addToInventory(current.emulsionId, 1)
+                back += current
             } else throw IllegalStateException(context.getString(R.string.err_roll_in_camera))
         }
+        return back
     }
 
-    /** Carica un rullino preso dal magazzino. */
-    suspend fun loadRoll(e: EmulsionEntity, exposures: Int): Long = db.withTransaction {
-        makeRoomInCamera()
-        val have = db.inventory().get(e.id)?.count ?: 0
-        if (have <= 0) throw IllegalStateException(context.getString(R.string.err_no_rolls_of, e.name))
-        db.inventory().upsert(InventoryEntity(e.id, have - 1))
-        db.rolls().insert(
-            RollEntity(
-                emulsionId = e.id, emulsionName = e.name, iso = e.iso, exposures = exposures,
-                isBw = e.isBw, loadedAt = System.currentTimeMillis(),
+    /** C'è posto in macchina (nessun rullino, o uno vergine che si può togliere)? */
+    suspend fun cameraFree(): Boolean = db.rolls().activeNow().all { it.shotCount == 0 }
+
+    /** Carica un rullino preso dal magazzino; [pocketId] è il suo codice sul server. */
+    suspend fun loadRoll(e: EmulsionEntity, exposures: Int, pocketId: String?): Long {
+        var back: List<RollEntity> = emptyList()
+        val id = db.withTransaction {
+            back = makeRoomInCamera()
+            db.rolls().insert(
+                RollEntity(
+                    emulsionId = e.id, emulsionName = e.name, iso = e.iso, exposures = exposures,
+                    isBw = e.isBw, loadedAt = System.currentTimeMillis(), pocketId = pocketId,
+                )
             )
-        )
+        }
+        back.forEach { onReturn(it) }
+        return id
     }
 
     /** Carica in macchina il rullino regalato da un concorso (non passa dal magazzino). */
-    suspend fun loadGiftRoll(e: EmulsionEntity, exposures: Int, contestId: String, ref: String): Long = db.withTransaction {
-        makeRoomInCamera()
-        db.rolls().insert(
-            RollEntity(
-                emulsionId = e.id, emulsionName = e.name, iso = e.iso, exposures = exposures,
-                isBw = e.isBw, loadedAt = System.currentTimeMillis(), contestId = contestId, contestRef = ref,
+    suspend fun loadGiftRoll(e: EmulsionEntity, exposures: Int, contestId: String, ref: String): Long {
+        var back: List<RollEntity> = emptyList()
+        val id = db.withTransaction {
+            back = makeRoomInCamera()
+            db.rolls().insert(
+                RollEntity(
+                    emulsionId = e.id, emulsionName = e.name, iso = e.iso, exposures = exposures,
+                    isBw = e.isBw, loadedAt = System.currentTimeMillis(), contestId = contestId, contestRef = ref,
+                )
             )
-        )
+        }
+        back.forEach { onReturn(it) }
+        return id
     }
 
     /** Ricarica un rullino messo da parte: riprende dal fotogramma dove era rimasto. */
-    suspend fun reloadRoll(rollId: Long) = db.withTransaction {
-        val r = db.rolls().get(rollId) ?: return@withTransaction
-        if (r.state != RollState.SHELVED) return@withTransaction
-        makeRoomInCamera()
-        db.rolls().update(r.copy(state = RollState.LOADED, wound = false))
+    suspend fun reloadRoll(rollId: Long) {
+        var back: List<RollEntity> = emptyList()
+        db.withTransaction {
+            val r = db.rolls().get(rollId) ?: return@withTransaction
+            if (r.state != RollState.SHELVED) return@withTransaction
+            back = makeRoomInCamera()
+            db.rolls().update(r.copy(state = RollState.LOADED, wound = false))
+        }
+        back.forEach { onReturn(it) }
     }
 
     /** Toglie dalla macchina un rullino su cui non si è ancora scattato: torna in magazzino. */
-    suspend fun unloadEmptyRoll(roll: RollEntity) = db.withTransaction {
-        val fresh = db.rolls().get(roll.id) ?: return@withTransaction
-        if (fresh.shotCount == 0 && fresh.contestId != null) {
-            db.rolls().update(fresh.copy(state = RollState.SHELVED, wound = false))
-        } else if (fresh.shotCount == 0) {
-            db.rolls().delete(fresh)
-            addToInventory(fresh.emulsionId, 1)
-            rollDir(fresh.id).deleteRecursively()
+    suspend fun unloadEmptyRoll(roll: RollEntity) {
+        var back: RollEntity? = null
+        db.withTransaction {
+            val fresh = db.rolls().get(roll.id) ?: return@withTransaction
+            if (fresh.shotCount == 0 && fresh.contestId != null) {
+                db.rolls().update(fresh.copy(state = RollState.SHELVED, wound = false))
+            } else if (fresh.shotCount == 0) {
+                db.rolls().delete(fresh)
+                rollDir(fresh.id).deleteRecursively()
+                back = fresh
+            }
         }
+        back?.let { onReturn(it) }
     }
 
     /** Sgancia e mette da parte, per finirlo più avanti. */

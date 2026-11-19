@@ -434,4 +434,7 @@
     <string name="share_resend">Reenviar</string>
     <string name="share_take_back">Recuperar</string>
     <string name="state_shared">De viaje</string>
+    <string name="eco_sign_in">Inicia sesión (Opciones › Cuenta) para tener más carretes</string>
+    <string name="eco_offline">Sin conexión: solo puedes cargar los carretes que llevas en el bolsillo</string>
+    <string name="eco_error">La tienda no responde, inténtalo en un momento</string>
 </resources>

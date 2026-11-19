@@ -433,3 +433,6 @@
 "share_resend" = "Reenviar";
 "share_take_back" = "Recuperar";
 "state_shared" = "De viaje";
+"eco_sign_in" = "Inicia sesión (Opciones › Cuenta) para tener más carretes";
+"eco_offline" = "Sin conexión: solo puedes cargar los carretes que llevas en el bolsillo";
+"eco_error" = "La tienda no responde, inténtalo en un momento";

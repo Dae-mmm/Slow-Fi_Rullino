@@ -434,4 +434,7 @@
     <string name="share_resend">Rimanda</string>
     <string name="share_take_back">Riprendi</string>
     <string name="state_shared">In viaggio</string>
+    <string name="eco_sign_in">Accedi (Opzioni › Account) per avere altri rullini</string>
+    <string name="eco_offline">Niente rete: puoi caricare solo i rullini che hai in tasca</string>
+    <string name="eco_error">Il negozio non risponde, riprova tra poco</string>
 </resources>

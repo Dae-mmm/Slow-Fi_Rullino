@@ -64,13 +64,14 @@ fun ShopScreen(vm: AppViewModel) {
     val rolls by vm.rolls.collectAsState()
     val inventory by vm.inventory.collectAsState()
     val coins by vm.shop.coins.collectAsState()
-    val lastDaily by vm.shop.lastDaily.collectAsState()
+    val dailyOpen by vm.shop.dailyAvailable.collectAsState()
+    LaunchedEffect(Unit) { vm.refreshShop() }
     val line by vm.shopkeeperLine.collectAsState()
     val skip by vm.settings.skipLabWait.collectAsState()
     val dev by vm.settings.developerMode.collectAsState()
     val now by produceState(System.currentTimeMillis()) { while (true) { delay(30_000); value = System.currentTimeMillis() } }
 
-    val dailyAvailable = lastDaily != vm.shop.today()
+    val dailyAvailable = dailyOpen
     val toDeliver = rolls.filter { it.state == RollState.FINISHED && it.shotCount > 0 }
     fun ready(r: RollEntity) = r.state == RollState.DEVELOPED && ((dev && skip) || (r.readyAt ?: 0L) <= now)
     // Al laboratorio: in vasca o in attesa. Quelli pronti sono già tornati in Rullini.

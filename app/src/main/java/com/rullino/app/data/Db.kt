@@ -84,6 +84,8 @@ data class RollEntity(
     val contestRef: String? = null,
     /** Codice della condivisione su Supabase, finché il rullino è "in viaggio". */
     val shareId: String? = null,
+    /** Codice del rullino sul server (magazzino → tasca → macchina): serve per restituirlo se non si scatta. */
+    val pocketId: String? = null,
 ) {
     val canWind get() = state == RollState.LOADED && !wound && cursor <= exposures
     /** Tutte le pose esposte: va riavvolto. */
@@ -224,6 +226,9 @@ interface InventoryDao {
 
     @Upsert
     suspend fun upsert(i: InventoryEntity)
+
+    @Query("DELETE FROM inventory")
+    suspend fun clear()
 }
 
 @Dao
@@ -273,7 +278,7 @@ interface FrameDao {
         EmulsionEntity::class, RollEntity::class, ExposureEntity::class, FrameEntity::class,
         InventoryEntity::class, ReleaseEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = false,
 )
 abstract class AppDb : RoomDatabase() {
@@ -318,10 +323,16 @@ abstract class AppDb : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE rolls ADD COLUMN pocketId TEXT")
+            }
+        }
+
         fun build(context: Context): AppDb =
             Room.databaseBuilder(context, AppDb::class.java, "rullino.db")
                 // App ancora in sviluppo: cambiando schema si riparte da zero.
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .fallbackToDestructiveMigration(true)
                 .build()
     }

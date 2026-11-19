@@ -433,3 +433,6 @@
 "share_resend" = "Renvoyer";
 "share_take_back" = "Reprendre";
 "state_shared" = "En voyage";
+"eco_sign_in" = "Connecte-toi (Options › Compte) pour avoir d'autres pellicules";
+"eco_offline" = "Pas de réseau : tu ne peux charger que les pellicules dans ta poche";
+"eco_error" = "La boutique ne répond pas, réessaie dans un instant";

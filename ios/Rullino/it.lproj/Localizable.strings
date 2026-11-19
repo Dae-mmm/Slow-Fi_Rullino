@@ -433,3 +433,6 @@
 "share_resend" = "Rimanda";
 "share_take_back" = "Riprendi";
 "state_shared" = "In viaggio";
+"eco_sign_in" = "Accedi (Opzioni › Account) per avere altri rullini";
+"eco_offline" = "Niente rete: puoi caricare solo i rullini che hai in tasca";
+"eco_error" = "Il negozio non risponde, riprova tra poco";

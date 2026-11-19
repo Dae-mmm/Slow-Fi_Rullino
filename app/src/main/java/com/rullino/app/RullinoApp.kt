@@ -33,11 +33,13 @@ class RullinoApp : Application() {
         val db = AppDb.build(this)
         repo = Repository(this, db)
         settings = Settings(this)
-        shop = Shop(this)
         account = Account(this, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY)
         contests = com.rullino.app.data.ContestsClient(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, account)
+        shop = Shop(this, db, contests)
+        // Un rullino mai scattato tolto dalla macchina torna nel magazzino del server.
+        repo.onReturn = { shop.giveBack(it.pocketId, it.emulsionId) }
         developer = Developer(this, repo, settings)
-        appScope.launch { runCatching { account.refresh() } }
+        appScope.launch { runCatching { account.refresh() }; shop.refresh() }
         appScope.launch {
             cleanOrphanRolls(db)
             installBundledEmulsions()

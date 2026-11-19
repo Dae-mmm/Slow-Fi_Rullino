@@ -79,11 +79,34 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun str(@StringRes id: Int, vararg args: Any): String = app.getString(id, *args)
     fun say(@StringRes id: Int, vararg args: Any) { message.value = str(id, *args) }
 
+    /** Prende un rullino (dalla tasca, dal magazzino sul server o il rullino di prova) e lo carica. */
     fun loadRoll(e: EmulsionEntity, exposures: Int, onDone: () -> Unit) = viewModelScope.launch {
-        runCatching { repo.loadRoll(e, exposures) }
-            .onSuccess { onDone() }
-            .onFailure { say(it.message ?: str(R.string.load_failed)) }
+        if (!repo.cameraFree()) { say(R.string.err_roll_in_camera); return@launch }
+        val pocketId = try {
+            shop.take(e.id)
+        } catch (x: Exception) {
+            say(economyMessage(x, e.name)); return@launch
+        }
+        runCatching { repo.loadRoll(e, exposures, pocketId) }
+            .onSuccess { onDone(); viewModelScope.launch { shop.refresh() } }
+            .onFailure { shop.giveBack(pocketId, e.id); say(it.message ?: str(R.string.load_failed)) }
     }
+
+    /** Il messaggio giusto per un rifiuto del negozio o un problema di rete. */
+    fun economyMessage(x: Throwable, emulsionName: String = ""): String = when {
+        x is com.rullino.app.data.EconomyException -> when (x.code) {
+            "not_enough_coins" -> str(R.string.sk_no_coins)
+            "daily_taken" -> str(R.string.sk_daily_taken)
+            "no_rolls" -> str(R.string.err_no_rolls_of, emulsionName)
+            "not_signed_in" -> str(R.string.eco_sign_in)
+            else -> str(R.string.eco_error)
+        }
+        x is com.rullino.app.data.ContestException && x.kind == com.rullino.app.data.ContestException.Kind.NETWORK -> str(R.string.eco_offline)
+        x is com.rullino.app.data.ContestException && x.kind == com.rullino.app.data.ContestException.Kind.SIGNED_OUT -> str(R.string.eco_sign_in)
+        else -> str(R.string.eco_error)
+    }
+
+    fun refreshShop() = viewModelScope.launch { shop.refresh() }
 
     fun unloadEmptyRoll(r: RollEntity) = viewModelScope.launch { repo.unloadEmptyRoll(r) }
 
@@ -143,17 +166,25 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun claimDaily(e: EmulsionEntity) = viewModelScope.launch {
-        if (!shop.dailyAvailable()) { shopkeeperLine.value = str(R.string.sk_daily_taken); return@launch }
-        repo.addToInventory(e.id, 1)
-        shop.markDailyClaimed()
-        shopkeeperLine.value = str(R.string.sk_daily_given, e.name)
+        runCatching { shop.claimDaily(e.id) }
+            .onSuccess { shopkeeperLine.value = str(R.string.sk_daily_given, e.name) }
+            .onFailure { shopkeeperLine.value = economyMessage(it, e.name) }
     }
 
     fun buy(e: EmulsionEntity) = viewModelScope.launch {
-        if (shop.spend(com.rullino.app.data.Shop.ROLL_PRICE)) {
-            repo.addToInventory(e.id, 1)
-            shopkeeperLine.value = str(R.string.sk_bought, e.name)
-        } else shopkeeperLine.value = str(R.string.sk_no_coins)
+        runCatching { shop.buy(e.id) }
+            .onSuccess { shopkeeperLine.value = str(R.string.sk_bought, e.name) }
+            .onFailure { shopkeeperLine.value = economyMessage(it, e.name) }
+    }
+
+    /* ---- Strumenti OP ---- */
+
+    fun opGrant(n: Int) = viewModelScope.launch {
+        runCatching { shop.opGrant(n) }.onSuccess { say(R.string.plus100) }.onFailure { say(economyMessage(it)) }
+    }
+
+    fun opResetDaily() = viewModelScope.launch {
+        runCatching { shop.opResetDaily() }.onSuccess { say(R.string.daily_again_msg) }.onFailure { say(economyMessage(it)) }
     }
 
     /* ---- Liberatorie ---- */
@@ -372,6 +403,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         pendingEmail.value = null
         // Gli OP hanno sempre gli strumenti da sviluppatore.
         if (account.profile.value?.role == Role.OP) settings.setDeveloperMode(true)
+        shop.refresh()
     }
 
     fun cancelCode() { pendingEmail.value = null }
@@ -381,9 +413,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         say(R.string.acc_saved)
     }
 
-    fun signOut() = accountAction { account.signOut(); say(R.string.acc_signed_out) }
+    fun signOut() = accountAction { shop.refresh(); account.signOut(); shop.forget(); say(R.string.acc_signed_out) }
 
-    fun deleteAccount() = accountAction { account.deleteAccount(); say(R.string.acc_deleted) }
+    fun deleteAccount() = accountAction { account.deleteAccount(); shop.forget(); say(R.string.acc_deleted) }
 
     fun download(item: CatalogItem) {
         if (item.id in downloading.value) return

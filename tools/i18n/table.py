@@ -434,4 +434,7 @@ T = [
 ('share_resend', 'Send again', 'Rimanda', 'Renvoyer', 'Reenviar', 'Erneut senden'),
 ('share_take_back', 'Take back', 'Riprendi', 'Reprendre', 'Recuperar', 'Zurücknehmen'),
 ('state_shared', 'Travelling', 'In viaggio', 'En voyage', 'De viaje', 'Unterwegs'),
+('eco_sign_in', 'Sign in (Options › Account) to get more rolls', 'Accedi (Opzioni › Account) per avere altri rullini', "Connecte-toi (Options › Compte) pour avoir d'autres pellicules", 'Inicia sesión (Opciones › Cuenta) para tener más carretes', 'Melde dich an (Optionen › Konto), um weitere Filme zu bekommen'),
+('eco_offline', 'No connection: you can only load the rolls in your pocket', 'Niente rete: puoi caricare solo i rullini che hai in tasca', 'Pas de réseau : tu ne peux charger que les pellicules dans ta poche', 'Sin conexión: solo puedes cargar los carretes que llevas en el bolsillo', 'Kein Netz: Du kannst nur die Filme in deiner Tasche einlegen'),
+('eco_error', "The shop isn't answering right now, try again in a moment", 'Il negozio non risponde, riprova tra poco', 'La boutique ne répond pas, réessaie dans un instant', 'La tienda no responde, inténtalo en un momento', 'Der Laden antwortet gerade nicht, versuch es gleich noch mal'),
 ]

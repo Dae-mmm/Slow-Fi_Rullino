@@ -85,6 +85,13 @@ data class ContestScore(val entryId: String, val score: Int, val note: String?)
 
 data class ContestReward(val contestId: String, val place: Int, val coins: Int, val emulsionId: String?, val emulsionUrl: String?)
 
+/** Un rifiuto del server per le regole del negozio: gettoni finiti, rullino del giorno già preso… */
+class EconomyException(val code: String) : Exception(code) {
+    companion object {
+        val CODES = setOf("not_enough_coins", "daily_taken", "no_rolls", "unknown_emulsion", "not_signed_in", "not_allowed")
+    }
+}
+
 class ContestException(val kind: Kind) : Exception(kind.name) {
     enum class Kind { NETWORK, SIGNED_OUT, CLOSED, NOT_ALLOWED, ALREADY, OTHER }
 }
@@ -306,6 +313,22 @@ class ContestsClient(private val baseUrl: String, private val key: String, priva
 
     fun me(): String? = account.userId
 
+    /* ---------------- Gettoni e magazzino (decide il server) ---------------- */
+
+    /** Chiama una funzione del server; gli errori "di gioco" (gettoni finiti…) diventano [EconomyException]. */
+    suspend fun rpc(name: String, args: JSONObject = JSONObject()): String {
+        val (c, t) = call("POST", "/rest/v1/rpc/$name", args.toString().toByteArray(), "application/json", token())
+        if (c !in 200..299) {
+            val msg = runCatching { JSONObject(t).optString("message") }.getOrDefault("")
+            if (msg in EconomyException.CODES) throw EconomyException(msg)
+        }
+        ok(c, t)
+        return t
+    }
+
+    fun signedIn(): Boolean = account.userId != null
+
+    /* ---------------- dettagli ---------------- */
     /* ---------------- dettagli ---------------- */
 
     private suspend fun upload(path: String, bytes: ByteArray, type: String, tok: String) {

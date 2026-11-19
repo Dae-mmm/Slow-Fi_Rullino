@@ -117,8 +117,8 @@ fun OptionsScreen(vm: AppViewModel) {
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SecondaryButton(onClick = { vm.shop.earn(100); vm.say(R.string.plus100) }) { Text(stringResource(R.string.plus100)) }
-                    SecondaryButton(onClick = { vm.shop.resetDaily(); vm.say(R.string.daily_again_msg) }) { Text(stringResource(R.string.daily_again)) }
+                    SecondaryButton(onClick = { vm.opGrant(100) }) { Text(stringResource(R.string.plus100)) }
+                    SecondaryButton(onClick = { vm.opResetDaily() }) { Text(stringResource(R.string.daily_again)) }
                 }
             }
         }

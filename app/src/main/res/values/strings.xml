@@ -435,4 +435,7 @@
     <string name="share_resend">Send again</string>
     <string name="share_take_back">Take back</string>
     <string name="state_shared">Travelling</string>
+    <string name="eco_sign_in">Sign in (Options › Account) to get more rolls</string>
+    <string name="eco_offline">No connection: you can only load the rolls in your pocket</string>
+    <string name="eco_error">The shop isn\'t answering right now, try again in a moment</string>
 </resources>

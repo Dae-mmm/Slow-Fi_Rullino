@@ -434,4 +434,7 @@
     <string name="share_resend">Renvoyer</string>
     <string name="share_take_back">Reprendre</string>
     <string name="state_shared">En voyage</string>
+    <string name="eco_sign_in">Connecte-toi (Options › Compte) pour avoir d\'autres pellicules</string>
+    <string name="eco_offline">Pas de réseau : tu ne peux charger que les pellicules dans ta poche</string>
+    <string name="eco_error">La boutique ne répond pas, réessaie dans un instant</string>
 </resources>

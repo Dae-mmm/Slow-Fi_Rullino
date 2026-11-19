@@ -433,3 +433,6 @@
 "share_resend" = "Send again";
 "share_take_back" = "Take back";
 "state_shared" = "Travelling";
+"eco_sign_in" = "Sign in (Options › Account) to get more rolls";
+"eco_offline" = "No connection: you can only load the rolls in your pocket";
+"eco_error" = "The shop isn't answering right now, try again in a moment";
