@@ -449,3 +449,4 @@
 "eco_not_for_sale" = "La tienda no vende «%1$@»: solo está en tu teléfono. Para venderla tiene que estar en el catálogo con el mismo archivo.";
 "emulsion_published" = "«%1$@» añadida y puesta en el catálogo: en unos segundos estará en la tienda para todos";
 "emulsion_publish_failed" = "«%1$@» está en tu teléfono, pero no pudo ir al catálogo: vuelve a abrir el archivo";
+"cam_simulated" = "Sin cámara aquí: escena de prueba";

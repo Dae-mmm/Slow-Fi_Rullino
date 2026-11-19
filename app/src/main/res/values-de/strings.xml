@@ -450,4 +450,5 @@
     <string name="eco_not_for_sale">Der Laden verkauft «%1$s» nicht: Sie ist nur auf deinem Handy. Zum Verkauf muss sie mit derselben Datei im Katalog sein.</string>
     <string name="emulsion_published">«%1$s» hinzugefügt und in den Katalog gestellt: in ein paar Sekunden ist sie für alle im Laden</string>
     <string name="emulsion_publish_failed">«%1$s» ist auf deinem Handy, konnte aber nicht in den Katalog: öffne die Datei noch einmal</string>
+    <string name="cam_simulated">Keine Kamera hier: Testszene</string>
 </resources>

@@ -449,3 +449,4 @@
 "eco_not_for_sale" = "The shop doesn't sell «%1$@»: it's only on your phone. To sell it, it has to be in the catalog with the same file.";
 "emulsion_published" = "«%1$@» added and put in the catalog: in a few seconds it's in the shop for everyone";
 "emulsion_publish_failed" = "«%1$@» is on your phone, but it couldn't go into the catalog: try opening the file again";
+"cam_simulated" = "No camera here: test scene";

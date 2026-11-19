@@ -450,4 +450,5 @@
     <string name="eco_not_for_sale">La boutique ne vend pas «%1$s» : elle n\'est que sur ton téléphone. Pour la vendre, elle doit être au catalogue avec le même fichier.</string>
     <string name="emulsion_published">«%1$s» ajoutée et mise au catalogue : dans quelques secondes elle est en boutique pour tous</string>
     <string name="emulsion_publish_failed">«%1$s» est sur ton téléphone, mais n\'a pas pu aller au catalogue : rouvre le fichier</string>
+    <string name="cam_simulated">Pas de caméra ici : scène de test</string>
 </resources>

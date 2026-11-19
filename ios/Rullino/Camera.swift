@@ -14,6 +14,8 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
     weak var previewLayer: AVCaptureVideoPreviewLayer? { didSet { attachRotation() } }
 
     @Published var authorized: Bool?
+    /// Nessuna fotocamera (il simulatore di Xcode): si scatta su una scena disegnata, per provare tutto il resto.
+    @Published private(set) var simulated = false
     /// Fattore di zoom che corrisponde all'obiettivo principale (24 mm circa).
     @Published private(set) var baseZoom: CGFloat = 1
     @Published private(set) var maxZoom: CGFloat = 1
@@ -57,7 +59,10 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
         let types: [AVCaptureDevice.DeviceType] = [.builtInTripleCamera, .builtInDualWideCamera, .builtInDualCamera, .builtInWideAngleCamera]
         let found = AVCaptureDevice.DiscoverySession(deviceTypes: types, mediaType: .video, position: .back).devices.first
         guard let cam = found, let input = try? AVCaptureDeviceInput(device: cam), session.canAddInput(input) else {
-            session.commitConfiguration(); return
+            session.commitConfiguration()
+            configured = true
+            DispatchQueue.main.async { self.simulated = true; self.ev100 = 12; self.maxZoom = 135 / 24 }
+            return
         }
         session.addInput(input)
         if session.canAddOutput(output) { session.addOutput(output) }
@@ -119,8 +124,15 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
     /// e gli ISO portano la foto a un'esposizione media, così il mosso è giusto e la pellicola resta simulata.
     func capture(to url: URL, seconds: Double? = nil, done: @escaping (Bool) -> Void) {
         let angle = rotation?.videoRotationAngleForHorizonLevelCapture
+        if simulated {
+            DispatchQueue.global(qos: .userInitiated).async {
+                let ok = (try? SimulatedScene.jpeg().write(to: url, options: .atomic)) != nil
+                DispatchQueue.main.async { done(ok) }
+            }
+            return
+        }
         queue.async {
-            guard self.configured else { DispatchQueue.main.async { done(false) }; return }
+            guard self.configured, self.device != nil else { DispatchQueue.main.async { done(false) }; return }
             if let seconds, let d = self.device, d.isExposureModeSupported(.custom), (try? d.lockForConfiguration()) != nil {
                 let f = d.activeFormat
                 let tAuto = CMTimeGetSeconds(d.exposureDuration), isoAuto = Double(d.iso)
@@ -184,4 +196,44 @@ struct CameraPreview: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: PreviewView, context: Context) {}
+}
+
+/// La scena finta del simulatore: cielo, sole, colline e una casetta, ogni scatto un po' diverso.
+enum SimulatedScene {
+    static let size = CGSize(width: 2016, height: 1512)
+
+    static func image(seed: UInt64 = UInt64(Date().timeIntervalSince1970 * 10)) -> UIImage {
+        var s = seed | 1
+        func rnd() -> CGFloat { s ^= s << 13; s ^= s >> 7; s ^= s << 17; return CGFloat(s % 10_000) / 10_000 }
+        let f = UIGraphicsImageRendererFormat(); f.scale = 1
+        return UIGraphicsImageRenderer(size: size, format: f).image { ctx in
+            let c = ctx.cgContext, w = size.width, h = size.height
+            let hue = 0.55 + rnd() * 0.08
+            let sky = [UIColor(hue: hue, saturation: 0.55, brightness: 0.95, alpha: 1).cgColor,
+                       UIColor(hue: 0.08, saturation: 0.35, brightness: 1, alpha: 1).cgColor] as CFArray
+            c.drawLinearGradient(CGGradient(colorsSpace: nil, colors: sky, locations: [0, 1])!,
+                                 start: .zero, end: CGPoint(x: 0, y: h * 0.62), options: [.drawsAfterEndLocation])
+            UIColor(hue: 0.11, saturation: 0.6, brightness: 1, alpha: 1).setFill()
+            let r = h * (0.07 + rnd() * 0.04)
+            c.fillEllipse(in: CGRect(x: w * (0.15 + rnd() * 0.7) - r, y: h * (0.12 + rnd() * 0.2) - r, width: r * 2, height: r * 2))
+            for layer in 0..<3 {
+                let base = h * (0.55 + CGFloat(layer) * 0.12)
+                UIColor(hue: 0.28 + CGFloat(layer) * 0.04, saturation: 0.5, brightness: 0.65 - CGFloat(layer) * 0.15, alpha: 1).setFill()
+                let p = UIBezierPath(); p.move(to: CGPoint(x: 0, y: h))
+                var x: CGFloat = 0
+                p.addLine(to: CGPoint(x: 0, y: base))
+                while x < w { x += w / 6; p.addQuadCurve(to: CGPoint(x: x, y: base + (rnd() - 0.5) * h * 0.08),
+                                                       controlPoint: CGPoint(x: x - w / 12, y: base - rnd() * h * 0.12)) }
+                p.addLine(to: CGPoint(x: w, y: h)); p.close(); p.fill()
+            }
+            let hx = w * (0.2 + rnd() * 0.6), hy = h * 0.7, hw = w * 0.09
+            UIColor(red: 0.93, green: 0.88, blue: 0.8, alpha: 1).setFill()
+            c.fill(CGRect(x: hx, y: hy, width: hw, height: hw * 0.75))
+            UIColor(red: 0.7, green: 0.2, blue: 0.15, alpha: 1).setFill()
+            let roof = UIBezierPath(); roof.move(to: CGPoint(x: hx - hw * 0.1, y: hy)); roof.addLine(to: CGPoint(x: hx + hw / 2, y: hy - hw * 0.5))
+            roof.addLine(to: CGPoint(x: hx + hw * 1.1, y: hy)); roof.close(); roof.fill()
+        }
+    }
+
+    static func jpeg() -> Data { image().jpegData(compressionQuality: 0.92) ?? Data() }
 }

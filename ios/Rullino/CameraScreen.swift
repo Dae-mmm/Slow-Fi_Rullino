@@ -208,7 +208,13 @@ struct CameraScreen: View {
                 }.buttonStyle(.primary)
             }
         } else if let r {
-            CameraPreview(camera: camera)
+            if camera.simulated {
+                // Simulatore: niente fotocamera, il mirino mostra la scena finta su cui si scatta.
+                Image(uiImage: SimulatedScene.image(seed: 7)).resizable().scaledToFill().clipped()
+                    .overlay(alignment: .bottom) { ViewfinderBadge(text: L("cam_simulated"), round: true).padding(.bottom, 90) }
+            } else {
+                CameraPreview(camera: camera)
+            }
             VStack {
                 HStack {
                     if r.wound && store.exposuresOnFrame(r) > 0 {
