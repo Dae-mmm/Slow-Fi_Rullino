@@ -288,8 +288,11 @@ struct NegativeFrame: View {
     }
 
     private var sprockets: some View {
-        HStack(spacing: 7) {
-            ForEach(0..<9, id: \.self) { _ in RoundedRectangle(cornerRadius: 1).fill(Color(hex: 0xF2EEE6)).frame(width: 8, height: 5) }
+        // 6 perforazioni per fotogramma, distribuite in modo uniforme.
+        HStack(spacing: 0) {
+            ForEach(0..<6, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: 1).fill(Color(hex: 0xF2EEE6)).frame(width: 8, height: 5).frame(maxWidth: .infinity)
+            }
         }
         .frame(height: 12)
     }

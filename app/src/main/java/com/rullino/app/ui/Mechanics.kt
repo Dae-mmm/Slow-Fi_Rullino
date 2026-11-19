@@ -372,8 +372,8 @@ fun FilmStrip(progress: Float, modifier: Modifier = Modifier) {
         val shift = progress * frameW
         val holeW = 5.dp.toPx()
         val holeH = 3.5f.dp.toPx()
-        val step = 10.dp.toPx()
-        var x = -(shift % step) - step
+        val step = frameW / 6 // 6 perforazioni per fotogramma
+        var x = -(shift % step) - step + (step - holeW) / 2
         while (x < size.width + step) {
             drawRoundRect(Color(0xFF0C0B0B), Offset(x, 2.dp.toPx()), Size(holeW, holeH), CornerRadius(1.dp.toPx()))
             drawRoundRect(Color(0xFF0C0B0B), Offset(x, size.height - 2.dp.toPx() - holeH), Size(holeW, holeH), CornerRadius(1.dp.toPx()))

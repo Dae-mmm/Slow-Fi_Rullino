@@ -409,6 +409,8 @@ private fun NegativeFrame(frame: FrameEntity, roll: RollEntity, hasRelease: Bool
     }
 }
 
+private const val HOLES_PER_FRAME = 6
+
 /** Banda con le perforazioni; quella superiore porta le scritte di bordo. */
 @Composable
 private fun Sprockets(base: Color, label: String?, number: Int) {
@@ -417,12 +419,11 @@ private fun Sprockets(base: Color, label: String?, number: Int) {
             drawRect(base)
             val holeW = 7.dp.toPx()
             val holeH = 5.dp.toPx()
-            val step = 13.dp.toPx()
+            // 6 perforazioni per fotogramma, distribuite in modo uniforme.
+            val step = size.width / HOLES_PER_FRAME
             val y = if (label != null) size.height - holeH - 3.dp.toPx() else 3.dp.toPx()
-            var x = 4.dp.toPx()
-            while (x < size.width) {
-                drawRoundRect(Color(0xFFE9E6DF), Offset(x, y), Size(holeW, holeH), CornerRadius(1.5f.dp.toPx()))
-                x += step
+            repeat(HOLES_PER_FRAME) { i ->
+                drawRoundRect(Color(0xFFE9E6DF), Offset(step * i + (step - holeW) / 2, y), Size(holeW, holeH), CornerRadius(1.5f.dp.toPx()))
             }
         }
         if (label != null) {
