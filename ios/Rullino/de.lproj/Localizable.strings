@@ -443,3 +443,5 @@
 "crop_landscape" = "Querformat";
 "crop_hint" = "Rahmen verschieben, mit zwei Fingern oder an den Ecken die Größe ändern";
 "crop_saved" = "Abzug %1$@ in der Galerie bereit";
+"crop_done_title" = "Zugeschnitten %1$@";
+"crop_done_where" = "Der zugeschnittene Abzug ist in der Galerie, in Rullino";

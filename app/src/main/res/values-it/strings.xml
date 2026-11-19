@@ -444,4 +444,6 @@
     <string name="crop_landscape">Orizzontale</string>
     <string name="crop_hint">Sposta la cornice, allarga con due dita o tirando gli angoli</string>
     <string name="crop_saved">Stampa %1$s pronta in galleria</string>
+    <string name="crop_done_title">Tagliata %1$s</string>
+    <string name="crop_done_where">La stampa tagliata è in galleria, in Rullino</string>
 </resources>

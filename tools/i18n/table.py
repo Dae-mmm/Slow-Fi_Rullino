@@ -444,4 +444,6 @@ T = [
 ("crop_landscape","Landscape","Orizzontale","Paysage","Horizontal","Querformat"),
 ("crop_hint","Drag the frame, pinch or pull the corners to resize","Sposta la cornice, allarga con due dita o tirando gli angoli","Déplace le cadre, pince ou tire les coins pour l'agrandir","Mueve el marco, pellizca o tira de las esquinas para cambiar el tamaño","Rahmen verschieben, mit zwei Fingern oder an den Ecken die Größe ändern"),
 ("crop_saved","%1$s print ready in the gallery","Stampa %1$s pronta in galleria","Tirage %1$s prêt dans la galerie","Copia %1$s lista en la galería","Abzug %1$s in der Galerie bereit"),
+("crop_done_title","Cut %1$s","Tagliata %1$s","Coupée %1$s","Recortada %1$s","Zugeschnitten %1$s"),
+("crop_done_where","The cut print is in the gallery, in Rullino","La stampa tagliata è in galleria, in Rullino","Le tirage coupé est dans la galerie, dans Rullino","La copia recortada está en la galería, en Rullino","Der zugeschnittene Abzug ist in der Galerie, in Rullino"),
 ]

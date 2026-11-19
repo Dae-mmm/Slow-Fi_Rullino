@@ -443,3 +443,5 @@
 "crop_landscape" = "Landscape";
 "crop_hint" = "Drag the frame, pinch or pull the corners to resize";
 "crop_saved" = "%1$@ print ready in the gallery";
+"crop_done_title" = "Cut %1$@";
+"crop_done_where" = "The cut print is in the gallery, in Rullino";

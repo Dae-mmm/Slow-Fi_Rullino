@@ -306,11 +306,23 @@ struct Loupe: View {
     @State private var image: UIImage?
     @State private var sending = false
     @State private var cropping = false
+    @State private var cut: String?
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             if let image { Image(uiImage: image).resizable().scaledToFit().padding(20) }
+            if let cut {
+                // Il cartellino "tagliata": forbici, formato e dove è finita.
+                VStack(spacing: 4) {
+                    Text("✂  " + L("crop_done_title", cut)).font(Fonts.mono(16)).tracking(1.5).foregroundStyle(Palette.safelight)
+                    Text(L("crop_done_where")).font(Fonts.barlow(12)).foregroundStyle(Palette.ink)
+                }
+                .padding(.horizontal, 22).padding(.vertical, 14)
+                .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0x1B0E09).opacity(0.9)))
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(Palette.safelight, lineWidth: 1))
+                .transition(.opacity)
+            }
             VStack {
                 HStack {
                     Text(L("positive_n", frame.frame) + (frame.layers > 1 ? L("n_exposures_suffix", frame.layers) : ""))
@@ -337,7 +349,11 @@ struct Loupe: View {
         .overlay {
             if cropping {
                 CropEditor(url: url, cancel: { cropping = false }) { rect, tag in
-                    store.printCrop(frame, rect, tag: tag); cropping = false
+                    cropping = false
+                    store.printCrop(frame, rect, tag: tag) {
+                        withAnimation { cut = tag.replacingOccurrences(of: "x", with: ":") }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) { withAnimation { cut = nil } }
+                    }
                 }
             }
         }

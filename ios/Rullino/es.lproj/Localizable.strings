@@ -443,3 +443,5 @@
 "crop_landscape" = "Horizontal";
 "crop_hint" = "Mueve el marco, pellizca o tira de las esquinas para cambiar el tamaño";
 "crop_saved" = "Copia %1$@ lista en la galería";
+"crop_done_title" = "Recortada %1$@";
+"crop_done_where" = "La copia recortada está en la galería, en Rullino";

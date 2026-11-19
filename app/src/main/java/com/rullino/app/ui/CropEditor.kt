@@ -142,12 +142,6 @@ fun CropEditor(path: String, onCancel: () -> Unit, onDone: (CropRect) -> Unit) {
                 val t = oy + (cy - h / 2) * s
                 val rw = w * s
                 val rh = h * s
-                val shade = Color(0xB3000000)
-                // Fuori dal taglio: in ombra.
-                drawRect(shade, Offset(0f, 0f), Size(size.width, t))
-                drawRect(shade, Offset(0f, t + rh), Size(size.width, size.height - t - rh))
-                drawRect(shade, Offset(0f, t), Size(l, rh))
-                drawRect(shade, Offset(l + rw, t), Size(size.width - l - rw, rh))
                 // Terzi, appena accennati.
                 for (i in 1..2) {
                     drawLine(Color(0x40FFFFFF), Offset(l + rw * i / 3, t), Offset(l + rw * i / 3, t + rh), 1f)

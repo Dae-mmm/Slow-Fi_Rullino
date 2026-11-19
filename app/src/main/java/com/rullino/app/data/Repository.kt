@@ -187,13 +187,12 @@ class Repository(private val context: Context, val db: AppDb) {
 
     /* ---------------- Stampa e cancellazione ---------------- */
 
-    /** Stampa: copia il positivo in galleria (Immagini/Rullino/…). */
+    /** Stampa: copia il positivo in galleria (Immagini/Rullino). */
     suspend fun print(roll: RollEntity, frame: FrameEntity): Uri = withContext(Dispatchers.IO) {
-        val folder = folderName(roll)
         val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, "${folder}_${"%02d".format(frame.frame)}.jpg")
+            put(MediaStore.Images.Media.DISPLAY_NAME, "${fileStem(roll)}_${"%02d".format(frame.frame)}.jpg")
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Rullino/$folder")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Rullino")
             put(MediaStore.Images.Media.IS_PENDING, 1)
         }
         val resolver = context.contentResolver
@@ -234,11 +233,10 @@ class Repository(private val context: Context, val db: AppDb) {
             )) a.getAttribute(k)?.let { b.setAttribute(k, it) }
             b.saveAttributes()
         }
-        val folder = folderName(roll)
         val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, "${folder}_${"%02d".format(frame.frame)}_${tag}_${System.currentTimeMillis() % 100000}.jpg")
+            put(MediaStore.Images.Media.DISPLAY_NAME, "${fileStem(roll)}_${"%02d".format(frame.frame)}_taglio-$tag.jpg")
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Rullino/$folder")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Rullino")
             put(MediaStore.Images.Media.IS_PENDING, 1)
         }
         val resolver = context.contentResolver
@@ -312,9 +310,11 @@ class Repository(private val context: Context, val db: AppDb) {
         File(e.dir).deleteRecursively()
     }
 
-    fun folderName(roll: RollEntity): String {
+    /** Tutte le stampe in un'unica cartella (Immagini/Rullino): le info del rullino stanno nel nome. */
+    fun fileStem(roll: RollEntity): String {
         val date = SimpleDateFormat("yyyy-MM-dd", Locale.ITALY).format(Date(roll.finishedAt ?: roll.loadedAt))
-        val name = roll.emulsionName.replace(Regex("[^\\p{L}\\p{N} _-]"), "").trim().ifBlank { "Rullino" }
-        return "$name $date #${roll.id}"
+        val name = roll.emulsionName.replace(Regex("[^\\p{L}\\p{N}]+"), "-").trim('-').ifBlank { "Rullino" }
+        return "${name}_ISO${roll.iso}_${date}_R${roll.id}"
     }
+
 }

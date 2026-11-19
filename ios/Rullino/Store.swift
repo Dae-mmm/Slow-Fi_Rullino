@@ -329,33 +329,63 @@ final class Store: ObservableObject {
 
     func url(_ f: DevFrame) -> URL { root.appendingPathComponent(f.file) }
 
-    /// Stampa: copia i positivi nella libreria Foto.
-    func printFrames(_ frames: [DevFrame]) {
-        let urls = frames.map { url($0) }
-        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+    /// Nome del file di una stampa: tutte finiscono nell'album "Rullino", le info del rullino stanno qui.
+    func fileStem(_ f: DevFrame) -> String {
+        let r = roll(f.rollId)
+        let name = (r?.emulsionName ?? "Rullino").components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }.joined(separator: "-")
+        let df = DateFormatter(); df.dateFormat = "yyyy-MM-dd"; df.locale = Locale(identifier: "en_US_POSIX")
+        return "\(name.isEmpty ? "Rullino" : name)_ISO\(r?.iso ?? 0)_\(df.string(from: r?.createdAt ?? Date()))_R\(f.rollId)_" + String(format: "%02d", f.frame)
+    }
+
+    /// Mette i file nella libreria Foto, tutti nello stesso album "Rullino", col nome scelto da noi.
+    nonisolated static func saveToPhotos(_ files: [(URL, String)], done: @escaping (Bool) -> Void) {
+        func create(_ files: [(URL, String)]) -> [PHObjectPlaceholder] {
+            files.compactMap { u, name in
+                let o = PHAssetResourceCreationOptions(); o.originalFilename = name
+                let req = PHAssetCreationRequest.forAsset()
+                req.addResource(with: .photo, fileURL: u, options: o)
+                return req.placeholderForCreatedAsset
+            }
+        }
+        PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
             guard status == .authorized || status == .limited else {
-                Task { @MainActor in self.say("err_gallery_save") }
+                // Senza accesso alla libreria niente album: si salva comunque, alla rinfusa.
+                PHPhotoLibrary.requestAuthorization(for: .addOnly) { s in
+                    guard s == .authorized || s == .limited else { done(false); return }
+                    PHPhotoLibrary.shared().performChanges({ _ = create(files) }) { ok, _ in done(ok) }
+                }
                 return
             }
+            let opts = PHFetchOptions(); opts.predicate = NSPredicate(format: "title = %@", "Rullino")
+            let existing = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .any, options: opts).firstObject
             PHPhotoLibrary.shared().performChanges({
-                for u in urls { PHAssetChangeRequest.creationRequestForAssetFromImage(atFileURL: u) }
-            }) { ok, _ in
-                Task { @MainActor in
-                    if ok {
-                        for f in frames {
-                            if let i = self.data.frames.firstIndex(of: f) { self.data.frames[i].printed = true }
-                        }
-                        if frames.count == 1 { self.say("print_one") } else { self.say("print_many", frames.count) }
-                    } else { self.say("print_failed") }
-                }
+                let album = existing.flatMap { PHAssetCollectionChangeRequest(for: $0) }
+                    ?? PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: "Rullino")
+                album.addAssets(create(files) as NSArray)
+            }) { ok, _ in done(ok) }
+        }
+    }
+
+    /// Stampa: copia i positivi nella libreria Foto (album "Rullino").
+    func printFrames(_ frames: [DevFrame]) {
+        let files = frames.map { (url($0), fileStem($0) + ".jpg") }
+        Store.saveToPhotos(files) { ok in
+            Task { @MainActor in
+                if ok {
+                    for f in frames {
+                        if let i = self.data.frames.firstIndex(of: f) { self.data.frames[i].printed = true }
+                    }
+                    if frames.count == 1 { self.say("print_one") } else { self.say("print_many", frames.count) }
+                } else { self.say("print_failed") }
             }
         }
     }
 
     /// Stampa ritagliata: il pezzo scelto del positivo (rettangolo 0…1 sull'immagine dritta) va in Foto
     /// come stampa a sé; il positivo resta intero. I dati dello scatto viaggiano anche sul ritaglio.
-    func printCrop(_ f: DevFrame, _ n: CGRect, tag: String) {
-        let src = url(f)
+    func printCrop(_ f: DevFrame, _ n: CGRect, tag: String, saved: @escaping () -> Void = {}) {
+        let src = url(f), name = fileStem(f) + "_taglio-\(tag).jpg"
         Task.detached(priority: .userInitiated) {
             guard let s = CGImageSourceCreateWithURL(src as CFURL, nil),
                   let props = CGImageSourceCopyPropertiesAtIndex(s, 0, nil) as? [CFString: Any],
@@ -381,17 +411,10 @@ final class Store: ObservableObject {
             meta[kCGImageDestinationLossyCompressionQuality] = 0.95
             CGImageDestinationAddImage(dst, cut, meta as CFDictionary)
             guard CGImageDestinationFinalize(dst) else { await MainActor.run { self.say("print_failed") }; return }
-            PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
-                guard status == .authorized || status == .limited else {
-                    Task { @MainActor in self.say("err_gallery_save") }; return
-                }
-                PHPhotoLibrary.shared().performChanges({
-                    PHAssetChangeRequest.creationRequestForAssetFromImage(atFileURL: out)
-                }) { ok, _ in
-                    try? FileManager.default.removeItem(at: out)
-                    Task { @MainActor in
-                        if ok { self.say("crop_saved", tag.replacingOccurrences(of: "x", with: ":")) } else { self.say("print_failed") }
-                    }
+            Store.saveToPhotos([(out, name)]) { ok in
+                try? FileManager.default.removeItem(at: out)
+                Task { @MainActor in
+                    if ok { saved(); self.say("crop_saved", tag.replacingOccurrences(of: "x", with: ":")) } else { self.say("print_failed") }
                 }
             }
         }

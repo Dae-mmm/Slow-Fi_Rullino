@@ -444,4 +444,6 @@
     <string name="crop_landscape">Paysage</string>
     <string name="crop_hint">Déplace le cadre, pince ou tire les coins pour l\'agrandir</string>
     <string name="crop_saved">Tirage %1$s prêt dans la galerie</string>
+    <string name="crop_done_title">Coupée %1$s</string>
+    <string name="crop_done_where">Le tirage coupé est dans la galerie, dans Rullino</string>
 </resources>

@@ -327,7 +327,7 @@ private fun LightTable(vm: AppViewModel, roll: RollEntity, onBack: () -> Unit) {
             frame = f,
             onClose = { loupe = null },
             onPrint = { vm.print(roll, listOf(f)); loupe = null },
-            onCrop = { c -> vm.printCrop(roll, f, c) },
+            onCrop = { c, saved -> vm.printCrop(roll, f, c, saved) },
             onRelease = { loupe = null; releaseFrame = f.frame },
             onContest = if (eligible.isNotEmpty()) ({ loupe = null; sendFrame = f }) else null,
         )
@@ -436,11 +436,14 @@ private fun Sprockets(base: Color, label: String?, number: Int) {
 
 /** Il lentino: il fotogramma in positivo, grande, con la stampa. */
 @Composable
-private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, onCrop: (CropRect) -> Unit, onRelease: () -> Unit, onContest: (() -> Unit)? = null) {
+private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, onCrop: (CropRect, () -> Unit) -> Unit, onRelease: () -> Unit, onContest: (() -> Unit)? = null) {
     var cropping by remember { mutableStateOf(false) }
+    // Dopo il taglio: la stampa tagliata resta un attimo sul tavolo, con l'etichetta del formato.
+    var cut by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(cut) { if (cut != null) { delay(2800); cut = null } }
     Dialog(onDismissRequest = { if (cropping) cropping = false else onClose() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         if (cropping) {
-            CropEditor(frame.developedPath, onCancel = { cropping = false }, onDone = { onCrop(it); cropping = false })
+            CropEditor(frame.developedPath, onCancel = { cropping = false }, onDone = { c -> cropping = false; onCrop(c) { cut = c.tag.replace('x', ':') } })
             return@Dialog
         }
         Column(
@@ -455,6 +458,7 @@ private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, 
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(4.dp)),
                 )
+                cut?.let { CutBanner(it) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.frame_n, frame.frame) + if (frame.exposureCount > 1) stringResource(R.string.n_exposures_suffix, frame.exposureCount) else "", color = Palette.Muted, fontFamily = Mono, fontSize = 12.sp)
@@ -467,6 +471,21 @@ private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, 
                 SecondaryButton(onClick = onClose) { Text(stringResource(R.string.back_on_table)) }
             }
         }
+    }
+}
+
+/** Il cartellino "tagliata": forbici, formato e dove è finita. */
+@Composable
+private fun CutBanner(ratio: String) {
+    Column(
+        Modifier
+            .background(Color(0xE61B0E09), RoundedCornerShape(4.dp))
+            .border(1.dp, Palette.Safelight, RoundedCornerShape(4.dp))
+            .padding(horizontal = 22.dp, vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("✂  " + stringResource(R.string.crop_done_title, ratio), color = Palette.Safelight, fontFamily = Mono, fontSize = 16.sp, letterSpacing = 1.5.sp)
+        Text(stringResource(R.string.crop_done_where), color = Palette.Ink, fontSize = 12.sp)
     }
 }
 

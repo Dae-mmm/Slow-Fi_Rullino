@@ -51,9 +51,6 @@ struct CropEditor: View {
                     let frame = CGRect(x: ox + (x - ww / 2) * s, y: oy + (y - hh / 2) * s, width: ww * s, height: hh * s)
                     ZStack(alignment: .topLeading) {
                         Image(uiImage: image).resizable().scaledToFit().frame(width: g.size.width, height: g.size.height)
-                        // Fuori dal taglio: in ombra.
-                        Path { p in p.addRect(CGRect(origin: .zero, size: g.size)); p.addRect(frame) }
-                            .fill(Color.black.opacity(0.7), style: FillStyle(eoFill: true))
                         // Terzi, appena accennati.
                         Path { p in
                             for i in 1...2 {

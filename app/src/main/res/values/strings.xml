@@ -445,4 +445,6 @@
     <string name="crop_landscape">Landscape</string>
     <string name="crop_hint">Drag the frame, pinch or pull the corners to resize</string>
     <string name="crop_saved">%1$s print ready in the gallery</string>
+    <string name="crop_done_title">Cut %1$s</string>
+    <string name="crop_done_where">The cut print is in the gallery, in Rullino</string>
 </resources>

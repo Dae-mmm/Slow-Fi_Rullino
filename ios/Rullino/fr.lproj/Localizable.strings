@@ -443,3 +443,5 @@
 "crop_landscape" = "Paysage";
 "crop_hint" = "Déplace le cadre, pince ou tire les coins pour l'agrandir";
 "crop_saved" = "Tirage %1$@ prêt dans la galerie";
+"crop_done_title" = "Coupée %1$@";
+"crop_done_where" = "Le tirage coupé est dans la galerie, dans Rullino";

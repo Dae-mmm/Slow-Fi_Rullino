@@ -183,6 +183,7 @@
 				INFOPLIST_FILE = "Rullino-Info.plist";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Rullino uses the camera to take your photos.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Rullino saves your prints in Photos.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Rullino keeps all your prints together in a “Rullino” album.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
@@ -215,6 +216,7 @@
 				INFOPLIST_FILE = "Rullino-Info.plist";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Rullino uses the camera to take your photos.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Rullino saves your prints in Photos.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Rullino keeps all your prints together in a “Rullino” album.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;

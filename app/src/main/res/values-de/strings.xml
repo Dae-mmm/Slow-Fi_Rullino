@@ -444,4 +444,6 @@
     <string name="crop_landscape">Querformat</string>
     <string name="crop_hint">Rahmen verschieben, mit zwei Fingern oder an den Ecken die Größe ändern</string>
     <string name="crop_saved">Abzug %1$s in der Galerie bereit</string>
+    <string name="crop_done_title">Zugeschnitten %1$s</string>
+    <string name="crop_done_where">Der zugeschnittene Abzug ist in der Galerie, in Rullino</string>
 </resources>

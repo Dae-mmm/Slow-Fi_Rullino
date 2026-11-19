@@ -222,9 +222,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (n > 0) say(if (n == 1) str(R.string.print_one) else str(R.string.print_many, n))
     }
 
-    fun printCrop(r: RollEntity, f: FrameEntity, c: CropRect) = viewModelScope.launch {
+    fun printCrop(r: RollEntity, f: FrameEntity, c: CropRect, onSaved: () -> Unit) = viewModelScope.launch {
         runCatching { repo.printCrop(r, f, c.left, c.top, c.width, c.height, c.tag) }
-            .onSuccess { say(str(R.string.crop_saved, c.tag.replace('x', ':'))) }
+            .onSuccess { onSaved(); say(str(R.string.crop_saved, c.tag.replace('x', ':'))) }
             .onFailure { say(it.message ?: str(R.string.print_failed)) }
     }
 

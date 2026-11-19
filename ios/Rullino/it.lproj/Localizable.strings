@@ -443,3 +443,5 @@
 "crop_landscape" = "Orizzontale";
 "crop_hint" = "Sposta la cornice, allarga con due dita o tirando gli angoli";
 "crop_saved" = "Stampa %1$@ pronta in galleria";
+"crop_done_title" = "Tagliata %1$@";
+"crop_done_where" = "La stampa tagliata è in galleria, in Rullino";
