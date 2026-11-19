@@ -424,4 +424,14 @@
     <string name="share_invalid">Esto no es un carrete de Rullino válido</string>
     <string name="share_newer">Este carrete viene de una versión más nueva: actualiza la app</string>
     <string name="share_no_emulsion">Falta la emulsión del carrete</string>
+    <string name="share_sign_in">Inicia sesión (Opciones › Cuenta) para pasar o recibir carretes</string>
+    <string name="share_old">Este carrete viene de una versión antigua de la app y no se puede abrir</string>
+    <string name="share_need_emulsion">Este carrete usa una emulsión exclusiva que no tienes</string>
+    <string name="share_already">Alguien ya ha cogido este carrete</string>
+    <string name="share_unknown">Este carrete no está registrado: no se puede abrir</string>
+    <string name="share_taken_back">Carrete recuperado: el archivo enviado ya no sirve</string>
+    <string name="share_delivered">%1$s: alguien lo ha cogido, ahora lo tiene él</string>
+    <string name="share_resend">Reenviar</string>
+    <string name="share_take_back">Recuperar</string>
+    <string name="state_shared">De viaje</string>
 </resources>

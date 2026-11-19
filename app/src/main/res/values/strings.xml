@@ -425,4 +425,14 @@
     <string name="share_invalid">This isn\'t a valid Rullino roll</string>
     <string name="share_newer">This roll comes from a newer version: update the app</string>
     <string name="share_no_emulsion">The roll\'s emulsion is missing</string>
+    <string name="share_sign_in">Sign in (Options › Account) to pass or receive rolls</string>
+    <string name="share_old">This roll comes from an old version of the app and can\'t be opened</string>
+    <string name="share_need_emulsion">This roll uses an exclusive emulsion you don\'t have</string>
+    <string name="share_already">This roll has already been taken by someone</string>
+    <string name="share_unknown">This roll isn\'t registered: it can\'t be opened</string>
+    <string name="share_taken_back">Roll taken back: the file you sent no longer works</string>
+    <string name="share_delivered">%1$s: someone has taken it, it\'s in their hands now</string>
+    <string name="share_resend">Send again</string>
+    <string name="share_take_back">Take back</string>
+    <string name="state_shared">Travelling</string>
 </resources>

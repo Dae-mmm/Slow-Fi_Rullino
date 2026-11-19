@@ -214,11 +214,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     /* ---- Rullini condivisi ---- */
 
     /** Prepara il file .rullino e apre la scelta di Android per mandarlo (chat, email, Drive…). */
+    /**
+     * Prepara il file .rullino e apre la scelta di Android per mandarlo. Il codice registrato su Supabase
+     * rende il file importabile una volta sola; intanto il rullino resta "in viaggio" qui.
+     */
     fun shareRoll(r: RollEntity) = viewModelScope.launch {
+        if (!account.signedIn.value) { say(R.string.share_sign_in); return@launch }
         say(R.string.share_preparing)
         runCatching {
             val from = account.profile.value?.let { it.displayName ?: it.username }
-            com.rullino.app.data.RollShare.export(app, repo, r, from)
+            val id = r.shareId ?: app.contests.createShare(r.emulsionId, r.shotCount)
+            if (r.shareId == null) repo.db.rolls().update(r.copy(state = RollState.SHARED, shareId = id))
+            com.rullino.app.data.RollShare.export(app, repo, r, from, id)
         }.onSuccess { file ->
             val uri = androidx.core.content.FileProvider.getUriForFile(app, app.packageName + ".files", file)
             val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
@@ -230,7 +237,32 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             app.startActivity(
                 android.content.Intent.createChooser(send, str(R.string.share_title)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
             )
-        }.onFailure { say(it.message ?: str(R.string.share_failed)) }
+        }.onFailure { say(if (it is com.rullino.app.data.ContestException) str(R.string.share_failed) else it.message ?: str(R.string.share_failed)) }
+    }
+
+    /** Riprende un rullino "in viaggio": funziona solo se nessuno l'ha ancora importato. */
+    fun takeBack(r: RollEntity) = viewModelScope.launch {
+        val id = r.shareId ?: return@launch
+        runCatching { app.contests.claimShare(id) }
+            .onSuccess { res ->
+                if (res == "ok") { repo.db.rolls().update(r.copy(state = RollState.SHELVED, shareId = null)); say(R.string.share_taken_back) }
+                else { repo.deleteRoll(r.id); say(R.string.share_delivered, r.emulsionName) }
+            }
+            .onFailure { say(R.string.share_failed) }
+    }
+
+    /** I rullini in viaggio già importati da qualcuno spariscono da qui (sono passati di mano). */
+    fun syncShared() = viewModelScope.launch {
+        if (!account.signedIn.value) return@launch
+        val shared = repo.db.rolls().allNow().filter { it.state == RollState.SHARED && it.shareId != null }
+        if (shared.isEmpty()) return@launch
+        val claims = runCatching { app.contests.shareClaims(shared.mapNotNull { it.shareId }) }.getOrNull() ?: return@launch
+        val me = app.contests.me()
+        for (r in shared) {
+            val by = claims[r.shareId] ?: continue
+            if (by == me) repo.db.rolls().update(r.copy(state = RollState.SHELVED, shareId = null))
+            else { repo.deleteRoll(r.id); say(R.string.share_delivered, r.emulsionName) }
+        }
     }
 
     /** È un rullino condiviso? Dal nome o, se manca, guardando dentro lo ZIP. */
@@ -257,7 +289,23 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (isRollFile(uri)) {
             runCatching {
                 val input = app.contentResolver.openInputStream(uri) ?: error(str(R.string.open_file_failed))
-                input.use { com.rullino.app.data.RollShare.import(app, repo, it) }
+                if (!account.signedIn.value) error(str(R.string.share_sign_in))
+                input.use {
+                    com.rullino.app.data.RollShare.import(
+                        app, repo, it,
+                        claim = { id -> app.contests.claimShare(id) },
+                        catalogInstall = { id ->
+                            runCatching {
+                                val item = repo.catalog.list().first { c -> c.id == id }
+                                val f = File(app.cacheDir, "download/${item.id}.emulsion")
+                                repo.catalog.download(item.fileUrl, f)
+                                f.inputStream().use { s -> repo.installer.install(s, "store", item.version) }
+                                f.delete()
+                                true
+                            }.getOrDefault(false)
+                        },
+                    )
+                }
             }.onSuccess { say(R.string.share_received, it.emulsionName, it.shotCount); onRoll() }
                 .onFailure { say(it.message ?: str(R.string.share_invalid)) }
         } else if (settings.developerMode.value) {

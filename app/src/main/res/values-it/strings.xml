@@ -424,4 +424,14 @@
     <string name="share_invalid">Questo non è un rullino di Rullino valido</string>
     <string name="share_newer">Questo rullino viene da una versione più nuova: aggiorna l\'app</string>
     <string name="share_no_emulsion">Manca l\'emulsione del rullino</string>
+    <string name="share_sign_in">Accedi (Opzioni › Account) per passare o ricevere rullini</string>
+    <string name="share_old">Questo rullino viene da una versione vecchia dell\'app e non si può aprire</string>
+    <string name="share_need_emulsion">Questo rullino usa un\'emulsione esclusiva che non hai</string>
+    <string name="share_already">Questo rullino l\'ha già preso qualcuno</string>
+    <string name="share_unknown">Questo rullino non risulta registrato: non si può aprire</string>
+    <string name="share_taken_back">Rullino ripreso: il file che avevi mandato non vale più</string>
+    <string name="share_delivered">%1$s: l\'ha preso qualcuno, ora è nelle sue mani</string>
+    <string name="share_resend">Rimanda</string>
+    <string name="share_take_back">Riprendi</string>
+    <string name="state_shared">In viaggio</string>
 </resources>

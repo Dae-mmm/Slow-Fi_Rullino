@@ -279,6 +279,33 @@ class ContestsClient(private val baseUrl: String, private val key: String, priva
         }
     }
 
+    /* ---------------- Rullini condivisi ---------------- */
+
+    /** Registra una condivisione: il codice che finisce nel file .rullino. */
+    suspend fun createShare(emulsionId: String, shotCount: Int): String {
+        val body = JSONObject().put("created_by", uid()).put("emulsion_id", emulsionId).put("shot_count", shotCount)
+        val (c, t) = call("POST", "/rest/v1/roll_shares", body.toString().toByteArray(), "application/json", token(), prefer = "return=representation")
+        ok(c, t)
+        return JSONArray(t).getJSONObject(0).getString("id")
+    }
+
+    /** Blocca il codice: "ok" la prima volta, poi "already_claimed"; "unknown" se non esiste. */
+    suspend fun claimShare(id: String): String {
+        val (c, t) = call("POST", "/rest/v1/rpc/claim_roll_share", JSONObject().put("s", id).toString().toByteArray(), "application/json", token())
+        ok(c, t)
+        return t.trim().trim('"')
+    }
+
+    /** Chi ha preso le mie condivisioni (null = ancora in viaggio). */
+    suspend fun shareClaims(ids: List<String>): Map<String, String?> {
+        if (ids.isEmpty()) return emptyMap()
+        val (c, t) = call("GET", "/rest/v1/roll_shares?id=in.(${ids.joinToString(",")})&select=id,claimed_by", token = token())
+        ok(c, t)
+        return JSONArray(t).objects().associate { it.getString("id") to it.str("claimed_by") }
+    }
+
+    fun me(): String? = account.userId
+
     /* ---------------- dettagli ---------------- */
 
     private suspend fun upload(path: String, bytes: ByteArray, type: String, tok: String) {

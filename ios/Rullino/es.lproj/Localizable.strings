@@ -423,3 +423,13 @@
 "share_invalid" = "Esto no es un carrete de Rullino válido";
 "share_newer" = "Este carrete viene de una versión más nueva: actualiza la app";
 "share_no_emulsion" = "Falta la emulsión del carrete";
+"share_sign_in" = "Inicia sesión (Opciones › Cuenta) para pasar o recibir carretes";
+"share_old" = "Este carrete viene de una versión antigua de la app y no se puede abrir";
+"share_need_emulsion" = "Este carrete usa una emulsión exclusiva que no tienes";
+"share_already" = "Alguien ya ha cogido este carrete";
+"share_unknown" = "Este carrete no está registrado: no se puede abrir";
+"share_taken_back" = "Carrete recuperado: el archivo enviado ya no sirve";
+"share_delivered" = "%1$@: alguien lo ha cogido, ahora lo tiene él";
+"share_resend" = "Reenviar";
+"share_take_back" = "Recuperar";
+"state_shared" = "De viaje";

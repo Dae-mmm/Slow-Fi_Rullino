@@ -75,6 +75,8 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit, onGoLab: () -> Unit)
     val open = rolls.firstOrNull { it.id == openId }
     val skipWait by vm.settings.skipLabWait.collectAsState()
     val devMode by vm.settings.developerMode.collectAsState()
+    // Rullini in viaggio: se qualcuno li ha importati, qui spariscono.
+    androidx.compose.runtime.LaunchedEffect(Unit) { vm.syncShared() }
     // L'orologio del laboratorio: si aggiorna ogni 30 secondi.
     val now by produceState(System.currentTimeMillis()) {
         while (true) { delay(30_000); value = System.currentTimeMillis() }
@@ -126,6 +128,7 @@ fun RollsScreen(vm: AppViewModel, onOpenCamera: () -> Unit, onGoLab: () -> Unit)
                 onReload = { vm.reload(r, onOpenCamera) },
                 onDevelop = { vm.rewindOut(r) },
                 onShare = { vm.shareRoll(r) },
+                onTakeBack = { vm.takeBack(r) },
                 onDelete = { vm.deleteRoll(r) },
             )
         }
@@ -143,6 +146,7 @@ private fun RollRow(
     onReload: () -> Unit,
     onDevelop: () -> Unit,
     onShare: () -> Unit,
+    onTakeBack: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
@@ -177,6 +181,11 @@ private fun RollRow(
             SecondaryButton(enabled = cameraFree, onClick = onReload) { Text(stringResource(R.string.load)) }
             SecondaryButton(onClick = onShare) { Text(stringResource(R.string.share)) }
             PrimaryButton(onClick = onDevelop) { Text(stringResource(R.string.develop_it)) }
+        }
+        // In viaggio: si può rimandare lo stesso file (stesso codice) o riprenderlo se nessuno l'ha preso.
+        if (r.state == RollState.SHARED) {
+            SecondaryButton(onClick = onShare) { Text(stringResource(R.string.share_resend)) }
+            PrimaryButton(onClick = onTakeBack) { Text(stringResource(R.string.share_take_back)) }
         }
         if (r.state == RollState.SHELVED || r.state == RollState.FINISHED || isReady) {
             TextButton(onClick = { if (confirmDelete) onDelete() else confirmDelete = true }) {
@@ -458,6 +467,7 @@ private fun Loupe(frame: FrameEntity, onClose: () -> Unit, onPrint: () -> Unit, 
 private fun stateLabel(r: RollEntity) = when (r.state) {
     RollState.LOADED -> stringResource(R.string.state_loaded)
     RollState.SHELVED -> stringResource(R.string.state_shelved)
+    RollState.SHARED -> stringResource(R.string.state_shared)
     RollState.FINISHED -> stringResource(R.string.state_finished)
     RollState.DEVELOPING -> stringResource(R.string.state_developing)
     else -> stringResource(R.string.negatives_arrow)

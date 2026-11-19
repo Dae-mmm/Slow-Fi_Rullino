@@ -423,3 +423,13 @@
 "share_invalid" = "Questo non è un rullino di Rullino valido";
 "share_newer" = "Questo rullino viene da una versione più nuova: aggiorna l'app";
 "share_no_emulsion" = "Manca l'emulsione del rullino";
+"share_sign_in" = "Accedi (Opzioni › Account) per passare o ricevere rullini";
+"share_old" = "Questo rullino viene da una versione vecchia dell'app e non si può aprire";
+"share_need_emulsion" = "Questo rullino usa un'emulsione esclusiva che non hai";
+"share_already" = "Questo rullino l'ha già preso qualcuno";
+"share_unknown" = "Questo rullino non risulta registrato: non si può aprire";
+"share_taken_back" = "Rullino ripreso: il file che avevi mandato non vale più";
+"share_delivered" = "%1$@: l'ha preso qualcuno, ora è nelle sue mani";
+"share_resend" = "Rimanda";
+"share_take_back" = "Riprendi";
+"state_shared" = "In viaggio";

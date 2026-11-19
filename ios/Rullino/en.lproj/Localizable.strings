@@ -423,3 +423,13 @@
 "share_invalid" = "This isn't a valid Rullino roll";
 "share_newer" = "This roll comes from a newer version: update the app";
 "share_no_emulsion" = "The roll's emulsion is missing";
+"share_sign_in" = "Sign in (Options › Account) to pass or receive rolls";
+"share_old" = "This roll comes from an old version of the app and can't be opened";
+"share_need_emulsion" = "This roll uses an exclusive emulsion you don't have";
+"share_already" = "This roll has already been taken by someone";
+"share_unknown" = "This roll isn't registered: it can't be opened";
+"share_taken_back" = "Roll taken back: the file you sent no longer works";
+"share_delivered" = "%1$@: someone has taken it, it's in their hands now";
+"share_resend" = "Send again";
+"share_take_back" = "Take back";
+"state_shared" = "Travelling";

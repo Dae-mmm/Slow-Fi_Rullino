@@ -423,3 +423,13 @@
 "share_invalid" = "Das ist kein gültiger Rullino-Film";
 "share_newer" = "Dieser Film stammt aus einer neueren Version: Aktualisiere die App";
 "share_no_emulsion" = "Die Emulsion des Films fehlt";
+"share_sign_in" = "Melde dich an (Optionen › Konto), um Filme weiterzugeben oder zu empfangen";
+"share_old" = "Dieser Film stammt aus einer alten App-Version und kann nicht geöffnet werden";
+"share_need_emulsion" = "Dieser Film nutzt eine exklusive Emulsion, die du nicht hast";
+"share_already" = "Diesen Film hat schon jemand genommen";
+"share_unknown" = "Dieser Film ist nicht registriert und kann nicht geöffnet werden";
+"share_taken_back" = "Film zurückgenommen: Die gesendete Datei gilt nicht mehr";
+"share_delivered" = "%1$@: Jemand hat ihn genommen, jetzt liegt er bei ihm";
+"share_resend" = "Erneut senden";
+"share_take_back" = "Zurücknehmen";
+"state_shared" = "Unterwegs";

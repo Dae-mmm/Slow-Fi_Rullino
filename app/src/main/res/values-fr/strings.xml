@@ -424,4 +424,14 @@
     <string name="share_invalid">Ce n\'est pas une pellicule Rullino valide</string>
     <string name="share_newer">Cette pellicule vient d\'une version plus récente : mets l\'app à jour</string>
     <string name="share_no_emulsion">L\'émulsion de la pellicule manque</string>
+    <string name="share_sign_in">Connecte-toi (Options › Compte) pour passer ou recevoir des pellicules</string>
+    <string name="share_old">Cette pellicule vient d\'une ancienne version de l\'app et ne peut pas être ouverte</string>
+    <string name="share_need_emulsion">Cette pellicule utilise une émulsion exclusive que tu n\'as pas</string>
+    <string name="share_already">Quelqu\'un a déjà pris cette pellicule</string>
+    <string name="share_unknown">Cette pellicule n\'est pas enregistrée : impossible de l\'ouvrir</string>
+    <string name="share_taken_back">Pellicule reprise : le fichier envoyé ne fonctionne plus</string>
+    <string name="share_delivered">%1$s : quelqu\'un l\'a prise, elle est entre ses mains</string>
+    <string name="share_resend">Renvoyer</string>
+    <string name="share_take_back">Reprendre</string>
+    <string name="state_shared">En voyage</string>
 </resources>

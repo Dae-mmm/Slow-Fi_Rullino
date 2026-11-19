@@ -423,3 +423,13 @@
 "share_invalid" = "Ce n'est pas une pellicule Rullino valide";
 "share_newer" = "Cette pellicule vient d'une version plus récente : mets l'app à jour";
 "share_no_emulsion" = "L'émulsion de la pellicule manque";
+"share_sign_in" = "Connecte-toi (Options › Compte) pour passer ou recevoir des pellicules";
+"share_old" = "Cette pellicule vient d'une ancienne version de l'app et ne peut pas être ouverte";
+"share_need_emulsion" = "Cette pellicule utilise une émulsion exclusive que tu n'as pas";
+"share_already" = "Quelqu'un a déjà pris cette pellicule";
+"share_unknown" = "Cette pellicule n'est pas enregistrée : impossible de l'ouvrir";
+"share_taken_back" = "Pellicule reprise : le fichier envoyé ne fonctionne plus";
+"share_delivered" = "%1$@ : quelqu'un l'a prise, elle est entre ses mains";
+"share_resend" = "Renvoyer";
+"share_take_back" = "Reprendre";
+"state_shared" = "En voyage";

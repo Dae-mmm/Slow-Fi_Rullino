@@ -39,7 +39,7 @@ object RollShare {
         ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY, ExifInterface.TAG_ORIENTATION,
     )
 
-    suspend fun export(context: Context, repo: Repository, roll: RollEntity, from: String?): File = withContext(Dispatchers.IO) {
+    suspend fun export(context: Context, repo: Repository, roll: RollEntity, from: String?, shareId: String): File = withContext(Dispatchers.IO) {
         val emulsion = repo.emulsion(roll.emulsionId) ?: throw InvalidRollException(context.getString(R.string.share_no_emulsion))
         val preset = JSONObject(File(emulsion.dir, "preset.json").readText())
             .put("id", emulsion.id).put("name", emulsion.name).put("iso", emulsion.iso)
@@ -61,8 +61,10 @@ object RollShare {
             }
             val manifest = JSONObject()
                 .put("format", FORMAT).put("version", VERSION)
+                .put("shareId", shareId)
                 .put("from", from ?: JSONObject.NULL)
-                .put("emulsion", preset)
+                // Le emulsioni esclusive (premi) non viaggiano: chi riceve il rullino deve averle già.
+                .put("emulsion", if (emulsion.source == "prize") JSONObject.NULL else preset)
                 .put("roll", JSONObject()
                     .put("emulsionId", roll.emulsionId).put("emulsionName", roll.emulsionName)
                     .put("iso", roll.iso).put("exposures", roll.exposures).put("isBw", roll.isBw)
@@ -77,7 +79,15 @@ object RollShare {
     }
 
     /** Apre un .rullino: installa l'emulsione se manca e mette il rullino in Rullini, scaricato. */
-    suspend fun import(context: Context, repo: Repository, input: InputStream): RollEntity = withContext(Dispatchers.IO) {
+    /**
+     * [claim] blocca il codice sul server ("ok" / "already_claimed" / "unknown"): si chiama dopo aver
+     * controllato tutto il file e prima di scrivere il rullino, così un file vale una volta sola.
+     */
+    suspend fun import(
+        context: Context, repo: Repository, input: InputStream,
+        claim: suspend (String) -> String,
+        catalogInstall: suspend (String) -> Boolean,
+    ): RollEntity = withContext(Dispatchers.IO) {
         fun bad(): Nothing = throw InvalidRollException(context.getString(R.string.share_invalid))
         val tmp = File(context.cacheDir, "import-${System.currentTimeMillis()}").apply { mkdirs() }
         try {
@@ -101,13 +111,28 @@ object RollShare {
             val m = manifest ?: bad()
             if (m.optString("format") != FORMAT) bad()
             if (m.optInt("version", 1) > VERSION) throw InvalidRollException(context.getString(R.string.share_newer))
-            val em = m.optJSONObject("emulsion") ?: bad()
+            val shareId = m.optString("shareId").ifBlank { throw InvalidRollException(context.getString(R.string.share_old)) }
+            val em = m.optJSONObject("emulsion")
             val ro = m.optJSONObject("roll") ?: bad()
             val emulsionId = ro.optString("emulsionId").ifBlank { bad() }
 
-            // L'emulsione: se non ce l'hai, arriva con il rullino.
-            if (repo.emulsion(emulsionId) == null) {
-                repo.installer.install(ByteArrayInputStream(emulsionFile(emulsionId, em)), "shared")
+            // Il rullino è mio e in viaggio? Riprenderlo vuol dire bloccare il codice e rimetterlo in Rullini.
+            val mine = repo.db.rolls().allNow().firstOrNull { it.shareId == shareId }
+
+            // L'emulsione: se non ce l'hai arriva con il rullino, o dal catalogo; le esclusive vanno già possedute.
+            if (mine == null && repo.emulsion(emulsionId) == null) {
+                if (em != null) repo.installer.install(ByteArrayInputStream(emulsionFile(emulsionId, em)), "shared")
+                else if (!catalogInstall(emulsionId)) throw InvalidRollException(context.getString(R.string.share_need_emulsion))
+            }
+
+            when (claim(shareId)) {
+                "ok" -> Unit
+                "already_claimed" -> throw InvalidRollException(context.getString(R.string.share_already))
+                else -> throw InvalidRollException(context.getString(R.string.share_unknown))
+            }
+            if (mine != null) {
+                repo.db.rolls().update(mine.copy(state = RollState.SHELVED, shareId = null))
+                return@withContext repo.db.rolls().get(mine.id)!!
             }
 
             repo.db.withTransaction {

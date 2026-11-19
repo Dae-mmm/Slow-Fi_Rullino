@@ -50,6 +50,8 @@ object RollState {
     const val DEVELOPING = "DEVELOPING"
     /** Sviluppato: è una striscia di negativi sul tavolo luminoso. */
     const val DEVELOPED = "DEVELOPED"
+    /** Condiviso e in attesa che qualcuno lo importi: non si usa finché non torna o non viene preso. */
+    const val SHARED = "SHARED"
 }
 
 /** Un rullino. */
@@ -80,6 +82,8 @@ data class RollEntity(
     /** Rullino regalato da un concorso: id del concorso e codice del regalo sul server. */
     val contestId: String? = null,
     val contestRef: String? = null,
+    /** Codice della condivisione su Supabase, finché il rullino è "in viaggio". */
+    val shareId: String? = null,
 ) {
     val canWind get() = state == RollState.LOADED && !wound && cursor <= exposures
     /** Tutte le pose esposte: va riavvolto. */
@@ -269,7 +273,7 @@ interface FrameDao {
         EmulsionEntity::class, RollEntity::class, ExposureEntity::class, FrameEntity::class,
         InventoryEntity::class, ReleaseEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = false,
 )
 abstract class AppDb : RoomDatabase() {
@@ -308,10 +312,16 @@ abstract class AppDb : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE rolls ADD COLUMN shareId TEXT")
+            }
+        }
+
         fun build(context: Context): AppDb =
             Room.databaseBuilder(context, AppDb::class.java, "rullino.db")
                 // App ancora in sviluppo: cambiando schema si riparte da zero.
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                 .fallbackToDestructiveMigration(true)
                 .build()
     }

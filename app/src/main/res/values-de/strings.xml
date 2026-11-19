@@ -424,4 +424,14 @@
     <string name="share_invalid">Das ist kein gültiger Rullino-Film</string>
     <string name="share_newer">Dieser Film stammt aus einer neueren Version: Aktualisiere die App</string>
     <string name="share_no_emulsion">Die Emulsion des Films fehlt</string>
+    <string name="share_sign_in">Melde dich an (Optionen › Konto), um Filme weiterzugeben oder zu empfangen</string>
+    <string name="share_old">Dieser Film stammt aus einer alten App-Version und kann nicht geöffnet werden</string>
+    <string name="share_need_emulsion">Dieser Film nutzt eine exklusive Emulsion, die du nicht hast</string>
+    <string name="share_already">Diesen Film hat schon jemand genommen</string>
+    <string name="share_unknown">Dieser Film ist nicht registriert und kann nicht geöffnet werden</string>
+    <string name="share_taken_back">Film zurückgenommen: Die gesendete Datei gilt nicht mehr</string>
+    <string name="share_delivered">%1$s: Jemand hat ihn genommen, jetzt liegt er bei ihm</string>
+    <string name="share_resend">Erneut senden</string>
+    <string name="share_take_back">Zurücknehmen</string>
+    <string name="state_shared">Unterwegs</string>
 </resources>
