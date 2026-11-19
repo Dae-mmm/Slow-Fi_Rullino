@@ -363,12 +363,14 @@ final class ContestsModel: ObservableObject {
             coins += r["coins"] as? Int ?? 0
             if let u = r["emulsion_url"] as? String, !pendingPrizes.contains(u) { pendingPrizes.append(u) }
         }
-        if coins > 0 { store?.data.coins += coins; store?.say("ct_prize_coins", coins) }
+        // I gettoni li ha già messi nel portafoglio il server: qui si aggiorna solo il saldo.
+        if coins > 0 { await store?.refreshEconomy(); store?.say("ct_prize_coins", coins) }
         for u in pendingPrizes {
             guard let url = URL(string: u), case let (d, resp)? = try? await URLSession.shared.data(from: url),
                   (resp as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? false,
                   let e = store?.install(d) else { continue }
             pendingPrizes.removeAll { $0 == u }
+            if store?.data.prizeEmulsions.contains(e.id) == false { store?.data.prizeEmulsions.append(e.id) }
             store?.say("ct_prize_emulsion", e.name)
         }
     }

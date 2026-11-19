@@ -50,6 +50,7 @@ struct RollsScreen: View {
             }
             .background(DottedPage())
         }
+        .task { await store.syncShared() }
         .sheet(item: $shared) { f in ActivityView(items: [f.url, L("share_text", f.name)]) }
         .alert(L("delete_roll_confirm"), isPresented: Binding(get: { toDelete != nil }, set: { if !$0 { toDelete = nil } })) {
             Button(L("delete"), role: .destructive) { if let r = toDelete { store.deleteRoll(r) } }
@@ -77,6 +78,10 @@ struct RollsScreen: View {
                 Button(L("share")) { share(r) }.buttonStyle(.secondary)
                 Button(L("develop_it")) { store.rewindOut(r) }.buttonStyle(.primary)
                 Button(L("delete")) { toDelete = r }.foregroundStyle(Color(hex: 0xFF8A80))
+            case .shared:
+                // In viaggio: finché nessuno lo importa puoi rimandare il file o riprenderlo.
+                Button(L("share_resend")) { share(r) }.buttonStyle(.secondary)
+                Button(L("share_take_back")) { Task { await store.takeBack(r) } }.buttonStyle(.primary)
             case .developed where store.isReady(r, now: now):
                 Button(L("negatives_arrow")) { open = r }.buttonStyle(.primary)
             case .finished:
@@ -103,16 +108,27 @@ struct RollsScreen: View {
         .card()
     }
 
+    /// Il codice nasce sul server: chi apre il file per primo se lo tiene, gli altri trovano il rullino già preso.
     private func share(_ r: Roll) {
+        guard account.signedIn else { store.say("share_sign_in"); return }
         let from = account.profile.flatMap { $0.displayName ?? $0.username }
-        do { shared = SharedFile(url: try RollShare.export(r, store: store, from: from), name: r.emulsionName) }
-        catch { store.say("share_failed") }
+        store.say("share_preparing")
+        Task { @MainActor in
+            do {
+                let id: String
+                if let existing = r.shareId { id = existing } else { id = try await store.createShare(r) }
+                let url = try RollShare.export(r, store: store, from: from, shareId: id)
+                store.update(r.id) { $0.state = .shared; $0.shareId = id }
+                shared = SharedFile(url: url, name: r.emulsionName)
+            } catch { store.say("share_failed") }
+        }
     }
 
     private func status(_ r: Roll, now: Date) -> String {
         switch r.state {
         case .loaded: return L("state_loaded")
         case .shelved: return L("state_shelved")
+        case .shared: return L("state_shared")
         case .finished: return L("state_finished")
         case .developing: return L("at_lab_tank")
         case .developed:

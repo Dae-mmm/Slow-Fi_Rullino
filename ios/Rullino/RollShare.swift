@@ -47,7 +47,7 @@ struct ZipWriter {
     }
 }
 
-enum RollShareError: Error { case invalid, newer, noEmulsion, failed }
+enum RollShareError: Error { case invalid, newer, noEmulsion, failed, old, signIn, needEmulsion, network, already, unknown }
 
 /// Un rullino da passare a qualcuno: file .rullino (ZIP) con roll.json, l'emulsione e le pose da sviluppare.
 /// Stesso formato dell'app Android: si scambiano tra i due telefoni.
@@ -57,7 +57,7 @@ enum RollShare {
 
     /// Prepara il file nella cartella temporanea e ne restituisce l'indirizzo.
     @MainActor
-    static func export(_ roll: Roll, store: Store, from: String?) throws -> URL {
+    static func export(_ roll: Roll, store: Store, from: String?, shareId: String) throws -> URL {
         guard let emulsion = store.emulsionJSON(roll.emulsionId) else { throw RollShareError.noEmulsion }
         var zip = ZipWriter()
         zip.add("mimetype", Data(mimetype.utf8))
@@ -71,8 +71,9 @@ enum RollShare {
                           "meterEv": e.meterEv.map { $0 as Any } ?? NSNull()])
         }
         let manifest: [String: Any] = [
-            "format": "rullino", "version": 1, "from": from.map { $0 as Any } ?? NSNull(),
-            "emulsion": emulsion,
+            "format": "rullino", "version": 1, "shareId": shareId, "from": from.map { $0 as Any } ?? NSNull(),
+            // Le emulsioni esclusive (premi) non viaggiano: chi riceve il rullino deve averle già.
+            "emulsion": store.data.prizeEmulsions.contains(roll.emulsionId) ? NSNull() : emulsion as Any,
             "roll": [
                 "emulsionId": roll.emulsionId, "emulsionName": roll.emulsionName, "iso": roll.iso,
                 "exposures": roll.exposures, "isBw": roll.isBw, "cursor": roll.cursor, "shotCount": roll.shotCount,
@@ -90,32 +91,57 @@ enum RollShare {
         return url
     }
 
-    /// Apre un .rullino: installa l'emulsione se manca e mette il rullino in Rullini, scaricato.
+    /// Apre un .rullino: il codice si blocca sul server (un file vale una volta sola), poi l'emulsione
+    /// arriva col rullino o dal catalogo e il rullino finisce in Rullini, scaricato. Se il rullino è tuo
+    /// e in viaggio, aprirlo vuol dire riprenderlo.
     @MainActor
-    static func importRoll(_ data: Data, store: Store) throws -> Roll {
+    static func importRoll(_ data: Data, store: Store) async throws -> Roll {
         let entries: [String: Data]
         do { entries = try ZipReader.read(data) } catch { throw RollShareError.invalid }
         guard let mBytes = entries["roll.json"],
               let m = (try? JSONSerialization.jsonObject(with: mBytes)) as? [String: Any],
               m["format"] as? String == "rullino" else { throw RollShareError.invalid }
         if let v = m["version"] as? Int, v > 1 { throw RollShareError.newer }
-        guard let em = m["emulsion"] as? [String: Any], let ro = m["roll"] as? [String: Any],
+        guard let shareId = m["shareId"] as? String, !shareId.isEmpty else { throw RollShareError.old }
+        guard let ro = m["roll"] as? [String: Any],
               let emulsionId = ro["emulsionId"] as? String, !emulsionId.isEmpty else { throw RollShareError.invalid }
+        let em = m["emulsion"] as? [String: Any]
+        guard store.signedIn else { throw RollShareError.signIn }
 
-        if store.emulsion(emulsionId) == nil {
-            var preset = em; preset["id"] = emulsionId
-            guard store.install(emulsionFile(id: emulsionId, preset: preset)) != nil else { throw RollShareError.noEmulsion }
+        let mine = store.data.rolls.first { $0.shareId == shareId }
+        if mine == nil && store.emulsion(emulsionId) == nil {
+            if let em {
+                var preset = em; preset["id"] = emulsionId
+                guard store.install(emulsionFile(id: emulsionId, preset: preset)) != nil else { throw RollShareError.noEmulsion }
+            } else {
+                if store.catalog == nil { await store.loadCatalog() }
+                guard let item = store.catalog?.first(where: { $0.id == emulsionId }) else { throw RollShareError.needEmulsion }
+                await store.download(item)
+                guard store.emulsion(emulsionId) != nil else { throw RollShareError.needEmulsion }
+            }
+        }
+
+        let claim: String
+        do { claim = try await store.claimShare(shareId) } catch { throw RollShareError.network }
+        switch claim {
+        case "ok": break
+        case "already_claimed": throw RollShareError.already
+        default: throw RollShareError.unknown
+        }
+        if let mine {
+            store.update(mine.id) { $0.state = .shelved; $0.shareId = nil }
+            return store.data.rolls.first { $0.id == mine.id } ?? mine
         }
 
         var roll = Roll(id: store.data.nextId, emulsionId: emulsionId,
-                        emulsionName: ro["emulsionName"] as? String ?? (em["name"] as? String ?? ""),
+                        emulsionName: ro["emulsionName"] as? String ?? (em?["name"] as? String ?? ""),
                         iso: ro["iso"] as? Int ?? 400, exposures: ro["exposures"] as? Int ?? 36, isBw: ro["isBw"] as? Bool ?? false)
         roll.cursor = ro["cursor"] as? Int ?? 1
         roll.shotCount = ro["shotCount"] as? Int ?? 0
         roll.push = ro["push"] as? Int ?? 0
         roll.state = .shelved
         if let ms = ro["loadedAt"] as? Double { roll.createdAt = Date(timeIntervalSince1970: ms / 1000) }
-        let dir = store.rollDir(roll.id)
+        _ = store.rollDir(roll.id)
         var exposures: [Exposure] = []
         for s in (m["shots"] as? [[String: Any]]) ?? [] {
             guard let file = s["file"] as? String, let bytes = entries[file] else { continue }
@@ -124,11 +150,19 @@ enum RollShare {
             exposures.append(Exposure(rollId: roll.id, frame: s["frame"] as? Int ?? 1, file: rel,
                                       shutter: s["shutter"] as? Double, meterEv: s["meterEv"] as? Double))
         }
-        _ = dir
         store.data.nextId += 1
         store.data.exposures += exposures
         store.data.rolls.append(roll)
         return roll
+    }
+
+    /// Il file è un mio rullino in viaggio?
+    @MainActor
+    static func isMine(_ data: Data, store: Store) throws -> Bool {
+        guard let entries = try? ZipReader.read(data), let b = entries["roll.json"],
+              let m = (try? JSONSerialization.jsonObject(with: b)) as? [String: Any] else { throw RollShareError.invalid }
+        guard let id = m["shareId"] as? String else { return false }
+        return store.data.rolls.contains { $0.shareId == id }
     }
 
     /// Un .emulsion minimo (mimetype, manifest, preset) costruito dai parametri arrivati col rullino.

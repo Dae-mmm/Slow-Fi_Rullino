@@ -13,7 +13,10 @@ struct RullinoApp: App {
                 .environmentObject(store)
                 .environmentObject(account)
                 .environmentObject(contests)
-                .onAppear { contests.account = account; contests.store = store }
+                .onAppear {
+                    contests.account = account; contests.store = store; store.account = account
+                    Task { await store.refreshEconomy() }
+                }
                 .preferredColorScheme(.dark)
                 .statusBarHidden(true)
                 .persistentSystemOverlays(.hidden)

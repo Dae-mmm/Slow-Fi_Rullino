@@ -6,6 +6,8 @@ import SwiftUI
 @MainActor
 final class Store: ObservableObject {
     static let rollPrice = 10
+    /// L'account, per il negozio sul server (Economy.swift). Lo collega l'app all'avvio.
+    weak var account: Account?
 
     @Published private(set) var emulsions: [Emulsion] = []
     @Published var data = AppData() { didSet { if data != oldValue { save() } } }
@@ -62,15 +64,26 @@ final class Store: ObservableObject {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         guard let bytes = try? Data(contentsOf: url) else { say("open_file_failed"); return }
-        do {
-            let r = try RollShare.importRoll(bytes, store: self)
-            say("share_received", r.emulsionName, r.shotCount)
-        } catch RollShareError.newer {
-            say("share_newer")
-        } catch RollShareError.noEmulsion {
-            say("share_no_emulsion")
-        } catch {
-            say("share_invalid")
+        Task { @MainActor in
+            do {
+                let wasMine = try RollShare.isMine(bytes, store: self)
+                let r = try await RollShare.importRoll(bytes, store: self)
+                if wasMine { say("share_taken_back") } else { say("share_received", r.emulsionName, r.shotCount) }
+            } catch let e as RollShareError {
+                switch e {
+                case .newer: say("share_newer")
+                case .noEmulsion: say("share_no_emulsion")
+                case .old: say("share_old")
+                case .signIn: say("share_sign_in")
+                case .needEmulsion: say("share_need_emulsion")
+                case .already: say("share_already")
+                case .unknown: say("share_unknown")
+                case .network: say("share_failed")
+                default: say("share_invalid")
+                }
+            } catch {
+                say("share_invalid")
+            }
         }
     }
 
@@ -159,7 +172,7 @@ final class Store: ObservableObject {
         return u
     }
 
-    private func update(_ id: Int, _ f: (inout Roll) -> Void) {
+    func update(_ id: Int, _ f: (inout Roll) -> Void) {
         guard let i = data.rolls.firstIndex(where: { $0.id == id }) else { return }
         var r = data.rolls[i]
         f(&r)
@@ -170,11 +183,10 @@ final class Store: ObservableObject {
 
     func owned(_ e: Emulsion) -> Int { data.inventory[e.id] ?? 0 }
 
-    func loadRoll(_ e: Emulsion, exposures: Int) {
-        guard activeRoll == nil else { say("err_roll_in_camera"); return }
-        guard owned(e) > 0 else { say("err_no_rolls_of", e.name); return }
-        data.inventory[e.id] = owned(e) - 1
-        let r = Roll(id: data.nextId, emulsionId: e.id, emulsionName: e.name, iso: e.iso, exposures: exposures, isBw: e.isBw)
+    /// Mette in macchina un rullino già preso (pocketId = il suo codice sul server, vedi Economy.swift).
+    func loadRoll(_ e: Emulsion, exposures: Int, pocketId: String?) {
+        var r = Roll(id: data.nextId, emulsionId: e.id, emulsionName: e.name, iso: e.iso, exposures: exposures, isBw: e.isBw)
+        r.pocketId = pocketId
         data.nextId += 1
         data.rolls.append(r)
     }
@@ -197,7 +209,7 @@ final class Store: ObservableObject {
     func unloadEmptyRoll(_ r: Roll) {
         if r.contestId != nil { update(r.id) { $0.state = .shelved; $0.wound = false }; return }
         data.rolls.removeAll { $0.id == r.id }
-        data.inventory[r.emulsionId] = (data.inventory[r.emulsionId] ?? 0) + 1
+        giveBack(r)
     }
 
     /// Scarica il rullino così com'è: se è vergine torna in magazzino, altrimenti va in Rullini.
@@ -342,24 +354,8 @@ final class Store: ObservableObject {
 
     /* ---------------- Negozio ---------------- */
 
-    private var today: String {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f.string(from: Date())
-    }
-    var dailyAvailable: Bool { data.lastDaily != today }
-
-    func takeFree(_ e: Emulsion) {
-        guard dailyAvailable else { say("sk_daily_taken"); return }
-        data.lastDaily = today
-        data.inventory[e.id] = owned(e) + 1
-        say("sk_daily_given", e.name)
-    }
-
-    func buy(_ e: Emulsion) {
-        guard data.coins >= Store.rollPrice else { say("sk_no_coins"); return }
-        data.coins -= Store.rollPrice
-        data.inventory[e.id] = owned(e) + 1
-        say("sk_bought", e.name)
-    }
+    // Gettoni, rullino del giorno e magazzino: decide il server (Economy.swift).
+    var dailyAvailable: Bool { data.dailyOpen }
 }
 
 /// "tra 3 h 20 min" ecc., con le stesse stringhe di Android.

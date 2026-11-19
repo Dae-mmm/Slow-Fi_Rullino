@@ -5,6 +5,10 @@ struct ShopScreen: View {
     @EnvironmentObject var store: Store
 
     var body: some View {
+        content.task { await store.refreshEconomy() }
+    }
+
+    private var content: some View {
         HStack(spacing: 0) {
             scene.frame(width: 300)
             ScrollView {
@@ -163,9 +167,9 @@ struct ShopScreen: View {
                 .font(.caption2).foregroundStyle(Palette.muted)
             HStack {
                 if store.dailyAvailable {
-                    Button(L("free_today")) { store.takeFree(e) }.buttonStyle(.primary)
+                    Button(L("free_today")) { Task { await store.takeFree(e) } }.buttonStyle(.primary)
                 }
-                Button(L("buy") + " · \(Store.rollPrice)") { store.buy(e) }.buttonStyle(.secondary)
+                Button(L("buy") + " · \(Store.rollPrice)") { Task { await store.buy(e) } }.buttonStyle(.secondary)
                     .disabled(store.data.coins < Store.rollPrice)
             }
         }

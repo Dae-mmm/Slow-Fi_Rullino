@@ -67,8 +67,8 @@ struct OptionsScreen: View {
                                 .tint(Palette.safelight)
                                 HStack {
                                     Button(L("import_emulsion")) { importing = true }.buttonStyle(.secondary)
-                                    Button(L("plus100")) { store.data.coins += 100; store.say("plus100") }.buttonStyle(.secondary)
-                                    Button(L("daily_again")) { store.data.lastDaily = ""; store.say("daily_again_msg") }.buttonStyle(.secondary)
+                                    Button(L("plus100")) { Task { await store.opGrant(100) } }.buttonStyle(.secondary)
+                                    Button(L("daily_again")) { Task { await store.opResetDaily() } }.buttonStyle(.secondary)
                                 }
                             }
                         }
@@ -83,7 +83,7 @@ struct OptionsScreen: View {
         .onChange(of: account.profile?.username) { _, v in username = v ?? "" }
         .onChange(of: account.profile?.displayName) { _, v in shown = v ?? "" }
         .alert(L("acc_delete_confirm"), isPresented: $confirmDelete) {
-            Button(L("acc_delete"), role: .destructive) { run { try await account.deleteAccount(); store.say("acc_deleted") } }
+            Button(L("acc_delete"), role: .destructive) { run { try await account.deleteAccount(); store.forgetEconomy(); store.say("acc_deleted") } }
             Button(L("cancel"), role: .cancel) {}
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(exportedAs: "com.slowfi.emulsion"), .zip, .data]) { result in
@@ -100,7 +100,7 @@ struct OptionsScreen: View {
                 DesignField(placeholder: L("acc_code"), text: $code)
                     .keyboardType(.numberPad).textContentType(.oneTimeCode)
                 HStack {
-                    Button(L("acc_sign_in")) { run { try await account.verify(code); code = "" } }
+                    Button(L("acc_sign_in")) { run { try await account.verify(code); code = ""; await store.refreshEconomy() } }
                         .buttonStyle(.primary).disabled(account.busy || code.count < 6)
                     Button(L("acc_change_email")) { code = ""; account.pendingEmail = nil }
                         .font(Fonts.barlow(14)).foregroundStyle(Palette.muted)
@@ -136,7 +136,7 @@ struct OptionsScreen: View {
                 if account.profile?.role != .user { Text(L("acc_judge_area")).font(Fonts.barlow(12)).foregroundStyle(Palette.muted) }
             }
             HStack(spacing: 14) {
-                Button(L("acc_sign_out")) { run { await account.signOut(); store.say("acc_signed_out") } }
+                Button(L("acc_sign_out")) { run { await store.refreshEconomy(); await account.signOut(); store.forgetEconomy(); store.say("acc_signed_out") } }
                     .buttonStyle(.secondary).disabled(account.busy)
                 Button(L("acc_delete")) { confirmDelete = true }
                     .font(Fonts.barlow(14)).underline().foregroundStyle(Palette.danger).disabled(account.busy)

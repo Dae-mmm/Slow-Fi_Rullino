@@ -110,7 +110,7 @@ struct Emulsion: Decodable, Identifiable {
     }
 }
 
-enum RollState: String, Codable { case loaded, shelved, finished, developing, developed }
+enum RollState: String, Codable { case loaded, shelved, finished, developing, developed, shared }
 
 struct Roll: Codable, Identifiable, Equatable {
     var id: Int
@@ -130,6 +130,10 @@ struct Roll: Codable, Identifiable, Equatable {
     /// Rullino regalato da un concorso: id del concorso e codice del regalo sul server.
     var contestId: String?
     var contestRef: String?
+    /// Codice della condivisione su Supabase, finché il rullino è "in viaggio".
+    var shareId: String?
+    /// Codice del rullino sul server (magazzino → tasca → macchina): serve per restituirlo se non si scatta.
+    var pocketId: String?
 
     init(id: Int, emulsionId: String, emulsionName: String, iso: Int, exposures: Int, isBw: Bool) {
         self.id = id; self.emulsionId = emulsionId; self.emulsionName = emulsionName
@@ -137,7 +141,7 @@ struct Roll: Codable, Identifiable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, emulsionId, emulsionName, iso, exposures, isBw, cursor, shotCount, wound, state, createdAt, readyAt, push, contestId, contestRef
+        case id, emulsionId, emulsionName, iso, exposures, isBw, cursor, shotCount, wound, state, createdAt, readyAt, push, contestId, contestRef, shareId, pocketId
     }
 
     // Decodifica tollerante: i campi nuovi non fanno perdere i rullini salvati.
@@ -150,6 +154,7 @@ struct Roll: Codable, Identifiable, Equatable {
         wound = c.v(.wound, false); state = c.v(.state, .loaded); createdAt = c.v(.createdAt, Date())
         readyAt = c.v(.readyAt, nil); push = c.v(.push, 0)
         contestId = c.v(.contestId, nil); contestRef = c.v(.contestRef, nil)
+        shareId = c.v(.shareId, nil); pocketId = c.v(.pocketId, nil)
     }
 
     var canWind: Bool { state == .loaded && !wound && cursor <= exposures }
@@ -197,6 +202,14 @@ struct AppData: Codable, Equatable {
     var catalogVersions: [String: Int] = [:]
     /// Posizione della ghiera dei tempi (0 = automatico).
     var shutterIndex = 0
+    /* Negozio sul server: qui solo le copie locali (vedi Economy.swift). */
+    var serverInventory: [String: Int] = [:]
+    var pocket: [PocketRoll] = []
+    var econQueue: [[String]] = []
+    var trialAvailable = true
+    var dailyOpen = false
+    /// Emulsioni vinte nei contest: non viaggiano dentro i rullini condivisi.
+    var prizeEmulsions: [String] = []
 
     init() {}
 
@@ -208,7 +221,16 @@ struct AppData: Codable, Equatable {
         nextId = c.v(.nextId, 1); labTime = c.v(.labTime, .day); devMode = c.v(.devMode, false)
         skipLab = c.v(.skipLab, false); catalogVersions = c.v(.catalogVersions, [:])
         shutterIndex = c.v(.shutterIndex, 0)
+        serverInventory = c.v(.serverInventory, [:]); pocket = c.v(.pocket, []); econQueue = c.v(.econQueue, [])
+        trialAvailable = c.v(.trialAvailable, true); dailyOpen = c.v(.dailyOpen, false)
+        prizeEmulsions = c.v(.prizeEmulsions, [])
     }
+}
+
+/// Un rullino "in tasca": già tolto dal magazzino sul server, caricabile anche offline.
+struct PocketRoll: Codable, Equatable {
+    var id: String
+    var emulsionId: String
 }
 
 /// Una riga del catalogo online (tabella `emulsions` su Supabase).

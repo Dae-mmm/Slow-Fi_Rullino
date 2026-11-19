@@ -307,7 +307,7 @@ struct RollPicker: View {
                                 Text(L("iso_owned", e.iso, store.owned(e))).font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Button(L("load")) { store.loadRoll(e, exposures: exposures); dismiss() }
+                            Button(L("load")) { Task { if await store.takeAndLoad(e, exposures: exposures) { dismiss() } } }
                                 .buttonStyle(.primary)
                         }
                     }
