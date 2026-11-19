@@ -232,6 +232,13 @@ class ContestsClient(private val baseUrl: String, private val key: String, priva
         ok(c, t)
     }
 
+    /** OP: mette un'emulsione nel catalogo pubblico. Il server la legge da sola e la pubblica con lo stesso id. */
+    suspend fun uploadCatalog(bytes: ByteArray, id: String) {
+        val safe = id.replace(Regex("[^A-Za-z0-9_-]"), "-").take(64)
+        val (c, t) = call("POST", "/storage/v1/object/emulsions/$safe.emulsion", bytes, "application/octet-stream", token(), upsert = true)
+        ok(c, t)
+    }
+
     /** Carica un'emulsione esclusiva (premio) fuori dal catalogo pubblico; restituisce il suo indirizzo. */
     suspend fun uploadExclusive(bytes: ByteArray, fileName: String): String {
         val safe = fileName.substringBeforeLast('.').replace(Regex("[^A-Za-z0-9_-]"), "-").take(40).ifBlank { "premio" }

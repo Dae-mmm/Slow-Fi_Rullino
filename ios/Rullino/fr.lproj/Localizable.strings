@@ -447,3 +447,5 @@
 "crop_done_where" = "Le tirage coupé est dans la galerie, dans Rullino";
 "shelf_local_only" = "Seulement sur ce téléphone · pas en vente";
 "eco_not_for_sale" = "La boutique ne vend pas «%1$@» : elle n'est que sur ton téléphone. Pour la vendre, elle doit être au catalogue avec le même fichier.";
+"emulsion_published" = "«%1$@» ajoutée et mise au catalogue : dans quelques secondes elle est en boutique pour tous";
+"emulsion_publish_failed" = "«%1$@» est sur ton téléphone, mais n'a pas pu aller au catalogue : rouvre le fichier";

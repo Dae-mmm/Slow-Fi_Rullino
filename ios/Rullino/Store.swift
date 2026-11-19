@@ -99,7 +99,27 @@ final class Store: ObservableObject {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         guard let bytes = try? Data(contentsOf: url) else { say("open_file_failed"); return }
-        if let e = install(bytes) { say("emulsion_added", e.name) }
+        guard let e = install(bytes) else { return }
+        // Un OP la mette anche a catalogo: stesso file e stesso codice, si compra e si usa subito.
+        guard account?.profile?.role == .op else { say("emulsion_added", e.name); return }
+        Task { @MainActor in
+            do {
+                try await uploadCatalog(bytes, id: e.id)
+                say("emulsion_published", e.name)
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
+                await loadCatalog()
+            } catch { say("emulsion_publish_failed", e.name) }
+        }
+    }
+
+    /// Toglie dal telefono un'emulsione (quelle che non sono in negozio). Non se c'è un rullino aperto.
+    func deleteEmulsion(_ e: Emulsion) {
+        if data.rolls.contains(where: { $0.emulsionId == e.id && [.loaded, .shelved, .finished, .developing].contains($0.state) }) {
+            say("err_emulsion_in_use"); return
+        }
+        try? FileManager.default.removeItem(at: root.appendingPathComponent("emulsions/\(e.id)", isDirectory: true))
+        emulsions.removeAll { $0.id == e.id }
+        say("emulsion_deleted", e.name)
     }
 
     @discardableResult

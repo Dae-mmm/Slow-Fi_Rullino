@@ -144,6 +144,21 @@ extension Store {
         mirror()
     }
 
+    /// OP: mette un'emulsione nel catalogo pubblico; il server la legge e la pubblica con lo stesso id.
+    func uploadCatalog(_ bytes: Data, id: String) async throws {
+        guard let account, let token = await account.accessToken() else { throw EconomyError.signedOut }
+        let safe = String(id.map { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" ? $0 : "-" }.prefix(64))
+        guard let url = URL(string: Store.catalogURL + "/storage/v1/object/emulsions/\(safe).emulsion") else { throw EconomyError.network }
+        var req = URLRequest(url: url, timeoutInterval: 60)
+        req.httpMethod = "POST"
+        req.setValue(Store.catalogKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        req.setValue("true", forHTTPHeaderField: "x-upsert")
+        let (_, resp) = try await URLSession.shared.upload(for: req, from: bytes)
+        guard (resp as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) == true else { throw EconomyError.network }
+    }
+
     /* ---------------- Rullini condivisi: un file si importa una volta sola ---------------- */
 
     func createShare(_ r: Roll) async throws -> String {

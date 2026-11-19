@@ -447,3 +447,5 @@
 "crop_done_where" = "La stampa tagliata è in galleria, in Rullino";
 "shelf_local_only" = "Solo su questo telefono · non in vendita";
 "eco_not_for_sale" = "Il negozio non vende «%1$@»: c'è solo sul tuo telefono. Per venderla deve stare a catalogo, con lo stesso file.";
+"emulsion_published" = "«%1$@» aggiunta e messa a catalogo: tra qualche secondo è in negozio per tutti";
+"emulsion_publish_failed" = "«%1$@» è sul telefono, ma non è riuscita ad andare a catalogo: riprova ad aprire il file";

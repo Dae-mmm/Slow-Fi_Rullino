@@ -32,6 +32,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -179,6 +182,7 @@ fun ShopScreen(vm: AppViewModel) {
                             freeToday = dailyAvailable,
                             onFree = { vm.claimDaily(e) },
                             onBuy = { vm.buy(e) },
+                            onDelete = { vm.deleteEmulsion(e) },
                         )
                     }
                     Text(
@@ -250,7 +254,8 @@ private fun LabRow(r: RollEntity, status: String, action: @Composable () -> Unit
 }
 
 @Composable
-private fun ShelfRow(e: EmulsionEntity, owned: Int, sellable: Boolean, canAfford: Boolean, freeToday: Boolean, onFree: () -> Unit, onBuy: () -> Unit) {
+private fun ShelfRow(e: EmulsionEntity, owned: Int, sellable: Boolean, canAfford: Boolean, freeToday: Boolean, onFree: () -> Unit, onBuy: () -> Unit, onDelete: () -> Unit) {
+    var confirm by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         FilmBox(e.name, e.iso, toneFor(e.isBw, VirtualCameraSlide(e)), compact = true)
         Column(Modifier.weight(1f)) {
@@ -258,7 +263,13 @@ private fun ShelfRow(e: EmulsionEntity, owned: Int, sellable: Boolean, canAfford
             Text(stringResource(R.string.iso_owned, e.iso, owned), color = Palette.Muted, fontFamily = Mono, fontSize = 11.sp)
         }
         if (!sellable) {
-            Text(stringResource(R.string.shelf_local_only), color = Palette.Muted, fontSize = 12.sp, modifier = Modifier.width(130.dp))
+            // Non è in linea: si può solo togliere dal telefono.
+            Column(Modifier.width(150.dp), horizontalAlignment = Alignment.End) {
+                Text(stringResource(R.string.shelf_local_only), color = Palette.Muted, fontSize = 12.sp)
+                TextButton(onClick = { if (confirm) onDelete() else confirm = true }) {
+                    Text(stringResource(if (confirm) R.string.delete_emulsion_confirm else R.string.delete_emulsion), color = Color(0xFFFF8A80), fontSize = 13.sp)
+                }
+            }
             return@Row
         }
         if (freeToday) PrimaryButton(onClick = onFree) { Text(stringResource(R.string.free_today)) }

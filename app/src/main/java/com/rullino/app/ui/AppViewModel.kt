@@ -18,6 +18,7 @@ import com.rullino.app.data.EmulsionEntity
 import com.rullino.app.data.RollEntity
 import com.rullino.app.data.RollState
 import com.rullino.app.data.FrameEntity
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -351,12 +352,28 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         } else say(R.string.import_needs_dev)
     }
 
+    /**
+     * Apre un .emulsion. Per un OP l'emulsione va anche nel catalogo, così telefono e negozio
+     * hanno lo stesso file e lo stesso codice: si compra e si usa subito.
+     */
     fun importFrom(uri: Uri, onDone: (EmulsionEntity) -> Unit = {}) = viewModelScope.launch {
+        val op = account.profile.value?.role == com.rullino.app.data.Role.OP
+        var bytes: ByteArray? = null
         runCatching {
             val input = app.contentResolver.openInputStream(uri) ?: error(str(R.string.open_file_failed))
-            input.use { repo.installer.install(it, "import") }
-        }.onSuccess { say(R.string.emulsion_added, it.name); onDone(it) }
-            .onFailure { say(it.message ?: str(R.string.invalid_file)) }
+            bytes = input.use { it.readBytes() }
+            repo.installer.install(java.io.ByteArrayInputStream(bytes), if (op) "store" else "import")
+        }.onSuccess { e ->
+            onDone(e)
+            if (!op) { say(R.string.emulsion_added, e.name); return@launch }
+            runCatching { app.contests.uploadCatalog(bytes!!, e.id) }
+                .onSuccess {
+                    say(R.string.emulsion_published, e.name)
+                    // Il server ci mette qualche secondo a leggerla: poi il negozio la vede.
+                    delay(4000); refreshStore()
+                }
+                .onFailure { say(R.string.emulsion_publish_failed, e.name) }
+        }.onFailure { say(it.message ?: str(R.string.invalid_file)) }
     }
 
     fun deleteEmulsion(e: EmulsionEntity) = viewModelScope.launch {

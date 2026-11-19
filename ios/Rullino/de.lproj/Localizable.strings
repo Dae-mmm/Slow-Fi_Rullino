@@ -447,3 +447,5 @@
 "crop_done_where" = "Der zugeschnittene Abzug ist in der Galerie, in Rullino";
 "shelf_local_only" = "Nur auf diesem Handy · nicht im Laden";
 "eco_not_for_sale" = "Der Laden verkauft «%1$@» nicht: Sie ist nur auf deinem Handy. Zum Verkauf muss sie mit derselben Datei im Katalog sein.";
+"emulsion_published" = "«%1$@» hinzugefügt und in den Katalog gestellt: in ein paar Sekunden ist sie für alle im Laden";
+"emulsion_publish_failed" = "«%1$@» ist auf deinem Handy, konnte aber nicht in den Katalog: öffne die Datei noch einmal";

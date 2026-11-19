@@ -449,4 +449,6 @@
     <string name="crop_done_where">The cut print is in the gallery, in Rullino</string>
     <string name="shelf_local_only">Only on this phone · not sold in the shop</string>
     <string name="eco_not_for_sale">The shop doesn\'t sell «%1$s»: it\'s only on your phone. To sell it, it has to be in the catalog with the same file.</string>
+    <string name="emulsion_published">«%1$s» added and put in the catalog: in a few seconds it\'s in the shop for everyone</string>
+    <string name="emulsion_publish_failed">«%1$s» is on your phone, but it couldn\'t go into the catalog: try opening the file again</string>
 </resources>

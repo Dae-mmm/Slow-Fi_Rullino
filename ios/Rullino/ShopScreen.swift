@@ -4,6 +4,8 @@ import SwiftUI
 struct ShopScreen: View {
     @EnvironmentObject var store: Store
 
+    @State private var confirmDelete: String?
+
     var body: some View {
         content.task {
             await store.refreshEconomy()
@@ -169,7 +171,14 @@ struct ShopScreen: View {
             Text(n == 1 ? L("in_stock_one") : (n > 1 ? L("in_stock_many", n) : L("none_in_stock")))
                 .font(.caption2).foregroundStyle(Palette.muted)
             if !store.sellable(e) {
-                Text(L("shelf_local_only")).font(.caption).foregroundStyle(Palette.muted)
+                // Non è in linea: si può solo togliere dal telefono.
+                HStack {
+                    Text(L("shelf_local_only")).font(.caption).foregroundStyle(Palette.muted)
+                    Spacer()
+                    Button(L(confirmDelete == e.id ? "delete_emulsion_confirm" : "delete_emulsion")) {
+                        if confirmDelete == e.id { store.deleteEmulsion(e); confirmDelete = nil } else { confirmDelete = e.id }
+                    }.font(.caption).foregroundStyle(Color(hex: 0xFF8A80))
+                }
             } else { HStack {
                 if store.dailyAvailable {
                     Button(L("free_today")) { Task { await store.takeFree(e) } }.buttonStyle(.primary)

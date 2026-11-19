@@ -448,4 +448,6 @@
     <string name="crop_done_where">La stampa tagliata è in galleria, in Rullino</string>
     <string name="shelf_local_only">Solo su questo telefono · non in vendita</string>
     <string name="eco_not_for_sale">Il negozio non vende «%1$s»: c\'è solo sul tuo telefono. Per venderla deve stare a catalogo, con lo stesso file.</string>
+    <string name="emulsion_published">«%1$s» aggiunta e messa a catalogo: tra qualche secondo è in negozio per tutti</string>
+    <string name="emulsion_publish_failed">«%1$s» è sul telefono, ma non è riuscita ad andare a catalogo: riprova ad aprire il file</string>
 </resources>
