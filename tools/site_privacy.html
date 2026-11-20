@@ -12,13 +12,17 @@
     <tr><th>Dato</th><th>Dove resta</th><th>Chi lo vede</th></tr>
     <tr><td>Foto scattate, rullini, negativi e stampe</td><td>Sul tuo telefono (le stampe nella galleria)</td><td>Solo tu</td></tr>
     <tr><td>Liberatorie: nome, cognome, contatto, luogo, firma della persona ritratta</td><td>Sul tuo telefono; il PDF in Download/Rullino</td><td>Tu e chi decidi tu</td></tr>
-    <tr><td>Gettoni, magazzino, impostazioni</td><td>Sul tuo telefono</td><td>Solo tu</td></tr>
+    <tr><td>Impostazioni</td><td>Sul tuo telefono</td><td>Solo tu</td></tr>
+    <tr><td>Gettoni, rullini in magazzino e in tasca, acquisti e premi ritirati</td><td>Server Supabase nell'UE, legati all'account</td><td>Tu e noi</td></tr>
+    <tr><td>Rullini condivisi: un codice del file, chi l'ha creato e chi l'ha aperto (le foto viaggiano solo nel file che mandi tu)</td><td>Server Supabase nell'UE</td><td>Noi, per far sì che un file si apra una volta sola</td></tr>
+    <tr><td>Rapporti di crash ed errori: modello del telefono, versione del sistema e dell'app, un codice casuale del dispositivo, il punto del codice in cui è avvenuto l'errore; l'account se sei collegato</td><td>Server Supabase nell'UE</td><td>Solo gli OP</td></tr>
+    <tr><td>Segnalazioni che ci scrivi: il testo, il contatto se lo lasci, lo screenshot se lo alleghi, più gli stessi dati tecnici dei crash</td><td>Server Supabase nell'UE, in uno spazio privato</td><td>Solo gli OP</td></tr>
     <tr><td>Account: email, nome utente, nome visualizzato, lingua del telefono, ruolo (utente, giudice, OP)</td><td>Server Supabase nell'UE</td><td>Noi; nome utente e nome visualizzato anche agli altri utenti registrati</td></tr>
     <tr><td>Concorsi: la foto inviata, il numero della posa, l'emulsione, la data di caricamento del rullino, la liberatoria se ci sono persone</td><td>Server Supabase nell'UE, in uno spazio privato</td><td>Tu, la giuria e gli OP; se arrivi sul podio, la foto e il tuo nome utente agli utenti registrati per una settimana</td></tr>
     <tr><td>Voti e note della giuria</td><td>Server Supabase nell'UE</td><td>La giuria; l'autore della foto a concorso chiuso</td></tr>
     <tr><td>Dati tecnici di accesso: indirizzo IP, data e ora delle richieste</td><td>Registri dei fornitori</td><td>I fornitori e noi, per sicurezza</td></tr>
   </table>
-  <p>Non raccogliamo posizione, contatti, identificativi pubblicitari né statistiche d'uso. Le foto lasciano il telefono solo quando scegli tu di mandarne una a un concorso.</p>
+  <p>Non raccogliamo posizione, contatti, identificativi pubblicitari né statistiche d'uso. Il codice del dispositivo è casuale, nasce con l'installazione e non serve a riconoscerti: ci permette solo di raggruppare i crash e di fermare chi manda troppe segnalazioni. Le foto lasciano il telefono solo quando scegli tu di mandarne una a un concorso.</p>
   <p>Quando scarichi un'emulsione dal catalogo, il telefono la chiede ai server di Supabase: la richiesta lascia nei registri l'indirizzo IP, ma non è legata al tuo account.</p>
 
   <h2>3. Perché li usiamo e su quale base</h2>
@@ -26,6 +30,8 @@
     <tr><th>Scopo</th><th>Dati</th><th>Base giuridica (GDPR)</th></tr>
     <tr><td>Creare e gestire l'account, l'accesso con il codice via email</td><td>Email, nome utente, nome visualizzato, lingua</td><td>Esecuzione del servizio richiesto (art. 6.1.b)</td></tr>
     <tr><td>Concorsi: partecipazione, giuria, classifica, premi e bacheca</td><td>Foto inviata, liberatoria, nome utente, voti</td><td>Esecuzione del servizio richiesto (art. 6.1.b)</td></tr>
+    <tr><td>Gettoni, magazzino e rullini condivisi</td><td>Saldo, rullini, codici dei file condivisi</td><td>Esecuzione del servizio richiesto (art. 6.1.b)</td></tr>
+    <tr><td>Correggere crash ed errori, rispondere alle segnalazioni</td><td>Rapporti di crash, segnalazioni, contatto facoltativo</td><td>Legittimo interesse a far funzionare l'app (art. 6.1.f); per lo screenshot e il contatto, la tua scelta di mandarli</td></tr>
     <tr><td>Sicurezza e prevenzione degli abusi</td><td>Dati tecnici di accesso</td><td>Legittimo interesse (art. 6.1.f)</td></tr>
     <tr><td>Obblighi di legge</td><td>I dati necessari caso per caso</td><td>Obbligo legale (art. 6.1.c)</td></tr>
   </table>
@@ -34,7 +40,7 @@
   <h2>4. Chi ci aiuta a fornire il servizio</h2>
   <table>
     <tr><th>Fornitore</th><th>Cosa fa</th><th>Dove</th></tr>
-    <tr><td>Supabase Inc.</td><td>Account, accesso, catalogo delle emulsioni, concorsi</td><td>Server in Irlanda (UE)</td></tr>
+    <tr><td>Supabase Inc.</td><td>Account, accesso, catalogo delle emulsioni, concorsi, gettoni, crash e segnalazioni</td><td>Server in Irlanda (UE)</td></tr>
     <tr><td>Resend Inc.</td><td>Spedisce l'email con il codice di accesso</td><td>Società con sede negli USA</td></tr>
     <tr><td>Cloudflare Inc., Vercel Inc.</td><td>Dominio slow-fi.app e questo sito</td><td>Rete globale</td></tr>
     <tr><td>Google (Play Store), Apple (App Store)</td><td>Distribuzione dell'app</td><td>Secondo le loro informative</td></tr>
@@ -44,7 +50,7 @@
   <h2>5. Permessi del telefono</h2>
   <ul>
     <li><b>Fotocamera:</b> per scattare. Le immagini restano nell'app finché non le stampi.</li>
-    <li><b>Foto / galleria:</b> solo per salvare le stampe che scegli. Su iPhone il permesso è di sola aggiunta.</li>
+    <li><b>Foto / galleria:</b> per salvare le stampe che scegli e, se vuoi, allegare uno screenshot a una segnalazione. Su iPhone l'app chiede l'accesso alla libreria solo per raccogliere le stampe nell'album "Rullino"; se lo neghi, le stampe si salvano lo stesso.</li>
     <li><b>File:</b> solo quando apri un file <code>.emulsion</code> o salvi il PDF di una liberatoria.</li>
     <li><b>Internet:</b> per l'account, il catalogo e i concorsi.</li>
   </ul>
@@ -55,6 +61,8 @@
     <tr><td>Account e profilo</td><td>Finché non lo elimini; poi viene cancellato subito</td></tr>
     <tr><td>Foto e liberatoria mandate a un concorso</td><td>Finché non ritiri la foto (a concorso aperto) o elimini l'account</td></tr>
     <tr><td>Codici di accesso</td><td>Scadono dopo un'ora</td></tr>
+    <tr><td>Rapporti di crash ed errori</td><td>90 giorni</td></tr>
+    <tr><td>Segnalazioni e screenshot</td><td>Finché non sono risolte, al massimo 12 mesi</td></tr>
     <tr><td>Dati sul telefono</td><td>Finché non li cancelli o disinstalli l'app</td></tr>
   </table>
 
