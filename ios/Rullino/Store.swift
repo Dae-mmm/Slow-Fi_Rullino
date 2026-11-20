@@ -337,6 +337,7 @@ final class Store: ObservableObject {
                                   push: push, slide: slide, shutters: shutters, meters: meters)
             }.value
             if ok { data.frames.append(DevFrame(rollId: id, frame: f, file: rel, layers: files.count)) }
+            else { Reporter.shared.error("Sviluppo", "posa \(f) di \(e.name) (\(files.count) strati)") }
         }
         developProgress = nil
         let wait = waitSeconds

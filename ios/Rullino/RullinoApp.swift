@@ -6,6 +6,11 @@ struct RullinoApp: App {
     @StateObject private var account = Account()
     @StateObject private var contests = ContestsModel()
 
+    init() {
+        // Prima di tutto il resto: i crash da qui in poi ci arrivano.
+        Reporter.shared.install()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -15,6 +20,7 @@ struct RullinoApp: App {
                 .environmentObject(contests)
                 .onAppear {
                     contests.account = account; contests.store = store; store.account = account
+                    Reporter.shared.account = account
                     Task { await store.refreshEconomy() }
                 }
                 .preferredColorScheme(.dark)

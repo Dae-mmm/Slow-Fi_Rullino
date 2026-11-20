@@ -262,7 +262,7 @@ struct CameraScreen: View {
             withAnimation(.easeOut(duration: 0.18)) { blackout = false }
         }
         camera.capture(to: url) { ok in
-            if ok { store.recordShot(current.id, file: rel, shutter: shutter, meterEv: meterEv) } else { store.say("shot_failed") }
+            if ok { store.recordShot(current.id, file: rel, shutter: shutter, meterEv: meterEv) } else { Reporter.shared.error("Scatto", camera.simulated ? "simulatore" : "capture fallita"); store.say("shot_failed") }
 
             releaseOn = false
             busy = false

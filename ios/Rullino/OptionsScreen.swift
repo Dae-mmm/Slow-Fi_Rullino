@@ -31,6 +31,9 @@ struct OptionsScreen: View {
         switch r { case .op: L("role_op"); case .judge: L("role_judge"); case .user: L("role_user") }
     }
 
+    @State private var feedback = false
+    @AppStorage("introSeen") private var introSeen = true
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -56,8 +59,15 @@ struct OptionsScreen: View {
                             }
                             Text(L("opt_lab_note")).font(Fonts.barlow(12)).foregroundStyle(Palette.muted)
                         }
+                        OptCard(number: "03", title: L("help_title")) {
+                            Text(L("help_text")).font(Fonts.barlow(14)).foregroundStyle(Palette.muted)
+                            HStack {
+                                Button(L("fb_title")) { feedback = true }.buttonStyle(.secondary)
+                                Button(L("intro_again")) { introSeen = false }.font(Fonts.barlow(14)).foregroundStyle(Palette.muted)
+                            }
+                        }
                         if isOp {
-                            OptCard(number: "03", title: L("dev_mode")) {
+                            OptCard(number: "04", title: L("dev_mode")) {
                                 Toggle(isOn: $store.data.skipLab) {
                                     VStack(alignment: .leading) {
                                         Text(L("skip_lab")).foregroundStyle(Palette.ink)
@@ -78,6 +88,7 @@ struct OptionsScreen: View {
             }
             .padding(.horizontal, 24).padding(.vertical, 20)
         }
+        .sheet(isPresented: $feedback) { FeedbackSheet() }
         .background(DottedPage())
         .onAppear { username = account.profile?.username ?? ""; shown = account.profile?.displayName ?? "" }
         .onChange(of: account.profile?.username) { _, v in username = v ?? "" }

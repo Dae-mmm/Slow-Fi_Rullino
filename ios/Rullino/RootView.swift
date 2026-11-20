@@ -13,8 +13,14 @@ struct RootView: View {
     @EnvironmentObject var store: Store
     @EnvironmentObject var account: Account
     @State private var tab = Tab.camera
+    /// Al primo avvio (o da Opzioni) l'introduzione copre tutto finché non la si chiude.
+    @AppStorage("introSeen") private var introSeen = false
 
     var body: some View {
+        if introSeen { main } else { IntroScreen { introSeen = true } }
+    }
+
+    private var main: some View {
         HStack(spacing: 0) {
             // Fascia di navigazione del design: marchio S—F e voci con segno e nome.
             VStack(spacing: 0) {
