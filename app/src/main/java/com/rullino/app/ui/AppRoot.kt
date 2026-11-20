@@ -99,6 +99,13 @@ fun AppRoot(importUri: Uri?, onImportHandled: () -> Unit, vm: AppViewModel = vie
         vm.message.value = null
     }
 
+    // Al primo avvio (o da Opzioni) l'introduzione copre tutto finché non la si chiude.
+    val introSeen by vm.introSeen.collectAsState()
+    if (!introSeen) {
+        IntroScreen(onDone = { vm.finishIntro() })
+        return
+    }
+
     Scaffold(
         containerColor = Palette.Body,
         snackbarHost = { SnackbarHost(snackbar) },

@@ -102,8 +102,18 @@ fun OptionsScreen(vm: AppViewModel) {
             }
         }
 
+        Section(stringResource(R.string.help_title), "04") {
+            var feedback by remember { mutableStateOf(false) }
+            Text(stringResource(R.string.help_text), color = Palette.Muted, fontSize = 13.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SecondaryButton(onClick = { feedback = true }) { Text(stringResource(R.string.fb_title)) }
+                TextButton(onClick = { vm.showIntro() }) { Text(stringResource(R.string.intro_again)) }
+            }
+            if (feedback) FeedbackDialog(vm, onClose = { feedback = false })
+        }
+
         if (isOp) {
-            Section(stringResource(R.string.dev_mode), "04") {
+            Section(stringResource(R.string.dev_mode), "05") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(R.string.skip_lab), color = Palette.Ink)

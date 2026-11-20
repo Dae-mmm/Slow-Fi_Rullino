@@ -176,6 +176,7 @@ fun CameraScreen(vm: AppViewModel, onGoShop: () -> Unit, onOpenRolls: () -> Unit
                 }
 
                 override fun onError(exception: ImageCaptureException) {
+                    vm.reportError("Scatto", exception)
                     vm.say(R.string.shot_failed)
                     done()
                 }

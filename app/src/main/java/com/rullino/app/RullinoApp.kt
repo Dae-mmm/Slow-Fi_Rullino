@@ -27,6 +27,8 @@ class RullinoApp : Application() {
     lateinit var account: Account
     lateinit var contests: com.rullino.app.data.ContestsClient
         private set
+    lateinit var reporter: com.rullino.app.data.Reporter
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -34,18 +36,20 @@ class RullinoApp : Application() {
         repo = Repository(this, db)
         settings = Settings(this)
         account = Account(this, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY)
+        // Prima di tutto il resto: un crash da qui in poi finisce su file e parte al prossimo avvio.
+        reporter = com.rullino.app.data.Reporter(this, account).also { it.install() }
         contests = com.rullino.app.data.ContestsClient(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, account)
         shop = Shop(this, db, contests)
         // Un rullino mai scattato tolto dalla macchina torna nel magazzino del server.
         repo.onReturn = { shop.giveBack(it.pocketId, it.emulsionId) }
         developer = Developer(this, repo, settings)
-        appScope.launch { runCatching { account.refresh() }; shop.refresh() }
+        appScope.launch { runCatching { account.refresh() }; shop.refresh(); reporter.flush() }
         appScope.launch {
             cleanOrphanRolls(db)
             installBundledEmulsions()
             // Riprende uno sviluppo interrotto (app chiusa a metà).
             for (roll in db.rolls().developing()) {
-                runCatching { developer.develop(roll.id) }.onFailure { Log.e("Rullino", "Sviluppo ripreso fallito", it) }
+                runCatching { developer.develop(roll.id) }.onFailure { reporter.error("Sviluppo ripreso", it) }
             }
         }
     }

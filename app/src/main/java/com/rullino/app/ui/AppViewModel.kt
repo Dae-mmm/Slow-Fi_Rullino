@@ -160,7 +160,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         shopkeeperLine.value = if (list.size == 1) str(R.string.sk_look) else str(R.string.sk_many, list.size)
         var last = System.currentTimeMillis()
         for (r in list) {
-            runCatching { developer.develop(r.id) }.onFailure { say(it.message ?: str(R.string.develop_failed)) }
+            runCatching { developer.develop(r.id) }.onFailure { app.reporter.error("Sviluppo", it); say(it.message ?: str(R.string.develop_failed)) }
             last = maxOf(last, repo.db.rolls().get(r.id)?.readyAt ?: last)
         }
         shopkeeperLine.value = if (settings.currentWaitMillis() == 0L) str(R.string.sk_done_now)
@@ -219,10 +219,25 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         var n = 0
         for (f in frames) {
             if (f.printUri != null) continue
-            runCatching { repo.print(r, f) }.onSuccess { n++ }.onFailure { say(it.message ?: str(R.string.print_failed)) }
+            runCatching { repo.print(r, f) }.onSuccess { n++ }.onFailure { app.reporter.error("Stampa", it); say(it.message ?: str(R.string.print_failed)) }
         }
         if (n > 0) say(if (n == 1) str(R.string.print_one) else str(R.string.print_many, n))
     }
+
+    fun reportError(where: String, e: Throwable) { app.appScope.launch { app.reporter.error(where, e) } }
+
+    /** "Segnala un problema": onDone(null) se è partita, altrimenti il codice dell'errore. */
+    fun sendFeedback(message: String, contact: String?, image: Uri?, onDone: (String?) -> Unit) = viewModelScope.launch {
+        onDone(app.reporter.feedback(message, contact, image))
+    }
+
+    /** Introduzione al primo avvio. */
+    val introSeen = MutableStateFlow(app.getSharedPreferences("rullino", android.content.Context.MODE_PRIVATE).getBoolean("introSeen", false))
+    fun finishIntro() {
+        app.getSharedPreferences("rullino", android.content.Context.MODE_PRIVATE).edit().putBoolean("introSeen", true).apply()
+        introSeen.value = true
+    }
+    fun showIntro() { introSeen.value = false }
 
     fun printCrop(r: RollEntity, f: FrameEntity, c: CropRect, onSaved: () -> Unit) = viewModelScope.launch {
         runCatching { repo.printCrop(r, f, c.left, c.top, c.width, c.height, c.tag) }
